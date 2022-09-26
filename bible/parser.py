@@ -10,6 +10,7 @@ def parse():
                 grammar_text = file.read()
     parser = Lark(grammar_text)
     tree = parser.parse("John 3:16-18; Romans 1:10-22; 3:20-22, 24")
+    print(tree)
     print(tree.pretty())
 
 
