@@ -28,14 +28,13 @@ verse_num: number
 ?minor_list_sep: ","
 ?verse_sep: ":"
 
-bible_book: book_name
+bible_book: /\w(\w|\s)*[^0-9\s:;,\-]/
 
 // matt_book: "Mt" | "Matt" | "Matthew" 
 // mark_book: "Mk" | "Mark" 
 // luke_book: "Lk" | "Luke" 
 // john_book: "Jn" | "John"
-one_john_book: "1 Jn" | "1 John"
-book_name: /\w(\w|\s)*[^0-9\s:;,\-]/
+// one_john_book: "1 Jn" | "1 John"
 
 %import common.WS
 %import common.INT
