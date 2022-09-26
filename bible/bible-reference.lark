@@ -1,0 +1,43 @@
+start: ref_list
+
+ref_list: bible_ref (list_sep bible_ref)* list_sep?
+
+?bible_ref: (single_ref | dual_ref)
+
+dual_ref: single_ref range_sep single_ref
+
+single_ref: book_only_ref
+          | book_num_ref
+          | book_chap_verse_ref
+          | num_only_ref
+          | chap_verse_ref
+
+book_only_ref: bible_book
+book_num_ref: bible_book number
+book_chap_verse_ref: bible_book chap_num verse_sep verse_num
+num_only_ref: number
+chap_verse_ref: chap_num verse_sep verse_num
+
+?number: INT
+chap_num: number
+verse_num: number
+
+?range_sep: "-"
+?list_sep: major_list_sep | minor_list_sep
+?major_list_sep: ";"
+?minor_list_sep: ","
+?verse_sep: ":"
+
+bible_book: book_name
+
+// matt_book: "Mt" | "Matt" | "Matthew" 
+// mark_book: "Mk" | "Mark" 
+// luke_book: "Lk" | "Luke" 
+// john_book: "Jn" | "John"
+one_john_book: "1 Jn" | "1 John"
+book_name: /\w(\w|\s)*[^0-9\s:;,\-]/
+
+%import common.WS
+%import common.INT
+%ignore WS
+
