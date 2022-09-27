@@ -1,10 +1,10 @@
-start: ref_list
+?start: ref_list
 
-ref_list: bible_ref (list_sep bible_ref)* list_sep?
+ref_list: bible_ref (LIST_SEP bible_ref)* LIST_SEP?
 
 ?bible_ref: (single_ref | dual_ref)
 
-dual_ref: single_ref range_sep single_ref
+dual_ref: single_ref RANGE_SEP single_ref
 
 single_ref: book_only_ref
           | book_num_ref
@@ -12,29 +12,23 @@ single_ref: book_only_ref
           | num_only_ref
           | chap_verse_ref
 
-book_only_ref: bible_book
-book_num_ref: bible_book number
-book_chap_verse_ref: bible_book chap_num verse_sep verse_num
-num_only_ref: number
-chap_verse_ref: chap_num verse_sep verse_num
+book_only_ref: BOOK_NAME
+book_num_ref: BOOK_NAME NUMBER
+book_chap_verse_ref: BOOK_NAME CHAP_NUM VERSE_SEP VERSE_NUM
+num_only_ref: NUMBER
+chap_verse_ref: CHAP_NUM VERSE_SEP VERSE_NUM
 
-?number: INT
-chap_num: number
-verse_num: number
+CHAP_NUM: NUMBER
+VERSE_NUM: NUMBER
+NUMBER: INT
 
-?range_sep: "-"
-?list_sep: major_list_sep | minor_list_sep
-?major_list_sep: ";"
-?minor_list_sep: ","
-?verse_sep: ":"
+RANGE_SEP: "-"
+LIST_SEP: MAJOR_LIST_SEP | MINOR_LIST_SEP
+MAJOR_LIST_SEP: ";"
+MINOR_LIST_SEP: ","
+VERSE_SEP: ":"
 
-bible_book: /\w(\w|\s)*[^0-9\s:;,\-]/
-
-// matt_book: "Mt" | "Matt" | "Matthew" 
-// mark_book: "Mk" | "Mark" 
-// luke_book: "Lk" | "Luke" 
-// john_book: "Jn" | "John"
-// one_john_book: "1 Jn" | "1 John"
+BOOK_NAME: /\w(\w|\s)*[^0-9\s:;,\-]/
 
 %import common.WS
 %import common.INT
