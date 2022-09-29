@@ -1,5 +1,5 @@
 from enum import Enum, auto
-
+import re
 
 class BibleBook(Enum):
     '''An enum for specifying books in the Bible.
@@ -95,6 +95,10 @@ class BibleBook(Enum):
 bible_book_names = {
     # Keys: Bible Book
     # Values: (Abbrev title, Full title, Min unique chars (excl. numbers), List of extra recognised abbrevs)
+    #
+    # The min unique chars is the minimum number of characters in the full title (after any initial "1 ",
+    # "2 " or "3 " has been stripped out) needed to uniquely identify the book.
+    #
     BibleBook.Gen:      ("Gen",     "Genesis",          2,   ["Gn"]),
     BibleBook.Exod:     ("Exod",    "Exodus",           2,   []),
     BibleBook.Lev:      ("Lev",     "Leviticus",        2,   ["Lv"]),
@@ -162,3 +166,72 @@ bible_book_names = {
     BibleBook.Jude:     ("Jude",    "Jude",             4,   []),
     BibleBook.Rev:      ("Rev",     "Revelation",       2,   ["The Revelation", "The Revelation to John"]),
 }
+
+
+bible_book_regexes = {} # Keys: Bible books. Values: Single regex matching any acceptable string for that book
+
+
+def _generate_regexes():
+    '''Generate the bible_book_regex dictionary.
+
+    The keys are each BibleBook enum value. The values are a single regex matching any acceptable string
+    for that book.
+
+    For each book, several regex patterns are joined together.
+    The main pattern is derived from the book's full title, and requires the min number of unique characters.
+    Any characters beyond the minimum are optional, but must be correct.
+    Extra patterns are derived from the list of any extra recognised abbreviations.
+    '''
+    for book, data in bible_book_names.items():
+        # For clarity, the comments show what happens for the example of "1 John"
+        full_title = data[1]    # e.g. "1 John"
+        min_chars = data[2]     # e.g. 1
+        extra_abbrevs = data[3] #
+        full_title_pattern = ""
+
+        # Peel off any numeric prefix, and match variations on the prefix.
+        # e.g. full_title_pattern = r"(1|I)\s*"
+        #      full_title = "John"
+        if full_title[0:2] == "1 " or full_title[0:2] == "2 " or full_title[0:2] == "3 ":
+            full_title_pattern = full_title[0:2]
+            full_title_pattern = full_title_pattern.replace("1 ", r"(1|I)\s*") 
+            full_title_pattern = full_title_pattern.replace("2 ", r"(2|II)\s*")
+            full_title_pattern = full_title_pattern.replace("3 ", r"(3|III)\s*")
+            full_title = full_title[2:]
+        
+        # Add the minimum number of unique characters
+        # e.g. full_title_pattern = r"(1|I)\s*J"
+        full_title_pattern += full_title[0:min_chars]
+
+        # Add the rest of full title characters as optional matches.
+        # e.g. full_title_pattern = r"(1|I)\s*J(o(h(n)?)?)?"
+        for char in full_title[min_chars:]:
+            full_title_pattern += "(" + char
+        full_title_pattern += ")?" * (len(full_title)-min_chars)
+
+        # Allow for extra whitespace.
+        full_title_pattern = full_title_pattern.replace(" ",r"\s+")
+
+        # Collate the extra acceptable abbreviations, and combine everything into a final,
+        # single regex for the book
+        total_pattern = full_title_pattern
+        for abbrev in extra_abbrevs:
+            abbrev = abbrev.replace(" ",r"\s+") # Allow for extra whitespace
+            total_pattern += "|" + abbrev
+        bible_book_regexes[book] = re.compile(total_pattern, re.IGNORECASE)
+
+
+_generate_regexes()
+
+
+if __name__ == "__main__":
+    while True:
+        s = input("Enter book: ")
+        for book, regex in bible_book_regexes.items():
+            match = False
+            if regex.fullmatch(s):
+                print(book)
+                match = True
+                break
+        if not match:
+            print("Not found!")
