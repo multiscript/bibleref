@@ -7,10 +7,11 @@ class BibleBook(Enum):
     Note that Python identifiers can't start with a number. So books like
     1 Samuel are written here as _1Sam.
 
-    BibleBooks have 3 extra attributes:
+    BibleBooks have the following extra attributes (added in methods below):
       abbrev - The abbreviated name of the book
       title  - The full title of the book.
       regex  - A regex which matches any acceptable name/abbrev of the book.
+      index  - An integer indicating its ordering in the collection of books (0-based).
     '''
     Gen = "Genesis" 
     Exod = "Exodus"
@@ -80,7 +81,7 @@ class BibleBook(Enum):
     Rev = "Revelation"
 
 
-bible_book_names = {
+name_data = {
     # Keys: Bible Book
     # Values: (Abbrev title, Full title, Min unique chars (excl. numbers), List of extra recognised abbrevs)
     #
@@ -155,9 +156,78 @@ bible_book_names = {
     BibleBook.Rev:      ("Rev",     "Revelation",       2,   ["The Revelation", "The Revelation to John"]),
 }
 
+order = [
+    BibleBook.Gen,
+    BibleBook.Exod,
+    BibleBook.Lev,
+    BibleBook.Num,
+    BibleBook.Deut,
+    BibleBook.Josh,
+    BibleBook.Judg,
+    BibleBook.Ruth,
+    BibleBook._1Sam,
+    BibleBook._2Sam,
+    BibleBook._1Kgs,
+    BibleBook._2Kgs,
+    BibleBook._1Chr,
+    BibleBook._2Chr,
+    BibleBook.Ezra,
+    BibleBook.Neh,
+    BibleBook.Esth,
+    BibleBook.Job,
+    BibleBook.Psa,
+    BibleBook.Prov,
+    BibleBook.Eccl,
+    BibleBook.Song,
+    BibleBook.Isa,
+    BibleBook.Jer,
+    BibleBook.Lam,
+    BibleBook.Ezek,
+    BibleBook.Dan,
+    BibleBook.Hos,
+    BibleBook.Joel,
+    BibleBook.Amos,
+    BibleBook.Obad,
+    BibleBook.Jonah,
+    BibleBook.Mic,
+    BibleBook.Nah,
+    BibleBook.Hab,
+    BibleBook.Zeph,
+    BibleBook.Hag,
+    BibleBook.Zech,
+    BibleBook.Mal,
+    BibleBook.Matt,
+    BibleBook.Mark,
+    BibleBook.Luke,
+    BibleBook.John,
+    BibleBook.Acts,
+    BibleBook.Rom,
+    BibleBook._1Cor,
+    BibleBook._2Cor,
+    BibleBook.Gal,
+    BibleBook.Eph,
+    BibleBook.Phil,
+    BibleBook.Col,
+    BibleBook._1Thess,
+    BibleBook._2Thess,
+    BibleBook._1Tim,
+    BibleBook._2Tim,
+    BibleBook.Titus,
+    BibleBook.Phlm,
+    BibleBook.Heb,
+    BibleBook.James,
+    BibleBook._1Pet,
+    BibleBook._2Pet,
+    BibleBook._1Jn,
+    BibleBook._2Jn,
+    BibleBook._3Jn,
+    BibleBook.Jude,
+    BibleBook.Rev
+]
+
 
 def _add_abbrevs_and_titles():
-    for book, data in bible_book_names.items():
+    for book, data in name_data.items():
         book.abbrev = data[0]
         book.title = data[1]
 
@@ -169,7 +239,7 @@ def _add_regexes():
     Any characters beyond the minimum are optional, but must be correct.
     Extra patterns are derived from the list of any extra recognised abbreviations.
     '''
-    for book, data in bible_book_names.items():
+    for book, data in name_data.items():
         # For clarity, the comments show what happens for the example of "1 John"
         full_title = data[1]    # e.g. "1 John"
         min_chars = data[2]     # e.g. 1
@@ -207,9 +277,14 @@ def _add_regexes():
             total_pattern += "|" + abbrev
         book.regex = re.compile(total_pattern, re.IGNORECASE)
 
+def _add_order():
+    for i in range(len(order)):
+        order[i].index = i
+
 
 _add_abbrevs_and_titles()
 _add_regexes()
+_add_order()
 
 
 if __name__ == "__main__":
@@ -217,8 +292,8 @@ if __name__ == "__main__":
         s = input("Enter book: ")
         for book in BibleBook:
             match = False
-            if book.regex.fullmatch(s):
-                print(book, book.abbrev, book.title)
+            if book.regex.fullmatch(s) is not None:
+                print(book, book.abbrev, book.title, book.index)
                 match = True
                 break
         if not match:
