@@ -5,9 +5,12 @@ class BibleBook(Enum):
     '''An enum for specifying books in the Bible.
 
     Note that Python identifiers can't start with a number. So books like
-    1 Samuel are written here as _1Sam . The enum name (minus any _)
-    becomes the book abbreviation, while the enum value becomes the full
-    book title.
+    1 Samuel are written here as _1Sam.
+
+    BibleBooks have 3 extra attributes:
+      abbrev - The abbreviated name of the book
+      title  - The full title of the book.
+      regex  - A regex which matches any acceptable name/abbrev of the book.
     '''
     Gen = "Genesis" 
     Exod = "Exodus"
@@ -75,21 +78,6 @@ class BibleBook(Enum):
     _3Jn = "3 John"
     Jude = "Jude"
     Rev = "Revelation"
-
-    @property
-    def abbrev(self):
-        '''Abbreviated book name
-        '''
-        abbrev = self.name
-        if abbrev[0] == "_":
-            abbrev = abbrev[1:]
-        return abbrev
-
-    @property
-    def title(self):
-        '''Full book name
-        '''
-        return self.value
 
 
 bible_book_names = {
@@ -168,14 +156,13 @@ bible_book_names = {
 }
 
 
-bible_book_regexes = {} # Keys: Bible books. Values: Single regex matching any acceptable string for that book
+def _add_abbrevs_and_titles():
+    for book, data in bible_book_names.items():
+        book.abbrev = data[0]
+        book.title = data[1]
 
-
-def _generate_regexes():
-    '''Generate the bible_book_regex dictionary.
-
-    The keys are each BibleBook enum value. The values are a single regex matching any acceptable string
-    for that book.
+def _add_regexes():
+    '''Add a 'regex' attribute to each BibleBook for a regex matching acceptable names.
 
     For each book, several regex patterns are joined together.
     The main pattern is derived from the book's full title, and requires the min number of unique characters.
@@ -218,19 +205,20 @@ def _generate_regexes():
         for abbrev in extra_abbrevs:
             abbrev = abbrev.replace(" ",r"\s+") # Allow for extra whitespace
             total_pattern += "|" + abbrev
-        bible_book_regexes[book] = re.compile(total_pattern, re.IGNORECASE)
+        book.regex = re.compile(total_pattern, re.IGNORECASE)
 
 
-_generate_regexes()
+_add_abbrevs_and_titles()
+_add_regexes()
 
 
 if __name__ == "__main__":
     while True:
         s = input("Enter book: ")
-        for book, regex in bible_book_regexes.items():
+        for book in BibleBook:
             match = False
-            if regex.fullmatch(s):
-                print(book)
+            if book.regex.fullmatch(s):
+                print(book, book.abbrev, book.title)
                 match = True
                 break
         if not match:
