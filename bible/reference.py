@@ -153,7 +153,7 @@ name_data = {
     BibleBook._2Jn:     ("2Jn",     "2 John",           1,   ["2 Jn", "2 Jhn"]),
     BibleBook._3Jn:     ("3Jn",     "3 John",           1,   ["3 Jn", "3 Jhn"]),
     BibleBook.Jude:     ("Jude",    "Jude",             4,   []),
-    BibleBook.Rev:      ("Rev",     "Revelation",       2,   ["The Revelation", "The Revelation to John"]),
+    BibleBook.Rev:      ("Rev",     "Revelation",       2,   ["The Revelation", "The Revelation to John"])
 }
 
 order = [
@@ -226,6 +226,8 @@ order = [
 ]
 
 max_verses = {
+    # Keys: Bible books
+    # Values: List of max verse number for each chapter (ascending by chapter). Len of list is number of chapters.
     BibleBook.Gen:      [31, 25, 24, 26, 32, 22, 24, 22, 29, 32, 32, 20, 18, 24, 21, 16, 27, 33, 38, 18, 34, 24, 20, 67, 34, 35, 46, 22, 35, 43, 55, 32, 20, 31, 29, 43, 36, 30, 23, 23, 57, 38, 34, 34, 28, 34, 31, 22, 33, 26],
     BibleBook.Exod:     [22, 25, 22, 31, 23, 30, 25, 32, 35, 29, 10, 51, 22, 31, 27, 36, 16, 27, 25, 26, 36, 31, 33, 18, 40, 37, 21, 43, 46, 38, 18, 35, 23, 35, 35, 38, 29, 31, 43, 38],
     BibleBook.Lev:      [17, 16, 17, 35, 19, 30, 38, 36, 24, 20, 47, 8, 59, 57, 33, 34, 16, 30, 37, 27, 24, 33, 44, 23, 55, 46, 34],
@@ -291,7 +293,18 @@ max_verses = {
     BibleBook._2Jn:     [13],
     BibleBook._3Jn:     [14],
     BibleBook.Jude:     [25],
-    BibleBook.Rev:      [20, 29, 22, 11, 14, 17, 17, 13, 21, 11, 19, 17, 18, 20, 8, 21, 18, 24, 21, 15, 27, 21],
+    BibleBook.Rev:      [20, 29, 22, 11, 14, 17, 17, 13, 21, 11, 19, 17, 18, 20, 8, 21, 18, 24, 21, 15, 27, 21]
+}
+
+verse_0s = {
+    # Keys: Bible books
+    # Values: Set of chapter numbers (1-indexed) that can begin with a verse 0.
+     BibleBook.Psa:      set(3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27,
+                        28, 29, 30, 31, 32, 34, 35, 36, 37, 38, 39, 40, 41, 42, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53,
+                        54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 72, 73, 74, 75, 76, 77, 78,
+                        79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 92, 98, 100, 101, 102, 103, 108, 109, 110, 120,
+                        121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 138, 139, 140, 141, 142,
+                        143, 144, 145)
 }
 
 
