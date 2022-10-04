@@ -8,7 +8,6 @@ defaul_allow_verse_0 = False    # Set to True to default to allowing verse 0 to 
                                 # This default value can be overridden in individual methods.
 
 
-
 class BibleBook(Enum):
     '''An enum for specifying books in the Bible.
 
@@ -92,6 +91,43 @@ class BibleBook(Enum):
     _3Jn = "3Jn"
     Jude = "Jude"
     Rev = "Rev"
+
+    @classmethod
+    def from_name(cls, name):
+        '''Return BibleBook matching the given string name, or None if no book matches.
+        '''
+        name = name.strip()
+        match = False
+        for book in BibleBook:
+            if book.regex.fullmatch(name) is not None:
+                match = True
+                break
+        return book if match else None
+
+    def min_chap(self):
+        '''Return lowest chapter number (indexed from 1) for this BibleBook.
+        '''
+        return 1
+
+    def max_chap(self):
+        '''Return highest chapter number (indexed from 1) for this BibleBook.
+        '''
+        return len(self._max_verses)
+
+    def min_verse(self, chap, allow_verse_0=None):
+        '''Return the lowest verse number (indexed from 1) for the specified chapter
+        of this BibleBook. If allow_verse_0 is not None it overrides the module attribute
+        default_allow_verse_0. If True, chapters with superscriptions start with verse 0.
+        '''
+        if allow_verse_0 is None:
+            allow_verse_0 = defaul_allow_verse_0
+        return 0 if (allow_verse_0 and chap in self._verse_0s) else 1
+
+    def max_verse(self, chap):
+        '''Return the highest verse number (indexed from 1) for the specified chapter
+        numbr of this BibleBook.
+        '''
+        return self._max_verses[chap-1]
 
 
 name_data = {
@@ -397,12 +433,9 @@ _add_verse_0s()
 
 if __name__ == "__main__":
     while True:
-        s = input("Enter book: ")
-        for book in BibleBook:
-            match = False
-            if book.regex.fullmatch(s) is not None:
-                print(book, book.abbrev, book.title, book.index)
-                match = True
-                break
-        if not match:
+        name = input("Enter book: ")
+        book = BibleBook.from_name(name)
+        if book is not None:
+            print(book, book.abbrev, book.title, book.index, book.min_chap(), book.max_chap())
+        else:
             print("Not found!")
