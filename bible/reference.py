@@ -1,84 +1,97 @@
 from enum import Enum, auto
 import re
 
+allow_multibook_ranges = False  # Set to True to allow a BibleRange to span multiple books.
+
+defaul_allow_verse_0 = False    # Set to True to default to allowing verse 0 to be the first verse for chapters with
+                                # superscriptions (currently just some Psalms).
+                                # This default value can be overridden in individual methods.
+
+
+
 class BibleBook(Enum):
     '''An enum for specifying books in the Bible.
 
     Note that Python identifiers can't start with a number. So books like
     1 Samuel are written here as _1Sam.
 
-    BibleBooks have the following extra attributes (added in methods below):
-      abbrev - The abbreviated name of the book
-      title  - The full title of the book.
-      regex  - A regex which matches any acceptable name/abbrev of the book.
-      index  - An integer indicating its ordering in the collection of books (0-based).
+    BibleBooks have the following extra attributes (added by the module):
+      abbrev:   The abbreviated name of the book
+      title:    The full title of the book.
+      regex:    A regex which matches any acceptable name/abbrev for the book.
+      index:    An integer indicating its ordering in the collection of books (0-based).
     '''
-    Gen = "Genesis" 
-    Exod = "Exodus"
-    Lev = "Leviticus"
-    Num = "Numbers"
-    Deut = "Deuteronomy"
-    Josh = "Joshua"
-    Judg = "Judges"
+    # Extra private attributes:
+    # _max_verses:  List of max verse number for each chapter (ascending by chapter).
+    #               Len of list is number of chapters. 
+    # _verse_0s:    If not None, set of chapter numbers (1-indexed) that can begin with a verse 0.
+    #
+    Gen = "Gen" 
+    Exod = "Exod"
+    Lev = "Lev"
+    Num = "Num"
+    Deut = "Deut"
+    Josh = "Josh"
+    Judg = "Judg"
     Ruth = "Ruth"
-    _1Sam = "1 Samuel"
-    _2Sam = "2 Samuel"
-    _1Kgs = "1 Kings"
-    _2Kgs = "2 Kings"
-    _1Chr = "1 Chronicles"
-    _2Chr = "2 Chronicles"
+    _1Sam = "1Sam"
+    _2Sam = "2Sam"
+    _1Kgs = "1Kgs"
+    _2Kgs = "2Kgs"
+    _1Chr = "1Chr"
+    _2Chr = "2Chr"
     Ezra = "Ezra"
-    Neh = "Nehemiah"
-    Esth = "Esther"
+    Neh = "Neh"
+    Esth = "Esth"
     Job = "Job"
-    Psa = "Psalms"
-    Prov = "Proverbs"
-    Eccl = "Ecclesiastes"
-    Song = "Song of Songs"
-    Isa = "Isaiah"
-    Jer = "Jeremiah"
-    Lam = "Lamentations"
-    Ezek = "Ezekiel"
-    Dan = "Daniel"
-    Hos = "Hosea"
+    Psa = "Psa"
+    Prov = "Prov"
+    Eccl = "Eccl"
+    Song = "Song"
+    Isa = "Isa"
+    Jer = "Jer"
+    Lam = "Lam"
+    Ezek = "Ezek"
+    Dan = "Dan"
+    Hos = "Hos"
     Joel = "Joel"
     Amos = "Amos"
-    Obad = "Obadiah"
+    Obad = "Obad"
     Jonah = "Jonah"
-    Mic = "Micah"
-    Nah = "Nahum"
-    Hab = "Habakkuk"
-    Zeph = "Zephaniah"
-    Hag = "Haggai"
-    Zech = "Zechariah"
-    Mal = "Malachi"
-    Matt = "Matthew"
+    Mic = "Mic"
+    Nah = "Nah"
+    Hab = "Hab"
+    Zeph = "Zeph"
+    Hag = "Hag"
+    Zech = "Zech"
+    Mal = "Mal"
+    Matt = "Matt"
     Mark = "Mark"
     Luke = "Luke"
     John = "John"
     Acts = "Acts"
-    Rom = "Romans"
-    _1Cor = "1 Corinthians"
-    _2Cor = "2 Corinthians"
-    Gal = "Galatians"
-    Eph = "Ephesians"
-    Phil = "Philippians"
-    Col = "Colossians"
-    _1Thess = "1 Thessalonians"
-    _2Thess = "2 Thessalonians"
-    _1Tim = "1 Timothy"
-    _2Tim = "2 Timothy"
+    Rom = "Rom"
+    _1Cor = "1Cor"
+    _2Cor = "2Cor"
+    Gal = "Gal"
+    Eph = "Eph"
+    Phil = "Phil"
+    Col = "Col"
+    _1Thess = "1Thess"
+    _2Thess = "2Thess"
+    _1Tim = "1 Tim"
+    _2Tim = "2 Tim"
     Titus = "Titus"
-    Phlm = "Philemon"
-    Heb = "Hebrews"
+    Phlm = "Phlm"
+    Heb = "Heb"
     James = "James"
-    _1Pet = "1 Peter"
-    _2Pet = "2 Peter"
-    _1Jn = "1 John"
-    _2Jn = "2 John"
-    _3Jn = "3 John"
+    _1Pet = "1Pet"
+    _2Pet = "2Pet"
+    _1Jn = "1Jn"
+    _2Jn = "2Jn"
+    _3Jn = "3Jn"
     Jude = "Jude"
-    Rev = "Revelation"
+    Rev = "Rev"
 
 
 name_data = {
@@ -299,12 +312,12 @@ max_verses = {
 verse_0s = {
     # Keys: Bible books
     # Values: Set of chapter numbers (1-indexed) that can begin with a verse 0.
-     BibleBook.Psa:      set(3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27,
+     BibleBook.Psa:     set([3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27,
                         28, 29, 30, 31, 32, 34, 35, 36, 37, 38, 39, 40, 41, 42, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53,
                         54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 72, 73, 74, 75, 76, 77, 78,
                         79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 92, 98, 100, 101, 102, 103, 108, 109, 110, 120,
                         121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 138, 139, 140, 141, 142,
-                        143, 144, 145)
+                        143, 144, 145])
 }
 
 
@@ -363,10 +376,23 @@ def _add_order():
     for i in range(len(order)):
         order[i].index = i
 
+def _add_max_verses():
+    for book, max_verse_list in max_verses.items():
+        book._max_verses = max_verse_list
+
+def _add_verse_0s():
+    for book in BibleBook:
+        if book in verse_0s:
+            book._verse_0s = verse_0s[book]
+        else:
+            book._verse_0s = None
+
 
 _add_abbrevs_and_titles()
 _add_regexes()
 _add_order()
+_add_max_verses()
+_add_verse_0s()
 
 
 if __name__ == "__main__":
