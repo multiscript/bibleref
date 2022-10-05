@@ -299,6 +299,86 @@ class BibleVerse:
         return self.book.max_verse(chap)
 
 
+class BibleRange:
+    # TODO Remove book attribute, so we can handle multibook ranges.
+    '''A reference to a range of Bible verses. Contains 3 attributes:
+    
+    book:   The BibleBook enum of the book of the reference.
+    start:  The BibleVerse of the first verse in the range.
+    end:    The BibleVerse of the last verse in the range.
+    '''
+    # TODO Change signature to require start_book and end_book, and generate correct ranges for missing numbers.
+    def __init__(self, bible_book, start_chap, start_verse=None, end_chap=None, end_verse=None, validate=True):
+        self.book = bible_book
+        self.start = BibleVerse(bible_book, start_chap, start_verse, validate=validate)
+        self.end = BibleVerse(bible_book, end_chap, end_verse, validate=validate)
+
+    def __eq__(self, other):
+        return (self.book == other.book) and (self.start == other.start) and (self.end == other.end)
+
+    def contains(self, bible_verse):
+        '''Returns True if this BibleRange contains the given BibleVerse, otherwise False.
+        '''
+        return (bible_verse >= self.start and bible_verse <= self.end)
+
+    def split(self, by_chap=True, num_verses=None):
+        '''Split this range into a list of smaller consecutive ranges.
+        
+        If by_chap is true, splits are made end of each chapter.
+        If num_verses is specified, splits are made after no more than the specified number of verses.
+        If both by_chap and num_verses are specified, splits occur both at chapter boundaries, and after
+        the specified number of verses.
+        '''
+        chap_split = [BibleRange(self.book, self.start.chap, self.start.verse, self.end.chap, self.end.verse)]
+
+        # Start by dividing our initial range into chapters, if requested.
+        if by_chap:
+            chap_split = []
+            for chap in range(self.start.chap, self.end.chap + 1):
+                if chap == self.start.chap:
+                    start_verse = self.start.verse
+                else:
+                    start_verse = 1
+                if chap == self.end.chap:
+                    end_verse = self.end.verse
+                else:
+                    end_verse = self.end.max_verse(chap)
+                chap_split.append(BibleRange(self.book, chap, start_verse, chap, end_verse))
+        
+        # Next, split our list of ranges into smaller ranges with a max numbers of verses, if requested.
+        if num_verses is not None:
+            verse_split = []
+            for bible_range in chap_split:
+                start = BibleVerse(bible_range.book, bible_range.start.chap, bible_range.start.verse)
+                end = start.add(num_verses-1)
+                while end is not None and end < bible_range.end:
+                    verse_split.append(BibleRange(bible_range.book, start.chap, start.verse, end.chap, end.verse))
+                    start = end.add(1)
+                    end = start.add(num_verses-1)
+                verse_split.append(BibleRange(bible_range.book, start.chap, start.verse, bible_range.end.chap, bible_range.end.verse))
+            return verse_split
+        else:
+            return chap_split
+
+    def __repr__(self):
+        return str((self.book.abbrev, self.start.chap, self.start.verse, self.end.chap, self.end.verse))
+    
+    def __str__(self):
+        return self.string()
+
+    def string(self, abbrev=False, periods=False, nospace=False, nobook=False):
+        '''Returns a string representation of this BibleRange.
+
+        If abbrev is True, the abbreviated name of the book is used (instead of the full name).
+        If periods is True, chapter and verse numbers are separated by '.' instead of ':'.
+        If nospace is True, no spaces are included in the string.
+        If nobook is True, the book name is omitted.
+        '''
+        # TODO Make this a proper implementation that doesn't double-print anything and handles multibook ranges.
+        sep = "." if periods else ":"
+        return self.start.string(abbrev, periods, nospace, nobook) + f"{self.end.chap}{sep}{self.end.verse}"
+
+
 class BibleReferenceError(Exception):
     pass
 
