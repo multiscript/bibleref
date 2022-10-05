@@ -1,3 +1,4 @@
+import copy
 from enum import Enum, auto
 import re
 
@@ -18,7 +19,7 @@ class BibleBook(Enum):
       abbrev:   The abbreviated name of the book
       title:    The full title of the book.
       regex:    A regex which matches any acceptable name/abbrev for the book.
-      index:    An integer indicating its ordering in the collection of books (0-based).
+      order:    An integer indicating its ordering in the collection of books (0-based).
     '''
     # Extra private attributes:
     # _max_verses:  List of max verse number for each chapter (ascending by chapter).
@@ -128,6 +129,182 @@ class BibleBook(Enum):
         numbr of this BibleBook.
         '''
         return self._max_verses[chap-1]
+
+    def __lt__(self, other):
+        if not isinstance(other, BibleBook):
+            return NotImplemented
+        else:
+            return self.order < other.order
+
+    def __le__(self, other):
+        if not isinstance(other, BibleBook):
+            return NotImplemented
+        else:
+            return self.order <= other.order
+
+    def __gt__(self, other):
+        if not isinstance(other, BibleBook):
+            return NotImplemented
+        else:
+            return self.order > other.order
+
+    def __ge__(self, other):
+        if not isinstance(other, BibleBook):
+            return NotImplemented
+        else:
+            return self.order >= other.order
+
+
+class BibleVerse:
+    '''A reference to a single Bible verse. Contains 3 attributes:
+    
+    book:   The BibleBook of the book of the reference.
+    chap:   The chapter number (indexed from 1) of the reference.
+    verse:  The verse number (indexed from 1) of the reference.
+    '''
+    def __init__(self, book, chap, verse, validate=True):
+        '''If validate is true, it checks that the reference is valid.
+        If it's not valid, InvalidReferenceError is raised.
+        '''
+        if validate:
+            if not isinstance(book, BibleBook):
+                raise InvalidReferenceError(f"{book} is not an instance of BibleBook")
+            if chap < book.min_chap() or chap > book.max_chap() or \
+               verse < book.min_verse(chap) or verse > book.max_verse(chap):
+                raise InvalidReferenceError(f"{book.abbrev} {chap}:{verse}")
+        self.book = book
+        self.chap = chap
+        self.verse = verse
+       
+    def __repr__(self):
+        return str((self.book.abbrev, self.chap, self.verse))
+
+    def __str__(self):
+        return self.string()
+
+    def string(self, abbrev=False, periods=False, nospace=False, nobook=False):
+        '''Returns a string representation of this BibleVerse.
+
+        If abbrev is True, the abbreviated name of the book is used (instead of the full name).
+        If periods is True, chapter and verse numbers are separated by '.' instead of ':'.
+        If nospace is True, no spaces are included in the string.
+        If nobook is True, the book name is omitted.
+        '''
+        name = "" if nobook else (self.book.abbrev if abbrev else self.book.title)
+        sep = "." if periods else ":"
+        space = "" if nospace else " "
+        return f"{name}{space}{str(self.chap)}{sep}{str(self.verse)}"
+
+    def __eq__(self, other):
+        return (self.book == other.book) and (self.chap == other.chap) and (self.verse == other.verse)
+
+    def __lt__(self, other):
+        if not isinstance(self, BibleVerse):
+            return NotImplemented
+        else:
+            return (self.book < other.book) or \
+                   (self.book == other.book and self.chap < other.chap) or \
+                   (self.book == other.book and self.chap == other.chap and self.verse < other.verse)
+
+    def __le__(self, other):
+        if not isinstance(self, BibleVerse):
+            return NotImplemented
+        else:
+            return (self.book < other.book) or \
+                   (self.book == other.book and self.chap < other.chap) or \
+                   (self.book == other.book and self.chap == other.chap and self.verse <= other.verse)
+
+    def __gt__(self, other):
+        if not isinstance(self, BibleVerse):
+            return NotImplemented
+        else:
+            return (self.book > other.book) or \
+                   (self.book == other.book and self.chap > other.chap) or \
+                   (self.book == other.book and self.chap == other.chap and self.verse > other.verse)
+
+    def __ge__(self, other):
+        if not isinstance(self, BibleVerse):
+            return NotImplemented
+        else:
+            return (self.book > other.book) or \
+                   (self.book == other.book and self.chap > other.chap) or \
+                   (self.book == other.book and self.chap == other.chap and self.verse >= other.verse)
+
+    def copy(self):
+        return copy.copy(self)
+
+    def add(self, num_verses):
+        ''' Return a new BibleVerse that is the specified number of verses after this verse.
+        
+        Returns None if the result would not be a valid reference in the book.
+        '''
+        new_chap = self.chap
+        new_verse = self.verse + num_verses
+        max_verse = self.max_verse(self.chap)
+        while new_verse > max_verse:
+            new_chap += 1
+            if new_chap > self.max_chap():
+                return None
+            
+            new_verse -= max_verse
+            max_verse = self.max_verse(new_chap)
+
+        return BibleVerse(self.book, new_chap, new_verse)
+
+    def subtract(self, num_verses):
+        ''' Return a new BibleVerse that is the specified number of verses before this verse.
+        
+        Returns None if the result would not be a valid reference in the book.
+        '''
+        new_chap = self.chap
+        new_verse = self.verse - num_verses
+        min_verse = self.min_verse(self.chap)
+        while new_verse < min_verse:
+            new_chap -= 1
+            if new_chap < self.min_chap():
+                return None
+            
+            new_verse += self.max_verse(new_chap)
+            min_verse = self.min_verse(new_chap)
+
+        return BibleVerse(self.book, new_chap, new_verse)
+
+    def min_chap(self):
+        '''Return lowest chapter number (indexed from 1) of the book of this BibleVerse.
+        '''
+        return self.book.min_chap()
+
+    def max_chap(self):
+        '''Return highest chapter number (indexed from 1) of the book of this BibleVerse.
+        '''
+        return self.book.max_chap()
+
+    def min_verse(self, chap=None, allow_verse_0=None):
+        '''Return the lowest verse number (indexed from 1) in the specified chapter
+        of the book of this BibleVerse. If no chapter is specified, the chapter
+        of this BibleVerse is used.  If allow_verse_0 is not None it overrides the module attribute
+        default_allow_verse_0. If True, chapters with superscriptions start with verse 0.
+        '''
+        if chap is None:
+            chap = self.chap
+        return self.book.min_verse(chap, allow_verse_0)
+
+    def max_verse(self, chap=None):
+        '''Return the highest verse number (indexed from 1) in the specified chapter
+        of the book of this BibleVerse. If no chapter is specified, the chapter
+        of this BibleVerse is used.
+        '''
+        if chap is None:
+            chap = self.chap
+        return self.book.max_verse(chap)
+
+
+class BibleReferenceError(Exception):
+    pass
+
+
+class InvalidReferenceError(Exception):
+    pass
 
 
 name_data = {
@@ -410,7 +587,7 @@ def _add_regexes():
 
 def _add_order():
     for i in range(len(order)):
-        order[i].index = i
+        order[i].order = i
 
 def _add_max_verses():
     for book, max_verse_list in max_verses.items():
@@ -436,6 +613,6 @@ if __name__ == "__main__":
         name = input("Enter book: ")
         book = BibleBook.from_name(name)
         if book is not None:
-            print(book, book.abbrev, book.title, book.index, book.min_chap(), book.max_chap())
+            verse = BibleVerse(book, 1, 1)
         else:
             print("Not found!")
