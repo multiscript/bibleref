@@ -107,30 +107,30 @@ class BibleBook(Enum):
                 break
         return book if match else None
 
-    # def min_chap(self):
-    #     '''Return lowest chapter number (indexed from 1) for this BibleBook.
-    #     '''
-    #     return 1
+    def min_chap(self):
+        '''Return lowest chapter number (indexed from 1) for this BibleBook.
+        '''
+        return 1
 
-    # def max_chap(self):
-    #     '''Return highest chapter number (indexed from 1) for this BibleBook.
-    #     '''
-    #     return len(self._max_verses)
+    def max_chap(self):
+        '''Return highest chapter number (indexed from 1) for this BibleBook.
+        '''
+        return len(self._max_verses)
 
-    # def min_verse(self, chap, allow_verse_0=None):
-    #     '''Return the lowest verse number (indexed from 1) for the specified chapter
-    #     of this BibleBook. If allow_verse_0 is not None it overrides the module attribute
-    #     default_allow_verse_0. If True, chapters with superscriptions start with verse 0.
-    #     '''
-    #     if allow_verse_0 is None:
-    #         allow_verse_0 = globals()['allow_verse_0']
-    #     return 0 if (allow_verse_0 and chap in self._verse_0s) else 1
+    def min_verse(self, chap, allow_verse_0=None):
+        '''Return the lowest verse number (indexed from 1) for the specified chapter
+        of this BibleBook. If allow_verse_0 is not None it overrides the module attribute
+        default_allow_verse_0. If True, chapters with superscriptions start with verse 0.
+        '''
+        if allow_verse_0 is None:
+            allow_verse_0 = globals()['allow_verse_0']
+        return 0 if (allow_verse_0 and chap in self._verse_0s) else 1
 
-    # def max_verse(self, chap):
-    #     '''Return the highest verse number (indexed from 1) for the specified chapter
-    #     numbr of this BibleBook.
-    #     '''
-    #     return self._max_verses[chap-1]
+    def max_verse(self, chap):
+        '''Return the highest verse number (indexed from 1) for the specified chapter
+        numbr of this BibleBook.
+        '''
+        return self._max_verses[chap-1]
 
     def next(self):
         '''Returns the next BibleBook in the book ordering, or None if this is the final book.
@@ -287,35 +287,6 @@ class BibleVerse:
 
         return BibleVerse(new_book, new_chap, new_verse)
 
-    def min_chap(self):
-        '''Return lowest chapter number (indexed from 1) of the book of this BibleVerse.
-        '''
-        return self.book.min_chap()
-
-    def max_chap(self):
-        '''Return highest chapter number (indexed from 1) of the book of this BibleVerse.
-        '''
-        return self.book.max_chap()
-
-    def min_verse(self, chap=None, allow_verse_0=None):
-        '''Return the lowest verse number (indexed from 1) in the specified chapter
-        of the book of this BibleVerse. If no chapter is specified, the chapter
-        of this BibleVerse is used.  If allow_verse_0 is not None it overrides the module attribute
-        default_allow_verse_0. If True, chapters with superscriptions start with verse 0.
-        '''
-        if chap is None:
-            chap = self.chap
-        return self.book.min_verse(chap, allow_verse_0)
-
-    def max_verse(self, chap=None):
-        '''Return the highest verse number (indexed from 1) in the specified chapter
-        of the book of this BibleVerse. If no chapter is specified, the chapter
-        of this BibleVerse is used.
-        '''
-        if chap is None:
-            chap = self.chap
-        return self.book.max_verse(chap)
-
     def __lt__(self, other):
         if not isinstance(self, BibleVerse):
             return NotImplemented
@@ -347,6 +318,35 @@ class BibleVerse:
             return (self.book > other.book) or \
                    (self.book == other.book and self.chap > other.chap) or \
                    (self.book == other.book and self.chap == other.chap and self.verse >= other.verse)
+
+    # def min_chap(self):
+    #     '''Return lowest chapter number (indexed from 1) of the book of this BibleVerse.
+    #     '''
+    #     return self.book.min_chap()
+
+    # def max_chap(self):
+    #     '''Return highest chapter number (indexed from 1) of the book of this BibleVerse.
+    #     '''
+    #     return self.book.max_chap()
+
+    # def min_verse(self, chap=None, allow_verse_0=None):
+    #     '''Return the lowest verse number (indexed from 1) in the specified chapter
+    #     of the book of this BibleVerse. If no chapter is specified, the chapter
+    #     of this BibleVerse is used.  If allow_verse_0 is not None it overrides the module attribute
+    #     default_allow_verse_0. If True, chapters with superscriptions start with verse 0.
+    #     '''
+    #     if chap is None:
+    #         chap = self.chap
+    #     return self.book.min_verse(chap, allow_verse_0)
+
+    # def max_verse(self, chap=None):
+    #     '''Return the highest verse number (indexed from 1) in the specified chapter
+    #     of the book of this BibleVerse. If no chapter is specified, the chapter
+    #     of this BibleVerse is used.
+    #     '''
+    #     if chap is None:
+    #         chap = self.chap
+    #     return self.book.max_verse(chap)
 
 
 class BibleRange:
