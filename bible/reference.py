@@ -1,10 +1,12 @@
 import copy
+from dataclasses import dataclass
 from enum import Enum, auto
 import re
 
-allow_multibook_ranges = False  # Set to True to allow a BibleRange to span multiple books.
+allow_multibook_ranges = False  # Set to True to default to allowing a BibleRange to span multiple books.
+                                # The default value can be overridden in individual methods.
 
-defaul_allow_verse_0 = False    # Set to True to default to allowing verse 0 to be the first verse for chapters with
+_allow_verse_0 = False           # Set to True to default to allowing verse 0 to be the first verse for chapters with
                                 # superscriptions (currently just some Psalms).
                                 # This default value can be overridden in individual methods.
 
@@ -121,7 +123,7 @@ class BibleBook(Enum):
         default_allow_verse_0. If True, chapters with superscriptions start with verse 0.
         '''
         if allow_verse_0 is None:
-            allow_verse_0 = defaul_allow_verse_0
+            allow_verse_0 = globals()['allow_verse_0']
         return 0 if (allow_verse_0 and chap in self._verse_0s) else 1
 
     def max_verse(self, chap):
@@ -129,6 +131,22 @@ class BibleBook(Enum):
         numbr of this BibleBook.
         '''
         return self._max_verses[chap-1]
+
+    def next(self):
+        '''Returns the next BibleBook in the book ordering, or None if this is the final book.
+        '''
+        if self.order == len(order)-1:
+            return None
+        else:
+            return order[self.order+1]
+
+    def prev(self):
+        '''Returns the previous BibleBook in the book ordering, or None if this is the first book.
+        '''
+        if self.order == 0:
+            return None
+        else:
+            return order[self.order-1]
 
     def __lt__(self, other):
         if not isinstance(other, BibleBook):
@@ -155,13 +173,20 @@ class BibleBook(Enum):
             return self.order >= other.order
 
 
+@dataclass(init=False, repr=False, eq=True, order=False, frozen=True)
 class BibleVerse:
     '''A reference to a single Bible verse. Contains 3 attributes:
     
     book:   The BibleBook of the book of the reference.
     chap:   The chapter number (indexed from 1) of the reference.
     verse:  The verse number (indexed from 1) of the reference.
+
+    BibleVerses are immutable.
     '''
+    book:   BibleBook
+    chap:   int
+    verse:  int
+
     def __init__(self, book, chap, verse, validate=True):
         '''If validate is true, it checks that the reference is valid.
         If it's not valid, InvalidReferenceError is raised.
@@ -172,9 +197,9 @@ class BibleVerse:
             if chap < book.min_chap() or chap > book.max_chap() or \
                verse < book.min_verse(chap) or verse > book.max_verse(chap):
                 raise InvalidReferenceError(f"{book.abbrev} {chap}:{verse}")
-        self.book = book
-        self.chap = chap
-        self.verse = verse
+        object.__setattr__(self, "book", book) # We have to use object.__setattr__ because the class is frozen
+        object.__setattr__(self, "chap", chap)
+        object.__setattr__(self, "verse", verse)
        
     def __repr__(self):
         return str((self.book.abbrev, self.chap, self.verse))
@@ -195,8 +220,101 @@ class BibleVerse:
         space = "" if nospace else " "
         return f"{name}{space}{str(self.chap)}{sep}{str(self.verse)}"
 
-    def __eq__(self, other):
-        return (self.book == other.book) and (self.chap == other.chap) and (self.verse == other.verse)
+    def copy(self):
+        return copy.copy(self)
+
+    def add(self, num_verses, allow_multibook_ranges=None, allow_verse_0=None):
+        ''' Returns a new BibleVerse that is the specified number of verses after this verse.
+        
+        If not None, allow_multibook_ranges and allow_verse_0 override the module attributes of the same names.
+        If allow_multibook_ranges is True, and the result would be beyond the current book, a verse
+        in a subsequent book is returned. Otherwise, if the verse does not exist, None is returned.
+        '''
+        if allow_multibook_ranges is None:
+            allow_multibook_ranges = globals()['allow_multibook_ranges']
+        if allow_verse_0 is None:
+            allow_verse_0 = globals()['allow_verse_0']
+        new_book = self.book
+        new_chap = self.chap
+        new_verse = self.verse + num_verses
+        max_verse = new_book.max_verse(new_chap)
+        while new_verse > max_verse:
+            new_chap += 1
+            if new_chap > new_book.max_chap():
+                if not allow_multibook_ranges:
+                    return None
+                else:
+                    new_book = new_book.next()
+                    if new_book is None:
+                        return None
+                    new_chap = new_book.min_chap()
+            
+            new_verse = new_verse - max_verse - 1 + new_book.min_verse(new_chap, allow_verse_0)
+            max_verse = new_book.max_verse(new_chap)
+
+        return BibleVerse(new_book, new_chap, new_verse)
+
+    def subtract(self, num_verses, allow_multibook_ranges=None, allow_verse_0=None):
+        ''' Return a new BibleVerse that is the specified number of verses before this verse.
+        
+        Returns None if the result would not be a valid reference in the book.
+        
+        If not None, allow_multibook_ranges and allow_verse_0 override the module attributes of the same names.
+        If allow_multibook_ranges is True, and the result would be before the current book, a verse
+        in a previous book is returned. Otherwise, if the verse does not exist, None is returned.
+        '''
+        if allow_multibook_ranges is None:
+            allow_multibook_ranges = globals()['allow_multibook_ranges']
+        if allow_verse_0 is None:
+            allow_verse_0 = globals()['allow_verse_0']
+        new_book = self.book
+        new_chap = self.chap
+        new_verse = self.verse - num_verses
+        min_verse = new_book.min_verse(new_chap, allow_verse_0)
+        while new_verse < min_verse:
+            new_chap -= 1
+            if new_chap < new_book.min_chap():
+                if not allow_multibook_ranges:
+                    return None
+                else:
+                    new_book = new_book.prev()
+                    if new_book is None:
+                        return None
+                    new_chap = new_book.max_chap()
+             
+            new_verse = new_verse + new_book.max_verse(new_chap)
+            min_verse = new_book.min_verse(new_chap)
+
+        return BibleVerse(new_book, new_chap, new_verse)
+
+    def min_chap(self):
+        '''Return lowest chapter number (indexed from 1) of the book of this BibleVerse.
+        '''
+        return self.book.min_chap()
+
+    def max_chap(self):
+        '''Return highest chapter number (indexed from 1) of the book of this BibleVerse.
+        '''
+        return self.book.max_chap()
+
+    def min_verse(self, chap=None, allow_verse_0=None):
+        '''Return the lowest verse number (indexed from 1) in the specified chapter
+        of the book of this BibleVerse. If no chapter is specified, the chapter
+        of this BibleVerse is used.  If allow_verse_0 is not None it overrides the module attribute
+        default_allow_verse_0. If True, chapters with superscriptions start with verse 0.
+        '''
+        if chap is None:
+            chap = self.chap
+        return self.book.min_verse(chap, allow_verse_0)
+
+    def max_verse(self, chap=None):
+        '''Return the highest verse number (indexed from 1) in the specified chapter
+        of the book of this BibleVerse. If no chapter is specified, the chapter
+        of this BibleVerse is used.
+        '''
+        if chap is None:
+            chap = self.chap
+        return self.book.max_verse(chap)
 
     def __lt__(self, other):
         if not isinstance(self, BibleVerse):
@@ -229,74 +347,6 @@ class BibleVerse:
             return (self.book > other.book) or \
                    (self.book == other.book and self.chap > other.chap) or \
                    (self.book == other.book and self.chap == other.chap and self.verse >= other.verse)
-
-    def copy(self):
-        return copy.copy(self)
-
-    def add(self, num_verses):
-        ''' Return a new BibleVerse that is the specified number of verses after this verse.
-        
-        Returns None if the result would not be a valid reference in the book.
-        '''
-        new_chap = self.chap
-        new_verse = self.verse + num_verses
-        max_verse = self.max_verse(self.chap)
-        while new_verse > max_verse:
-            new_chap += 1
-            if new_chap > self.max_chap():
-                return None
-            
-            new_verse -= max_verse
-            max_verse = self.max_verse(new_chap)
-
-        return BibleVerse(self.book, new_chap, new_verse)
-
-    def subtract(self, num_verses):
-        ''' Return a new BibleVerse that is the specified number of verses before this verse.
-        
-        Returns None if the result would not be a valid reference in the book.
-        '''
-        new_chap = self.chap
-        new_verse = self.verse - num_verses
-        min_verse = self.min_verse(self.chap)
-        while new_verse < min_verse:
-            new_chap -= 1
-            if new_chap < self.min_chap():
-                return None
-            
-            new_verse += self.max_verse(new_chap)
-            min_verse = self.min_verse(new_chap)
-
-        return BibleVerse(self.book, new_chap, new_verse)
-
-    def min_chap(self):
-        '''Return lowest chapter number (indexed from 1) of the book of this BibleVerse.
-        '''
-        return self.book.min_chap()
-
-    def max_chap(self):
-        '''Return highest chapter number (indexed from 1) of the book of this BibleVerse.
-        '''
-        return self.book.max_chap()
-
-    def min_verse(self, chap=None, allow_verse_0=None):
-        '''Return the lowest verse number (indexed from 1) in the specified chapter
-        of the book of this BibleVerse. If no chapter is specified, the chapter
-        of this BibleVerse is used.  If allow_verse_0 is not None it overrides the module attribute
-        default_allow_verse_0. If True, chapters with superscriptions start with verse 0.
-        '''
-        if chap is None:
-            chap = self.chap
-        return self.book.min_verse(chap, allow_verse_0)
-
-    def max_verse(self, chap=None):
-        '''Return the highest verse number (indexed from 1) in the specified chapter
-        of the book of this BibleVerse. If no chapter is specified, the chapter
-        of this BibleVerse is used.
-        '''
-        if chap is None:
-            chap = self.chap
-        return self.book.max_verse(chap)
 
 
 class BibleRange:
@@ -694,5 +744,6 @@ if __name__ == "__main__":
         book = BibleBook.from_name(name)
         if book is not None:
             verse = BibleVerse(book, 1, 1)
+            print(verse < BibleVerse(BibleBook.Matt, 1, 1))
         else:
             print("Not found!")
