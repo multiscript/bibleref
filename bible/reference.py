@@ -11,6 +11,14 @@ allow_verse_0 = False           # Set to True to default to allowing verse 0 to 
                                 # This default value can be overridden in individual methods.
 
 
+class MultibookRangeNotAllowedError(Exception):
+    pass
+
+
+class InvalidReferenceError(Exception):
+    pass
+
+
 class BibleBook(Enum):
     '''An enum for specifying books in the Bible.
 
@@ -96,7 +104,7 @@ class BibleBook(Enum):
     Rev = "Rev"
 
     @classmethod
-    def from_name(cls, name):
+    def from_name(cls, name: str) -> 'BibleBook':
         '''Return BibleBook matching the given string name, or None if no book matches.
         '''
         name = name.strip()
@@ -107,17 +115,17 @@ class BibleBook(Enum):
                 break
         return book if match else None
 
-    def min_chap(self):
+    def min_chap(self) -> int:
         '''Return lowest chapter number (indexed from 1) for this BibleBook.
         '''
         return 1
 
-    def max_chap(self):
+    def max_chap(self) -> int:
         '''Return highest chapter number (indexed from 1) for this BibleBook.
         '''
         return len(self._max_verses)
 
-    def min_verse(self, chap, allow_verse_0=None):
+    def min_verse(self, chap: int, allow_verse_0: bool = None) -> int:
         '''Return the lowest verse number (indexed from 1) for the specified chapter
         of this BibleBook. If allow_verse_0 is not None it overrides the module attribute
         with the same name. If True, some chapters can start with verse 0 (e.g. Psalm superscriptions).
@@ -126,13 +134,13 @@ class BibleBook(Enum):
             allow_verse_0 = globals()['allow_verse_0']
         return 0 if (allow_verse_0 and chap in self._verse_0s) else 1
 
-    def max_verse(self, chap):
+    def max_verse(self, chap: int) -> int:
         '''Return the highest verse number (indexed from 1) for the specified chapter
         numbr of this BibleBook.
         '''
         return self._max_verses[chap-1]
 
-    def next(self):
+    def next(self) -> 'BibleBook':
         '''Returns the next BibleBook in the book ordering, or None if this is the final book.
         '''
         if self.order == len(order)-1:
@@ -140,7 +148,7 @@ class BibleBook(Enum):
         else:
             return order[self.order+1]
 
-    def prev(self):
+    def prev(self) -> 'BibleBook':
         '''Returns the previous BibleBook in the book ordering, or None if this is the first book.
         '''
         if self.order == 0:
@@ -179,7 +187,7 @@ class BibleVerse:
     
     book:   The BibleBook of the book of the reference.
     chap:   The chapter number (indexed from 1) of the reference.
-    verse:  The verse number (indexed from 1) of the reference.
+    verse:  The verse number (usually indexed from 1) of the reference.
 
     BibleVerses are immutable.
     '''
@@ -187,7 +195,7 @@ class BibleVerse:
     chap:   int
     verse:  int
 
-    def __init__(self, book, chap, verse, validate=True):
+    def __init__(self, book: BibleBook, chap: int, verse: int, validate: bool = True):
         '''If validate is true, it checks that the reference is valid.
         If it's not valid, InvalidReferenceError is raised.
         '''
@@ -207,7 +215,7 @@ class BibleVerse:
     def __str__(self):
         return self.string()
 
-    def string(self, abbrev=False, periods=False, nospace=False, nobook=False):
+    def string(self, abbrev: bool = False, periods: bool = False, nospace: bool = False, nobook: bool = False):
         '''Returns a string representation of this BibleVerse.
 
         If abbrev is True, the abbreviated name of the book is used (instead of the full name).
@@ -223,7 +231,7 @@ class BibleVerse:
     def copy(self):
         return copy.copy(self)
 
-    def add(self, num_verses, allow_multibook_ranges=None, allow_verse_0=None):
+    def add(self, num_verses: int, allow_multibook_ranges: bool = None, allow_verse_0: bool = None):
         ''' Returns a new BibleVerse that is the specified number of verses after this verse.
         
         If not None, allow_multibook_ranges and allow_verse_0 override the module attributes of the same names.
@@ -255,7 +263,7 @@ class BibleVerse:
 
         return BibleVerse(new_book, new_chap, new_verse)
 
-    def subtract(self, num_verses, allow_multibook_ranges=None, allow_verse_0=None):
+    def subtract(self, num_verses: int, allow_multibook_ranges: bool = None, allow_verse_0: bool = None):
         ''' Return a new BibleVerse that is the specified number of verses before this verse.
         
         Returns None if the result would not be a valid reference in the book.
@@ -351,29 +359,52 @@ class BibleVerse:
     #     return self.book.max_verse(chap)
 
 
+@dataclass(init=False, repr=False, eq=True, order=False, frozen=True)
 class BibleRange:
     # TODO Remove book attribute, so we can handle multibook ranges.
-    '''A reference to a range of Bible verses. Contains 3 attributes:
+    '''A reference to a range of Bible verses. Contains 2 attributes:
     
-    book:   The BibleBook enum of the book of the reference.
     start:  The BibleVerse of the first verse in the range.
     end:    The BibleVerse of the last verse in the range.
     '''
-    # TODO Change signature to require start_book and end_book, and generate correct ranges for missing numbers.
-    def __init__(self, bible_book, start_chap, start_verse=None, end_chap=None, end_verse=None, validate=True):
-        self.book = bible_book
-        self.start = BibleVerse(bible_book, start_chap, start_verse, validate=validate)
-        self.end = BibleVerse(bible_book, end_chap, end_verse, validate=validate)
+    start: BibleVerse
+    end: BibleVerse
 
-    def __eq__(self, other):
-        return (self.book == other.book) and (self.start == other.start) and (self.end == other.end)
+    def __init__(self, start_book: BibleBook, start_chap: int = None, start_verse: int = None,
+                end_book: BibleBook = None, end_chap: int = None, end_verse: int = None,
+                validate: bool = True, allow_multibook_ranges: bool = None, allow_verse_0: bool = None):
+        if allow_multibook_ranges is None:
+            allow_multibook_ranges = globals()['allow_multibook_ranges']
+        if allow_verse_0 is None:
+            allow_verse_0 = globals()['allow_verse_0']
 
-    def contains(self, bible_verse):
+        if start_book is None or start_book not in BibleBook:
+            raise InvalidReferenceError("Start book not valid")
+
+        if start_chap is None:
+            start_chap = start_book.min_chap()
+        if start_verse is None:
+            start_verse = start_book.min_verse(start_chap, allow_verse_0)
+        if end_book is None:
+            end_book = start_book
+        if end_chap is None:
+            end_chap = end_book.max_chap()
+        if end_verse is None:
+            end_verse = end_book.max_verse(end_chap)
+
+        if not allow_multibook_ranges and start_book != end_book:
+            raise MultibookRangeNotAllowedError()
+
+        self.start = BibleVerse(start_book, start_chap, start_verse, validate=validate)
+        self.end = BibleVerse(end_book, end_chap, end_verse, validate=validate)
+
+    def contains(self, bible_verse: BibleVerse) -> bool:
         '''Returns True if this BibleRange contains the given BibleVerse, otherwise False.
         '''
         return (bible_verse >= self.start and bible_verse <= self.end)
 
-    def split(self, by_chap=True, num_verses=None):
+    # TODO: Make this work for multibook ranges
+    def split(self, by_chap: bool = True, num_verses: bool = None):
         '''Split this range into a list of smaller consecutive ranges.
         
         If by_chap is true, splits are made end of each chapter.
@@ -381,7 +412,8 @@ class BibleRange:
         If both by_chap and num_verses are specified, splits occur both at chapter boundaries, and after
         the specified number of verses.
         '''
-        chap_split = [BibleRange(self.book, self.start.chap, self.start.verse, self.end.chap, self.end.verse)]
+        chap_split = [BibleRange(self.start.book, self.start.chap, self.start.verse,
+                                 self.end.book, self.end.chap, self.end.verse)]
 
         # Start by dividing our initial range into chapters, if requested.
         if by_chap:
@@ -429,14 +461,6 @@ class BibleRange:
         # TODO Make this a proper implementation that doesn't double-print anything and handles multibook ranges.
         sep = "." if periods else ":"
         return self.start.string(abbrev, periods, nospace, nobook) + f"{self.end.chap}{sep}{self.end.verse}"
-
-
-class BibleReferenceError(Exception):
-    pass
-
-
-class InvalidReferenceError(Exception):
-    pass
 
 
 name_data = {
