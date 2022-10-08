@@ -126,7 +126,7 @@ class BibleBook(Enum):
         return len(self._max_verses)
 
     def min_verse(self, chap: int, allow_verse_0: bool = None) -> int:
-        '''Return the lowest verse number (indexed from 1) for the specified chapter
+        '''Return the lowest verse number (usually indexed from 1) for the specified chapter
         of this BibleBook. If allow_verse_0 is not None it overrides the module attribute
         with the same name. If True, some chapters can start with verse 0 (e.g. Psalm superscriptions).
         '''
@@ -135,7 +135,7 @@ class BibleBook(Enum):
         return 0 if (allow_verse_0 and chap in self._verse_0s) else 1
 
     def max_verse(self, chap: int) -> int:
-        '''Return the highest verse number (indexed from 1) for the specified chapter
+        '''Return the highest verse number (usually indexed from 1) for the specified chapter
         numbr of this BibleBook.
         '''
         return self._max_verses[chap-1]
@@ -339,29 +339,21 @@ class BibleVerse:
     #     '''
     #     return self.book.max_chap()
 
-    # def min_verse(self, chap=None, allow_verse_0=None):
-    #     '''Return the lowest verse number (indexed from 1) in the specified chapter
-    #     of the book of this BibleVerse. If no chapter is specified, the chapter
-    #     of this BibleVerse is used.  If allow_verse_0 is not None it overrides the module attribute
-    #     allow_verse_0. If True, chapters with superscriptions start with verse 0.
-    #     '''
-    #     if chap is None:
-    #         chap = self.chap
-    #     return self.book.min_verse(chap, allow_verse_0)
+    def min_chap_verse(self, allow_verse_0: bool = None):
+        '''Return the lowest verse number (usually indexed from 1) for the chapter of this BibleVerse.
+        If allow_verse_0 is not None it overrides the module attribute of the same name. If True,
+        chapters with superscriptions start with verse 0.
+        '''
+        return self.book.min_verse(self.chap, allow_verse_0)
 
-    # def max_verse(self, chap=None):
-    #     '''Return the highest verse number (indexed from 1) in the specified chapter
-    #     of the book of this BibleVerse. If no chapter is specified, the chapter
-    #     of this BibleVerse is used.
-    #     '''
-    #     if chap is None:
-    #         chap = self.chap
-    #     return self.book.max_verse(chap)
+    def max_chap_verse(self):
+        '''Return the highest verse number (usually indexed from 1) for the chapter of this BibleVerse.
+        '''
+        return self.book.max_verse(self.chap)
 
 
 @dataclass(init=False, repr=False, eq=True, order=False, frozen=True)
 class BibleRange:
-    # TODO Remove book attribute, so we can handle multibook ranges.
     '''A reference to a range of Bible verses. Contains 2 attributes:
     
     start:  The BibleVerse of the first verse in the range.
@@ -412,9 +404,6 @@ class BibleRange:
         If both by_chap and num_verses are specified, splits occur both at chapter boundaries, and after
         the specified number of verses.
         '''
-        chap_split = [BibleRange(self.start.book, self.start.chap, self.start.verse,
-                                 self.end.book, self.end.chap, self.end.verse)]
-
         # Start by dividing our initial range into chapters, if requested.
         if by_chap:
             chap_split = []
@@ -428,18 +417,21 @@ class BibleRange:
                 else:
                     end_verse = self.end.max_verse(chap)
                 chap_split.append(BibleRange(self.book, chap, start_verse, chap, end_verse))
-        
+        else:
+            chap_split = [BibleRange(self.start.book, self.start.chap, self.start.verse,
+                                    self.end.book, self.end.chap, self.end.verse)]
+
         # Next, split our list of ranges into smaller ranges with a max numbers of verses, if requested.
         if num_verses is not None:
             verse_split = []
             for bible_range in chap_split:
-                start = BibleVerse(bible_range.book, bible_range.start.chap, bible_range.start.verse)
+                start = BibleVerse(bible_range.start.book, bible_range.start.chap, bible_range.start.verse)
                 end = start.add(num_verses-1)
                 while end is not None and end < bible_range.end:
-                    verse_split.append(BibleRange(bible_range.book, start.chap, start.verse, end.chap, end.verse))
+                    verse_split.append(BibleRange(start.book, start.chap, start.verse, end.book, end.chap, end.verse))
                     start = end.add(1)
                     end = start.add(num_verses-1)
-                verse_split.append(BibleRange(bible_range.book, start.chap, start.verse, bible_range.end.chap, bible_range.end.verse))
+                verse_split.append(BibleRange(start.book, start.chap, start.verse, bible_range.end.book, bible_range.end.chap, bible_range.end.verse))
             return verse_split
         else:
             return chap_split
