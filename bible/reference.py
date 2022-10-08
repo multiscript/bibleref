@@ -234,6 +234,7 @@ class BibleVerse:
             allow_multibook_ranges = globals()['allow_multibook_ranges']
         if allow_verse_0 is None:
             allow_verse_0 = globals()['allow_verse_0']
+        
         new_book = self.book
         new_chap = self.chap
         new_verse = self.verse + num_verses
@@ -267,6 +268,7 @@ class BibleVerse:
             allow_multibook_ranges = globals()['allow_multibook_ranges']
         if allow_verse_0 is None:
             allow_verse_0 = globals()['allow_verse_0']
+        
         new_book = self.book
         new_chap = self.chap
         new_verse = self.verse - num_verses
