@@ -6,8 +6,8 @@ import re
 allow_multibook_ranges = False  # Set to True to default to allowing a BibleRange to span multiple books.
                                 # The default value can be overridden in individual methods.
 
-_allow_verse_0 = False           # Set to True to default to allowing verse 0 to be the first verse for chapters with
-                                # superscriptions (currently just some Psalms).
+allow_verse_0 = False           # Set to True to default to allowing verse 0 to be the first verse for some
+                                # chapters (currently just Psalms with superscriptions).
                                 # This default value can be overridden in individual methods.
 
 
@@ -120,7 +120,7 @@ class BibleBook(Enum):
     def min_verse(self, chap, allow_verse_0=None):
         '''Return the lowest verse number (indexed from 1) for the specified chapter
         of this BibleBook. If allow_verse_0 is not None it overrides the module attribute
-        default_allow_verse_0. If True, chapters with superscriptions start with verse 0.
+        with the same name. If True, some chapters can start with verse 0 (e.g. Psalm superscriptions).
         '''
         if allow_verse_0 is None:
             allow_verse_0 = globals()['allow_verse_0']
@@ -333,7 +333,7 @@ class BibleVerse:
     #     '''Return the lowest verse number (indexed from 1) in the specified chapter
     #     of the book of this BibleVerse. If no chapter is specified, the chapter
     #     of this BibleVerse is used.  If allow_verse_0 is not None it overrides the module attribute
-    #     default_allow_verse_0. If True, chapters with superscriptions start with verse 0.
+    #     allow_verse_0. If True, chapters with superscriptions start with verse 0.
     #     '''
     #     if chap is None:
     #         chap = self.chap
