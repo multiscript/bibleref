@@ -118,12 +118,15 @@ class BibleBook(Enum):
     def min_chap(self) -> int:
         '''Return lowest chapter number (indexed from 1) for this BibleBook.
         '''
-        return 1
+        return 1    # Currently always 1. Perhaps in future some books may have a chapter-0 prologue included?
 
     def max_chap(self) -> int:
         '''Return highest chapter number (indexed from 1) for this BibleBook.
         '''
         return len(self._max_verses)
+    
+    def chap_count(self):
+        return (self.max_chap() - self.min_chap() + 1)
 
     def min_verse(self, chap: int, allow_verse_0: bool = None) -> int:
         '''Return the lowest verse number (usually indexed from 1) for the specified chapter
@@ -387,8 +390,8 @@ class BibleRange:
         if not allow_multibook_ranges and start_book != end_book:
             raise MultibookRangeNotAllowedError()
 
-        self.start = BibleVerse(start_book, start_chap, start_verse, validate=validate)
-        self.end = BibleVerse(end_book, end_chap, end_verse, validate=validate)
+        object.__setattr__(self, "start", BibleVerse(start_book, start_chap, start_verse, validate=validate))
+        object.__setattr__(self, "end", BibleVerse(end_book, end_chap, end_verse, validate=validate))
 
     def contains(self, bible_verse: BibleVerse) -> bool:
         '''Returns True if this BibleRange contains the given BibleVerse, otherwise False.
@@ -466,7 +469,7 @@ class BibleRange:
         '''
         # TODO Make this a proper implementation that doesn't double-print anything and handles multibook ranges.
         sep = "." if periods else ":"
-        return self.start.string(abbrev, periods, nospace, nobook) + f"{self.end.chap}{sep}{self.end.verse}"
+        return self.start.string(abbrev, periods, nospace, nobook) + f"-{self.end.chap}{sep}{self.end.verse}"
 
 
 name_data = {

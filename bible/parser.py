@@ -1,74 +1,138 @@
 from pathlib import Path
+from pprint import pprint
 
 from lark import Lark, Transformer
+from lark.visitors import VisitError
+
+from .reference import BibleBook, BibleVerse, BibleRange
 
 
 GRAMMAR_FILE_NAME = "bible-reference.lark"
 
+MAJOR_LIST_SEP_SENTINEL = object()
+MINOR_LIST_SEP_SENTINEL = object()
 
 class BibleRefTransformer(Transformer):
     
-    def __init__(self, *args, **kwargs):
+    def __init__(self, allow_multibook_ranges: bool = None, allow_verse_0: bool = None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.cur_book = None
         self.cur_chap_num = None
         self.at_verse_level = False
+        self.allow_multibook_ranges = allow_multibook_ranges
+        self.allow_verse_0 = allow_verse_0
+
+    def ref_list(self, children):
+        top_list = []
+        group = []
+        for child in children:
+            if child is MAJOR_LIST_SEP_SENTINEL:
+                if len(group) > 0:
+                    top_list.append(group)
+                    group = []
+            elif child is MINOR_LIST_SEP_SENTINEL:
+                pass
+            else:
+                group.append(str(child))
+        if len(group) > 0:
+            top_list.append(group)
+            group = []
+        return top_list
+
+    def dual_ref(self, children):
+        start: BibleRange = children[0]
+        end: BibleRange = children[2]
+        return BibleRange(start.start.book, start.start.chap, start.start.verse,
+                          end.end.book, end.end.chap, end.end.verse)
+
+    def single_ref(self, children):
+        return children[0]
 
     def book_only_ref(self, children):
-        book = children[0]
+        book: BibleBook = children[0]
         self.cur_book = book
         self.at_verse_level = False
-        return (book, None, None)
+
+        start_chap = book.min_chap()
+        start_verse = book.min_verse(start_chap, self.allow_verse_0)
+        end_chap = book.max_chap()
+        end_verse = book.max_verse(end_chap)
+        return BibleRange(book, start_chap, start_verse, book, end_chap, end_verse)
 
     def book_num_ref(self, children):
-        book = children[0]
-        chap_num = children[1] # Unless it's a single chapter book.
+        book: BibleBook = children[0]
+        num: int = children[1]
         self.cur_book = book
-        self.cur_chap_num = chap_num # Unless it's a single chapter book.
-        self.at_verse_level = False # Unless it's a single chapter book.
-        return (book, chap_num, None)
+
+        single_chap = (book.chap_count() == 1)
+        if single_chap:
+            start_chap = end_chap = book.min_chap()
+            start_verse = end_verse = num
+            self.cur_chap_num = end_chap
+            self.at_verse_level = True
+        else:
+            start_chap = end_chap = num
+            start_verse = book.min_verse(start_chap, self.allow_verse_0)
+            end_verse = book.max_verse(end_chap)
+            self.cur_chap_num = end_chap            
+            self.at_verse_level = False
+        return BibleRange(book, start_chap, start_verse, book, end_chap, end_verse)
 
     def book_chap_verse_ref(self, children):
-        book = children[0]
-        chap_num = children[1]
-        verse_num = children [3]
+        book: BibleBook = children[0]
+        chap_num: int = children[1]
+        verse_num: int = children [3]
         self.cur_book = book
         self.cur_chap_num = chap_num
         self.at_verse_level = True
-        return (book, chap_num, verse_num)
+        return BibleRange(book, chap_num, verse_num, book, chap_num, verse_num)
 
     def chap_verse_ref(self, children):
         if self.cur_book is None:
             raise Exception("No book specified.")
-        chap_num = children[0]
-        verse_num = children [2]
+        book: BibleBook = self.cur_book
+        chap_num: int = children[0]
+        verse_num: int = children [2]
         self.cur_chap_num = chap_num
         self.at_verse_level = True
-        return (self.cur_book, chap_num, verse_num)
+        return BibleRange(book, chap_num, verse_num, book, chap_num, verse_num)
 
     def num_only_ref(self, children):
         if self.cur_book is None:
             raise Exception("No book specified.")
-        book = self.cur_book
-        if not self.at_verse_level:
-            chap_num = children[0] # Unless it's a single chapter book.
-            verse_num = None
-            self.cur_book = book
-            self.cur_chap_num = chap_num # Unless it's a single chapter book.
-            self.at_verse_level = False # Unless it's a single chapter book.
-        else:
-            if self.cur_chap_num is None:
+        book: BibleBook = self.cur_book
+        num: int = children[0]
+        single_chap = (book.chap_count() == 1)
+
+        if self.at_verse_level or single_chap:
+            if single_chap:
+                self.cur_chap_num = book.min_chap()
+            elif self.cur_chap_num is None:
                 raise Exception("No chapter specified") # Is it even possible to get here?
-            chap_num = self.cur_chap_num
-            verse_num = children[0]
-        return (book, chap_num, verse_num)
+
+            start_chap = end_chap = self.cur_chap_num
+            start_verse = end_verse = num
+        else: # We're at the chapter level
+            start_chap = end_chap = num
+            start_verse = book.min_verse(start_chap, self.allow_verse_0)
+            end_verse = book.max_verse(end_chap)
+        return BibleRange(book, start_chap, start_verse, book, end_chap, end_verse)
+
+    def list_sep(self, children):
+        return children[0]
 
     def MAJOR_LIST_SEP(self, token):
         self.at_verse_level = False
-        return token
+        return MAJOR_LIST_SEP_SENTINEL
+
+    def MINOR_LIST_SEP(self, token):
+        return MINOR_LIST_SEP_SENTINEL
 
     def BOOK_NAME(self, token):
-        return str(token)
+        book = BibleBook.from_name(str(token))
+        if book is None:
+            raise Exception(f"str(token) is not a valid book name.")
+        return book
 
     def NUM(self, token):
         return int(token)
@@ -79,9 +143,12 @@ def parse():
                 grammar_text = file.read()
     parser = Lark(grammar_text)
     tree = parser.parse("Matthew; Mark 2; John 3:16-18; Romans 1:10-22; 2; 3:20-22, 24, 26")
-    tree = BibleRefTransformer().transform(tree)
-    print(tree)
-    print(tree.pretty())
+    try:
+        tree = BibleRefTransformer().transform(tree)
+    except VisitError as e:
+        raise e.orig_exc
+    # print(tree.pretty())
+    pprint(tree)
 
 
 if __name__ == '__main__':
