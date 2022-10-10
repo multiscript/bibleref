@@ -141,7 +141,9 @@ def parse():
     grammar_path = Path(__file__, "..", GRAMMAR_FILE_NAME).resolve()
     with open(grammar_path) as file:
                 grammar_text = file.read()
+    print("Creating parser...")
     parser = Lark(grammar_text)
+    print("Parsing...")
     tree = parser.parse("Matthew; Mark 2; John 3:16-18; Romans 1:10-22; 2; 3:20-22, 24, 26")
     try:
         tree = BibleRefTransformer().transform(tree)
