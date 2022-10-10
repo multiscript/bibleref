@@ -13,7 +13,7 @@ MAJOR_LIST_SEP_SENTINEL = object()
 MINOR_LIST_SEP_SENTINEL = object()
 
 class BibleRefTransformer(Transformer):
-    
+    # TODO: Make better use of optional args to BibleRange
     def __init__(self, allow_multibook_ranges: bool = None, allow_verse_0: bool = None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.cur_book = None
