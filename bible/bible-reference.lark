@@ -24,9 +24,9 @@ RANGE_SEP: "-"
 ?list_sep: MAJOR_LIST_SEP | MINOR_LIST_SEP
 MAJOR_LIST_SEP: ";"
 MINOR_LIST_SEP: ","
-VERSE_SEP: ":"
+VERSE_SEP: ":" | "."
 
-BOOK_NAME: /\w(\w|\s)*[^0-9\s:;,\-]/
+BOOK_NAME: /\w(\w|\s)*[^0-9\s:.;,\-]/
 
 %import common.WS
 %import common.INT

@@ -126,7 +126,7 @@ class BibleRefTransformer(Transformer):
     def BOOK_NAME(self, token):
         book = BibleBook.from_name(str(token))
         if book is None:
-            raise Exception(f"str(token) is not a valid book name.")
+            raise Exception(f"{str(token)} is not a valid book name.")
         return book
 
     def NUM(self, token):
@@ -140,7 +140,7 @@ def parse():
     print("Creating parser...")
     parser = Lark(grammar_text)
     print("Parsing...")
-    tree = parser.parse("Matthew; Mark 2; Jude 5; 8; John 3:16-18; Romans 1:10-22; 2; 3:20-22, 24, 26")
+    tree = parser.parse("Matthew; Mark 2; Jude 5; 8; John 3.16-18; Romans 1:10-22; 2; 3:20-22, 24, 26")
     try:
         tree = BibleRefTransformer().transform(tree)
     except VisitError as e:
