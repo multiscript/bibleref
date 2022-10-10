@@ -395,8 +395,7 @@ class BibleRange:
         '''
         return (bible_verse >= self.start and bible_verse <= self.end)
 
-    # TODO: Make this work for multibook ranges
-    def split(self, by_chap: bool = True, num_verses: bool = None):
+    def split(self, by_chap: bool = True, num_verses: bool = None, allow_verse_0: bool = None):
         '''Split this range into a list of smaller consecutive ranges.
         
         If by_chap is true, splits are made end of each chapter.
@@ -404,19 +403,32 @@ class BibleRange:
         If both by_chap and num_verses are specified, splits occur both at chapter boundaries, and after
         the specified number of verses.
         '''
+        if allow_verse_0 is None:
+            allow_verse_0 = globals()['allow_verse_0']
+        
         # Start by dividing our initial range into chapters, if requested.
         if by_chap:
             chap_split = []
-            for chap in range(self.start.chap, self.end.chap + 1):
-                if chap == self.start.chap:
+            book = self.start.book
+            chap = self.start.chap
+            done = False
+            while book <= self.end.book and chap <= self.end.chap:
+                if book == self.start.book and chap == self.start.chap:
                     start_verse = self.start.verse
                 else:
-                    start_verse = 1
-                if chap == self.end.chap:
+                    start_verse = book.min_verse(chap, allow_verse_0)
+                if book == self.end.book and chap == self.end.chap:
                     end_verse = self.end.verse
+                    done = True
                 else:
-                    end_verse = self.end.max_verse(chap)
-                chap_split.append(BibleRange(self.book, chap, start_verse, chap, end_verse))
+                    end_verse = book.max_verse(chap)
+                chap_split.append(BibleRange(book, chap, start_verse, book, chap, end_verse))
+                
+                if not done:
+                    chap += 1
+                    if chap > book.max_chap():
+                        book = book.next()
+                        chap = book.min_chap()
         else:
             chap_split = [BibleRange(self.start.book, self.start.chap, self.start.verse,
                                     self.end.book, self.end.chap, self.end.verse)]
@@ -426,18 +438,20 @@ class BibleRange:
             verse_split = []
             for bible_range in chap_split:
                 start = BibleVerse(bible_range.start.book, bible_range.start.chap, bible_range.start.verse)
-                end = start.add(num_verses-1)
+                end = start.add(num_verses-1, allow_verse_0=allow_verse_0)
                 while end is not None and end < bible_range.end:
                     verse_split.append(BibleRange(start.book, start.chap, start.verse, end.book, end.chap, end.verse))
-                    start = end.add(1)
-                    end = start.add(num_verses-1)
-                verse_split.append(BibleRange(start.book, start.chap, start.verse, bible_range.end.book, bible_range.end.chap, bible_range.end.verse))
+                    start = end.add(1, allow_verse_0=allow_verse_0)
+                    end = start.add(num_verses-1, allow_verse_0=allow_verse_0)
+                verse_split.append(BibleRange(start.book, start.chap, start.verse,
+                                   bible_range.end.book, bible_range.end.chap, bible_range.end.verse))
             return verse_split
         else:
             return chap_split
 
     def __repr__(self):
-        return str((self.book.abbrev, self.start.chap, self.start.verse, self.end.chap, self.end.verse))
+        return str((self.start.book.abbrev, self.start.chap, self.start.verse,
+               self.end.book.abbrev, self.end.chap, self.end.verse))
     
     def __str__(self):
         return self.string()
