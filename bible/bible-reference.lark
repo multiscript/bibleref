@@ -6,7 +6,7 @@ ref_list: bible_ref (list_sep bible_ref)* list_sep?
 
 dual_ref: single_ref RANGE_SEP single_ref
 
-single_ref: book_only_ref
+?single_ref: book_only_ref
           | book_num_ref
           | book_chap_verse_ref
           | chap_verse_ref
@@ -21,7 +21,7 @@ num_only_ref: NUM
 NUM: INT
 
 RANGE_SEP: "-"
-list_sep: MAJOR_LIST_SEP | MINOR_LIST_SEP
+?list_sep: MAJOR_LIST_SEP | MINOR_LIST_SEP
 MAJOR_LIST_SEP: ";"
 MINOR_LIST_SEP: ","
 VERSE_SEP: ":"

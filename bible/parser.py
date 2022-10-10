@@ -32,7 +32,7 @@ class BibleRefTransformer(Transformer):
                     group = []
             elif child is MINOR_LIST_SEP_SENTINEL:
                 pass
-            else:
+            else: # It's a BibleRange
                 group.append(str(child))
         if len(group) > 0:
             top_list.append(group)
@@ -40,13 +40,11 @@ class BibleRefTransformer(Transformer):
         return top_list
 
     def dual_ref(self, children):
-        start: BibleRange = children[0]
-        end: BibleRange = children[2]
-        return BibleRange(start.start.book, start.start.chap, start.start.verse,
-                          end.end.book, end.end.chap, end.end.verse)
-
-    def single_ref(self, children):
-        return children[0]
+        first: BibleRange = children[0]
+        second: BibleRange = children[2]
+        return BibleRange(first.start.book, first.start.chap, first.start.verse,
+                          second.end.book, second.end.chap, second.end.verse,
+                          allow_multibook_ranges=self.allow_multibook_ranges)
 
     def book_only_ref(self, children):
         book: BibleBook = children[0]
@@ -118,9 +116,6 @@ class BibleRefTransformer(Transformer):
             end_verse = book.max_verse(end_chap)
         return BibleRange(book, start_chap, start_verse, book, end_chap, end_verse)
 
-    def list_sep(self, children):
-        return children[0]
-
     def MAJOR_LIST_SEP(self, token):
         self.at_verse_level = False
         return MAJOR_LIST_SEP_SENTINEL
@@ -137,6 +132,7 @@ class BibleRefTransformer(Transformer):
     def NUM(self, token):
         return int(token)
 
+
 def parse():
     grammar_path = Path(__file__, "..", GRAMMAR_FILE_NAME).resolve()
     with open(grammar_path) as file:
@@ -144,7 +140,7 @@ def parse():
     print("Creating parser...")
     parser = Lark(grammar_text)
     print("Parsing...")
-    tree = parser.parse("Matthew; Mark 2; John 3:16-18; Romans 1:10-22; 2; 3:20-22, 24, 26")
+    tree = parser.parse("Matthew; Mark 2; Jude 5; 8; John 3:16-18; Romans 1:10-22; 2; 3:20-22, 24, 26")
     try:
         tree = BibleRefTransformer().transform(tree)
     except VisitError as e:
