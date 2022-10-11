@@ -2,6 +2,7 @@ import copy
 from dataclasses import dataclass
 from enum import Enum, auto
 import re
+from pprint import pprint
 
 allow_multibook_ranges = False  # Set to True to default to allowing a BibleRange to span multiple books.
                                 # The default value can be overridden in individual methods.
@@ -375,17 +376,40 @@ class BibleRange:
 
         if start_book is None or start_book not in BibleBook:
             raise InvalidReferenceError("Start book not valid")
+        if start_chap is None and start_verse is not None:
+            raise InvalidReferenceError("Start verse is missing a start chapter")
+        if end_chap is None and end_verse is not None:
+            raise InvalidReferenceError("End verse is missing an end chapter")
 
-        if start_chap is None:
+        no_end = (end_book is None and end_chap is None and end_verse is None)
+
+        if start_chap is None: # Start is book only
             start_chap = start_book.min_chap()
-        if start_verse is None:
             start_verse = start_book.min_verse(start_chap, allow_verse_0)
-        if end_book is None:
-            end_book = start_book
-        if end_chap is None:
-            end_chap = end_book.max_chap()
-        if end_verse is None:
-            end_verse = end_book.max_verse(end_chap)
+            if no_end:
+                end_book = start_book
+                end_chap = end_book.max_chap()
+                end_verse = end_book.max_verse(end_chap)
+        elif start_verse is None: # Start is book and chap only
+            start_verse = start_book.min_verse(start_chap, allow_verse_0)
+            if no_end:
+                end_book = start_book
+                end_chap = start_chap
+                end_verse = end_book.max_verse(end_chap)
+        else: # Start is book, chap and verse
+            if no_end:
+                end_book = start_book
+                end_chap = start_chap
+                end_verse = start_verse
+        
+        if not no_end: # We have end-point info
+            if end_book is None:
+                end_book = start_book
+            if end_chap is None: # End is book only
+                end_chap = end_book.max_chap()
+                end_verse = end_book.max_verse(end_chap)
+            elif end_verse is None: # End is book and chap only
+                end_verse = end_book.max_verse(end_chap)                 
 
         if not allow_multibook_ranges and start_book != end_book:
             raise MultibookRangeNotAllowedError()
@@ -773,12 +797,37 @@ _add_max_verses()
 _add_verse_0s()
 
 
-if __name__ == "__main__":
+def _book_test():
     while True:
         name = input("Enter book: ")
         book = BibleBook.from_name(name)
         if book is not None:
-            verse = BibleVerse(book, 1, 1)
-            print(verse < BibleVerse(BibleBook.Matt, 1, 1))
+            print(book)
         else:
             print("Not found!")
+
+def _range_formation_test():
+    ranges = [
+        BibleRange(BibleBook.Matt, None, None,           None, None, None),
+        BibleRange(BibleBook.Matt,    2, None,           None, None, None),
+        BibleRange(BibleBook.Matt,    2,    3,           None, None, None),
+        BibleRange(BibleBook.Matt, None, None, BibleBook.John, None, None, allow_multibook_ranges=True),
+        BibleRange(BibleBook.Matt,    2, None, BibleBook.John, None, None, allow_multibook_ranges=True),
+        BibleRange(BibleBook.Matt,    2,    3, BibleBook.John, None, None, allow_multibook_ranges=True),
+        BibleRange(BibleBook.Matt, None, None,           None,    4, None),
+        BibleRange(BibleBook.Matt,    2, None,           None,    4, None),
+        BibleRange(BibleBook.Matt,    2,    3,           None,    4, None),
+        BibleRange(BibleBook.Matt, None, None, BibleBook.John,    5, None, allow_multibook_ranges=True),
+        BibleRange(BibleBook.Matt,    2, None, BibleBook.John,    5, None, allow_multibook_ranges=True),
+        BibleRange(BibleBook.Matt,    2,    3, BibleBook.John,    5, None, allow_multibook_ranges=True),
+        BibleRange(BibleBook.Matt, None, None,           None,    6,    7),
+        BibleRange(BibleBook.Matt,    2, None,           None,    6,    7),
+        BibleRange(BibleBook.Matt,    2,    3,           None,    6,    7),
+        BibleRange(BibleBook.Matt, None, None, BibleBook.John,    8,   10, allow_multibook_ranges=True),
+        BibleRange(BibleBook.Matt,    2, None, BibleBook.John,    8,   10, allow_multibook_ranges=True),
+        BibleRange(BibleBook.Matt,    2,    3, BibleBook.John,    8,   10, allow_multibook_ranges=True),
+     ]
+    pprint(ranges)
+
+if __name__ == "__main__":
+    _range_formation_test()
