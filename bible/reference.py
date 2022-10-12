@@ -129,6 +129,7 @@ class BibleBook(Enum):
     def chap_count(self):
         return (self.max_chap() - self.min_chap() + 1)
 
+    # TODO If chap is out of range, return None or raise an exception?
     def min_verse(self, chap: int, allow_verse_0: bool = None) -> int:
         '''Return the lowest verse number (usually indexed from 1) for the specified chapter
         of this BibleBook. If allow_verse_0 is not None it overrides the module attribute
@@ -138,6 +139,7 @@ class BibleBook(Enum):
             allow_verse_0 = globals()['allow_verse_0']
         return 0 if (allow_verse_0 and chap in self._verse_0s) else 1
 
+    # TODO If chap is out of range, return None or raise an exception?
     def max_verse(self, chap: int) -> int:
         '''Return the highest verse number (usually indexed from 1) for the specified chapter
         numbr of this BibleBook.
@@ -366,6 +368,7 @@ class BibleRange:
     start: BibleVerse
     end: BibleVerse
 
+    # TODO Validate data provided, and raise an exception if there's any problems.
     def __init__(self, start_book: BibleBook, start_chap: int = None, start_verse: int = None,
                 end_book: BibleBook = None, end_chap: int = None, end_verse: int = None,
                 validate: bool = True, allow_multibook_ranges: bool = None, allow_verse_0: bool = None):

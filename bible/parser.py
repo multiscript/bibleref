@@ -4,7 +4,7 @@ from pprint import pprint
 from lark import Lark, Transformer
 from lark.visitors import VisitError
 
-from .reference import BibleBook, BibleVerse, BibleRange
+from .reference import BibleBook, BibleRange
 
 
 GRAMMAR_FILE_NAME = "bible-reference.lark"
