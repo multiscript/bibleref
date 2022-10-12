@@ -129,7 +129,6 @@ class BibleBook(Enum):
     def chap_count(self):
         return (self.max_chap() - self.min_chap() + 1)
 
-    # TODO If chap is out of range, return None or raise an exception?
     def min_verse(self, chap: int, allow_verse_0: bool = None) -> int:
         '''Return the lowest verse number (usually indexed from 1) for the specified chapter
         of this BibleBook. If allow_verse_0 is not None it overrides the module attribute
@@ -137,13 +136,16 @@ class BibleBook(Enum):
         '''
         if allow_verse_0 is None:
             allow_verse_0 = globals()['allow_verse_0']
+        if chap < self.min_chap() or chap > self.max_chap():
+            raise InvalidReferenceError(f"No chapter {chap} in {self.title}")
         return 0 if (allow_verse_0 and chap in self._verse_0s) else 1
 
-    # TODO If chap is out of range, return None or raise an exception?
     def max_verse(self, chap: int) -> int:
         '''Return the highest verse number (usually indexed from 1) for the specified chapter
         numbr of this BibleBook.
         '''
+        if chap < self.min_chap() or chap > self.max_chap():
+            raise InvalidReferenceError(f"No chapter {chap} in {self.title}")
         return self._max_verses[chap-1]
 
     def next(self) -> 'BibleBook':
@@ -208,9 +210,10 @@ class BibleVerse:
         if validate:
             if not isinstance(book, BibleBook):
                 raise InvalidReferenceError(f"{book} is not an instance of BibleBook")
-            if chap < book.min_chap() or chap > book.max_chap() or \
-               verse < book.min_verse(chap) or verse > book.max_verse(chap):
-                raise InvalidReferenceError(f"{book.abbrev} {chap}:{verse}")
+            if chap < book.min_chap() or chap > book.max_chap():
+                raise InvalidReferenceError(f"No chapter {chap} in {book.title}")
+            if verse < book.min_verse(chap) or verse > book.max_verse(chap):
+                raise InvalidReferenceError(f"No verse {verse} in {book.title} {chap}")
         object.__setattr__(self, "book", book) # We have to use object.__setattr__ because the class is frozen
         object.__setattr__(self, "chap", chap)
         object.__setattr__(self, "verse", verse)
@@ -368,7 +371,6 @@ class BibleRange:
     start: BibleVerse
     end: BibleVerse
 
-    # TODO Validate data provided, and raise an exception if there's any problems.
     def __init__(self, start_book: BibleBook, start_chap: int = None, start_verse: int = None,
                 end_book: BibleBook = None, end_chap: int = None, end_verse: int = None,
                 validate: bool = True, allow_multibook_ranges: bool = None, allow_verse_0: bool = None):
