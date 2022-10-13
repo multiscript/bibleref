@@ -1,6 +1,7 @@
 import unittest
 from bible.reference import BibleBook, BibleVerse, BibleRange
 
+
 class TestBibleReference(unittest.TestCase):
     def test_bible_books(self):
         self.assertEqual(BibleBook.from_name("Gen"), BibleBook.Gen)

@@ -1,5 +1,3 @@
-from pathlib import Path
-from pprint import pprint
 
 from lark import Lark, Transformer, v_args
 from lark.visitors import VisitError
@@ -11,6 +9,7 @@ GRAMMAR_FILE_NAME = "bible-reference.lark"
 
 MAJOR_LIST_SEP_SENTINEL = object()
 MINOR_LIST_SEP_SENTINEL = object()
+
 
 @v_args(meta=True)
 class BibleRefTransformer(Transformer):
@@ -121,23 +120,3 @@ class BibleRefTransformer(Transformer):
     def NUM(self, token):
         return int(token)
 
-
-def parse():
-    grammar_path = Path(__file__, "..", GRAMMAR_FILE_NAME).resolve()
-    with open(grammar_path) as file:
-                grammar_text = file.read()
-    print("Creating parser...")
-    parser = Lark(grammar_text, propagate_positions=True)
-    print("Parsing...")
-    tree = parser.parse("Matthew; Mark 2; Jude 5; 8; Obadiah 2-3; John 3.16-18; " + 
-                        "Romans 1:10-22; 2; 3:20-22, 24, 4:2-5:2, 10")
-    try:
-        tree = BibleRefTransformer().transform(tree)
-    except VisitError as e:
-        raise e.orig_exc
-    # print(tree.pretty())
-    pprint(tree)
-
-
-if __name__ == '__main__':
-    parse()

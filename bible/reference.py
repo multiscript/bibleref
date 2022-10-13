@@ -383,8 +383,6 @@ class BibleRange:
             raise InvalidReferenceError("Start book not valid")
         if start_chap is None and start_verse is not None:
             raise InvalidReferenceError("Start verse is missing a start chapter")
-        if end_chap is None and end_verse is not None:
-            raise InvalidReferenceError("End verse is missing an end chapter")
 
         no_end = (end_book is None and end_chap is None and end_verse is None)
 
@@ -410,11 +408,16 @@ class BibleRange:
         if not no_end: # We have end-point info
             if end_book is None:
                 end_book = start_book
-            if end_chap is None: # End is book only
+            if end_chap is None and end_verse is None: # End is book only
                 end_chap = end_book.max_chap()
                 end_verse = end_book.max_verse(end_chap)
             elif end_verse is None: # End is book and chap only
-                end_verse = end_book.max_verse(end_chap)                 
+                end_verse = end_book.max_verse(end_chap)
+            elif end_chap is None: # End is book and verse only
+                if start_book != end_book:
+                    raise InvalidReferenceError("End verse is missing an end chapter")
+                else:
+                    end_chap = start_chap
 
         if not allow_multibook and start_book != end_book:
             raise MultibookRangeNotAllowedError()
