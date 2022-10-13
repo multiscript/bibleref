@@ -4,12 +4,12 @@ from enum import Enum, auto
 import re
 from pprint import pprint
 
-allow_multibook_ranges = False  # Set to True to default to allowing a BibleRange to span multiple books.
-                                # The default value can be overridden in individual methods.
+allow_multibook = False     # Set to True to default to allowing a BibleRange to span multiple books.
+                            # The default value can be overridden in individual methods.
 
-allow_verse_0 = False           # Set to True to default to allowing verse 0 to be the first verse for some
-                                # chapters (currently just Psalms with superscriptions).
-                                # This default value can be overridden in individual methods.
+allow_verse_0 = False       # Set to True to default to allowing verse 0 to be the first verse for some
+                            # chapters (currently just Psalms with superscriptions).
+                            # This default value can be overridden in individual methods.
 
 
 class MultibookRangeNotAllowedError(Exception):
