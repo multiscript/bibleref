@@ -18,7 +18,7 @@ class BibleRefParsingError(Exception):
         super().__init__(mesg, *args, **kwargs)
         if meta_info is not None:
             self.start_pos = meta_info.start_pos
-            self.end_post = meta_info.end_pos
+            self.end_pos = meta_info.end_pos
         if start_pos is not None:
             self.start_pos = start_pos
         if end_pos is not None:
