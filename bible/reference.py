@@ -800,39 +800,3 @@ _add_regexes()
 _add_order()
 _add_max_verses()
 _add_verse_0s()
-
-
-def _book_test():
-    while True:
-        name = input("Enter book: ")
-        book = BibleBook.from_name(name)
-        if book is not None:
-            print(book)
-        else:
-            print("Not found!")
-
-def _range_formation_test():
-    ranges = [
-        BibleRange(BibleBook.Matt, None, None,           None, None, None),
-        BibleRange(BibleBook.Matt,    2, None,           None, None, None),
-        BibleRange(BibleBook.Matt,    2,    3,           None, None, None),
-        BibleRange(BibleBook.Matt, None, None, BibleBook.John, None, None, allow_multibook=True),
-        BibleRange(BibleBook.Matt,    2, None, BibleBook.John, None, None, allow_multibook=True),
-        BibleRange(BibleBook.Matt,    2,    3, BibleBook.John, None, None, allow_multibook=True),
-        BibleRange(BibleBook.Matt, None, None,           None,    4, None),
-        BibleRange(BibleBook.Matt,    2, None,           None,    4, None),
-        BibleRange(BibleBook.Matt,    2,    3,           None,    4, None),
-        BibleRange(BibleBook.Matt, None, None, BibleBook.John,    5, None, allow_multibook=True),
-        BibleRange(BibleBook.Matt,    2, None, BibleBook.John,    5, None, allow_multibook=True),
-        BibleRange(BibleBook.Matt,    2,    3, BibleBook.John,    5, None, allow_multibook=True),
-        BibleRange(BibleBook.Matt, None, None,           None,    6,    7),
-        BibleRange(BibleBook.Matt,    2, None,           None,    6,    7),
-        BibleRange(BibleBook.Matt,    2,    3,           None,    6,    7),
-        BibleRange(BibleBook.Matt, None, None, BibleBook.John,    8,   10, allow_multibook=True),
-        BibleRange(BibleBook.Matt,    2, None, BibleBook.John,    8,   10, allow_multibook=True),
-        BibleRange(BibleBook.Matt,    2,    3, BibleBook.John,    8,   10, allow_multibook=True),
-    ]
-    pprint(ranges)
-
-if __name__ == "__main__":
-    _range_formation_test()
