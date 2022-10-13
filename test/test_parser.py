@@ -1,28 +1,18 @@
-from pathlib import Path
 from pprint import pprint
 import unittest
 
-from lark import Lark
-from lark.visitors import VisitError
 
 from bible.reference import BibleBook, BibleRange
-from bible.parser import GRAMMAR_FILE_NAME, BibleRefTransformer
-
+from bible.parser import BibleRefParsingError, _parse as parse
 
 class TestBibleParser(unittest.TestCase):
     def test_parse(self):
-        grammar_path = Path(__file__, "../../bible", GRAMMAR_FILE_NAME).resolve()
-        with open(grammar_path) as file:
-                    grammar_text = file.read()
-        print("Creating parser...")
-        parser = Lark(grammar_text, propagate_positions=True)
-        print("Parsing...")
-        tree = parser.parse("Matthew; Mark 2; Jude 5; 8; Obadiah 2-3; John 3.16-18; " + 
-                            "Romans 1:10-22; 2; 3:20-22, 24, 4:2-5:2, 10")
         try:
-            top_list = BibleRefTransformer().transform(tree)
-        except VisitError as e:
-            raise e.orig_exc
+            top_list = parse("2; Matthew; Mark 2; Jude 5; 8; Obadiah 2-3; John 3.16-18; " + 
+                            "Romans 1:10-22; 2; 3:20-22, 24, 4:2-5:2, 10")
+        except BibleRefParsingError as e:
+            self.fail(str([str(e), e.start_pos, e.end_pos]))
+
         # print(tree.pretty())
         # pprint(top_list)
         expected_top_list = [

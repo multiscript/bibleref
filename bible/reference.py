@@ -1,8 +1,8 @@
 import copy
 from dataclasses import dataclass
-from enum import Enum, auto
+from enum import Enum
 import re
-from pprint import pprint
+
 
 allow_multibook = False     # Set to True to default to allowing a BibleRange to span multiple books.
                             # The default value can be overridden in individual methods.
@@ -248,7 +248,7 @@ class BibleVerse:
         in a subsequent book is returned. Otherwise, if the verse does not exist, None is returned.
         '''
         if allow_multibook is None:
-            allow_multibook = globals()['allow_multibook_ranges']
+            allow_multibook = globals()['allow_multibook']
         if allow_verse_0 is None:
             allow_verse_0 = globals()['allow_verse_0']
         
@@ -282,7 +282,7 @@ class BibleVerse:
         in a previous book is returned. Otherwise, if the verse does not exist, None is returned.
         '''
         if allow_multibook is None:
-            allow_multibook = globals()['allow_multibook_ranges']
+            allow_multibook = globals()['allow_multibook']
         if allow_verse_0 is None:
             allow_verse_0 = globals()['allow_verse_0']
         
@@ -375,7 +375,7 @@ class BibleRange:
                 end_book: BibleBook = None, end_chap: int = None, end_verse: int = None,
                 validate: bool = True, allow_multibook: bool = None, allow_verse_0: bool = None):
         if allow_multibook is None:
-            allow_multibook = globals()['allow_multibook_ranges']
+            allow_multibook = globals()['allow_multibook']
         if allow_verse_0 is None:
             allow_verse_0 = globals()['allow_verse_0']
 
