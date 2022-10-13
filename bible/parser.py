@@ -1,7 +1,7 @@
 from pathlib import Path
 from pprint import pprint
 
-from lark import Lark, Transformer
+from lark import Lark, Transformer, v_args
 from lark.visitors import VisitError
 
 from .reference import BibleBook, BibleRange
@@ -12,6 +12,7 @@ GRAMMAR_FILE_NAME = "bible-reference.lark"
 MAJOR_LIST_SEP_SENTINEL = object()
 MINOR_LIST_SEP_SENTINEL = object()
 
+@v_args(meta=True)
 class BibleRefTransformer(Transformer):
     def __init__(self, allow_multibook: bool = None, allow_verse_0: bool = None, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -21,7 +22,7 @@ class BibleRefTransformer(Transformer):
         self.allow_multibook = allow_multibook
         self.allow_verse_0 = allow_verse_0
 
-    def ref_list(self, children):
+    def ref_list(self, meta, children):
         top_list = []
         group = []
         for child in children:
@@ -38,22 +39,22 @@ class BibleRefTransformer(Transformer):
             group = []
         return top_list
 
-    def dual_ref(self, children): # Children: single_ref RANGE_SEP single_ref
+    def dual_ref(self, meta, children): # Children: single_ref RANGE_SEP single_ref
         first: BibleRange = children[0]
         second: BibleRange = children[2]
         # We don't need to update self.cur_book or self.cur_chap_num as they will
         # have already been updated by the parsing of the second BibleRange child.
         return BibleRange(first.start.book, first.start.chap, first.start.verse,
                           second.end.book, second.end.chap, second.end.verse,
-                          allow_multibook_ranges=self.allow_multibook)
+                          allow_multibook=self.allow_multibook)
 
-    def book_only_ref(self, children): # Children: BOOK_NAME
+    def book_only_ref(self, meta, children): # Children: BOOK_NAME
         book: BibleBook = children[0]
         self.cur_book = book
         self.at_verse_level = False
         return BibleRange(book)
 
-    def book_num_ref(self, children): # Children: BOOK_NAME NUM
+    def book_num_ref(self, meta, children): # Children: BOOK_NAME NUM
         book: BibleBook = children[0]
         num: int = children[1]
         self.cur_book = book
@@ -68,7 +69,7 @@ class BibleRefTransformer(Transformer):
             result = BibleRange(book, num)
         return result
 
-    def book_chap_verse_ref(self, children): # Children: BOOK_NAME NUM VERSE_SEP NUM
+    def book_chap_verse_ref(self, meta, children): # Children: BOOK_NAME NUM VERSE_SEP NUM
         book: BibleBook = children[0]
         chap_num: int = children[1]
         verse_num: int = children [3]
@@ -77,7 +78,7 @@ class BibleRefTransformer(Transformer):
         self.at_verse_level = True
         return BibleRange(book, chap_num, verse_num)
 
-    def chap_verse_ref(self, children): # Children: NUM VERSE_SEP NUM
+    def chap_verse_ref(self, meta, children): # Children: NUM VERSE_SEP NUM
         if self.cur_book is None:
             raise Exception("No book specified.")
         book: BibleBook = self.cur_book
@@ -87,7 +88,7 @@ class BibleRefTransformer(Transformer):
         self.at_verse_level = True
         return BibleRange(book, chap_num, verse_num)
 
-    def num_only_ref(self, children): # Children: NUM
+    def num_only_ref(self, meta, children): # Children: NUM
         if self.cur_book is None:
             raise Exception("No book specified.")
         book: BibleBook = self.cur_book
@@ -126,7 +127,7 @@ def parse():
     with open(grammar_path) as file:
                 grammar_text = file.read()
     print("Creating parser...")
-    parser = Lark(grammar_text)
+    parser = Lark(grammar_text, propagate_positions=True)
     print("Parsing...")
     tree = parser.parse("Matthew; Mark 2; Jude 5; 8; Obadiah 2-3; John 3.16-18; " + 
                         "Romans 1:10-22; 2; 3:20-22, 24, 4:2-5:2, 10")

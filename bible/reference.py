@@ -203,17 +203,17 @@ class BibleVerse:
     chap:   int
     verse:  int
 
-    def __init__(self, book: BibleBook, chap: int, verse: int, validate: bool = True):
-        '''If validate is true, it checks that the reference is valid.
-        If it's not valid, InvalidReferenceError is raised.
+    def __init__(self, book: BibleBook, chap: int, verse: int):
+        '''Returns a new BibleVerse.
+
+        If the supplied data is not valid, raises an InvalidReferenceError.
         '''
-        if validate:
-            if not isinstance(book, BibleBook):
-                raise InvalidReferenceError(f"{book} is not an instance of BibleBook")
-            if chap < book.min_chap() or chap > book.max_chap():
-                raise InvalidReferenceError(f"No chapter {chap} in {book.title}")
-            if verse < book.min_verse(chap) or verse > book.max_verse(chap):
-                raise InvalidReferenceError(f"No verse {verse} in {book.title} {chap}")
+        if not isinstance(book, BibleBook):
+            raise InvalidReferenceError(f"{book} is not an instance of BibleBook")
+        if chap < book.min_chap() or chap > book.max_chap():
+            raise InvalidReferenceError(f"No chapter {chap} in {book.title}")
+        if verse < book.min_verse(chap) or verse > book.max_verse(chap):
+            raise InvalidReferenceError(f"No verse {verse} in {book.title} {chap}")
         object.__setattr__(self, "book", book) # We have to use object.__setattr__ because the class is frozen
         object.__setattr__(self, "chap", chap)
         object.__setattr__(self, "verse", verse)
@@ -240,15 +240,15 @@ class BibleVerse:
     def copy(self):
         return copy.copy(self)
 
-    def add(self, num_verses: int, allow_multibook_ranges: bool = None, allow_verse_0: bool = None):
+    def add(self, num_verses: int, allow_multibook: bool = None, allow_verse_0: bool = None):
         ''' Returns a new BibleVerse that is the specified number of verses after this verse.
         
-        If not None, allow_multibook_ranges and allow_verse_0 override the module attributes of the same names.
-        If allow_multibook_ranges is True, and the result would be beyond the current book, a verse
+        If not None, allow_multibook and allow_verse_0 override the module attributes of the same names.
+        If allow_multibook is True, and the result would be beyond the current book, a verse
         in a subsequent book is returned. Otherwise, if the verse does not exist, None is returned.
         '''
-        if allow_multibook_ranges is None:
-            allow_multibook_ranges = globals()['allow_multibook_ranges']
+        if allow_multibook is None:
+            allow_multibook = globals()['allow_multibook_ranges']
         if allow_verse_0 is None:
             allow_verse_0 = globals()['allow_verse_0']
         
@@ -259,7 +259,7 @@ class BibleVerse:
         while new_verse > max_verse:
             new_chap += 1
             if new_chap > new_book.max_chap():
-                if not allow_multibook_ranges:
+                if not allow_multibook:
                     return None
                 else:
                     new_book = new_book.next()
@@ -272,17 +272,17 @@ class BibleVerse:
 
         return BibleVerse(new_book, new_chap, new_verse)
 
-    def subtract(self, num_verses: int, allow_multibook_ranges: bool = None, allow_verse_0: bool = None):
+    def subtract(self, num_verses: int, allow_multibook: bool = None, allow_verse_0: bool = None):
         ''' Return a new BibleVerse that is the specified number of verses before this verse.
         
         Returns None if the result would not be a valid reference in the book.
         
-        If not None, allow_multibook_ranges and allow_verse_0 override the module attributes of the same names.
-        If allow_multibook_ranges is True, and the result would be before the current book, a verse
+        If not None, allow_multibook and allow_verse_0 override the module attributes of the same names.
+        If allow_multibook is True, and the result would be before the current book, a verse
         in a previous book is returned. Otherwise, if the verse does not exist, None is returned.
         '''
-        if allow_multibook_ranges is None:
-            allow_multibook_ranges = globals()['allow_multibook_ranges']
+        if allow_multibook is None:
+            allow_multibook = globals()['allow_multibook_ranges']
         if allow_verse_0 is None:
             allow_verse_0 = globals()['allow_verse_0']
         
@@ -293,7 +293,7 @@ class BibleVerse:
         while new_verse < min_verse:
             new_chap -= 1
             if new_chap < new_book.min_chap():
-                if not allow_multibook_ranges:
+                if not allow_multibook:
                     return None
                 else:
                     new_book = new_book.prev()
@@ -373,9 +373,9 @@ class BibleRange:
 
     def __init__(self, start_book: BibleBook, start_chap: int = None, start_verse: int = None,
                 end_book: BibleBook = None, end_chap: int = None, end_verse: int = None,
-                validate: bool = True, allow_multibook_ranges: bool = None, allow_verse_0: bool = None):
-        if allow_multibook_ranges is None:
-            allow_multibook_ranges = globals()['allow_multibook_ranges']
+                validate: bool = True, allow_multibook: bool = None, allow_verse_0: bool = None):
+        if allow_multibook is None:
+            allow_multibook = globals()['allow_multibook_ranges']
         if allow_verse_0 is None:
             allow_verse_0 = globals()['allow_verse_0']
 
@@ -416,11 +416,11 @@ class BibleRange:
             elif end_verse is None: # End is book and chap only
                 end_verse = end_book.max_verse(end_chap)                 
 
-        if not allow_multibook_ranges and start_book != end_book:
+        if not allow_multibook and start_book != end_book:
             raise MultibookRangeNotAllowedError()
 
-        object.__setattr__(self, "start", BibleVerse(start_book, start_chap, start_verse, validate=validate))
-        object.__setattr__(self, "end", BibleVerse(end_book, end_chap, end_verse, validate=validate))
+        object.__setattr__(self, "start", BibleVerse(start_book, start_chap, start_verse))
+        object.__setattr__(self, "end", BibleVerse(end_book, end_chap, end_verse))
 
     def contains(self, bible_verse: BibleVerse) -> bool:
         '''Returns True if this BibleRange contains the given BibleVerse, otherwise False.
@@ -483,7 +483,7 @@ class BibleRange:
 
     def __repr__(self):
         return str((self.start.book.abbrev, self.start.chap, self.start.verse,
-               self.end.book.abbrev, self.end.chap, self.end.verse))
+                    self.end.book.abbrev, self.end.chap, self.end.verse))
     
     def __str__(self):
         return self.string()
@@ -816,22 +816,22 @@ def _range_formation_test():
         BibleRange(BibleBook.Matt, None, None,           None, None, None),
         BibleRange(BibleBook.Matt,    2, None,           None, None, None),
         BibleRange(BibleBook.Matt,    2,    3,           None, None, None),
-        BibleRange(BibleBook.Matt, None, None, BibleBook.John, None, None, allow_multibook_ranges=True),
-        BibleRange(BibleBook.Matt,    2, None, BibleBook.John, None, None, allow_multibook_ranges=True),
-        BibleRange(BibleBook.Matt,    2,    3, BibleBook.John, None, None, allow_multibook_ranges=True),
+        BibleRange(BibleBook.Matt, None, None, BibleBook.John, None, None, allow_multibook=True),
+        BibleRange(BibleBook.Matt,    2, None, BibleBook.John, None, None, allow_multibook=True),
+        BibleRange(BibleBook.Matt,    2,    3, BibleBook.John, None, None, allow_multibook=True),
         BibleRange(BibleBook.Matt, None, None,           None,    4, None),
         BibleRange(BibleBook.Matt,    2, None,           None,    4, None),
         BibleRange(BibleBook.Matt,    2,    3,           None,    4, None),
-        BibleRange(BibleBook.Matt, None, None, BibleBook.John,    5, None, allow_multibook_ranges=True),
-        BibleRange(BibleBook.Matt,    2, None, BibleBook.John,    5, None, allow_multibook_ranges=True),
-        BibleRange(BibleBook.Matt,    2,    3, BibleBook.John,    5, None, allow_multibook_ranges=True),
+        BibleRange(BibleBook.Matt, None, None, BibleBook.John,    5, None, allow_multibook=True),
+        BibleRange(BibleBook.Matt,    2, None, BibleBook.John,    5, None, allow_multibook=True),
+        BibleRange(BibleBook.Matt,    2,    3, BibleBook.John,    5, None, allow_multibook=True),
         BibleRange(BibleBook.Matt, None, None,           None,    6,    7),
         BibleRange(BibleBook.Matt,    2, None,           None,    6,    7),
         BibleRange(BibleBook.Matt,    2,    3,           None,    6,    7),
-        BibleRange(BibleBook.Matt, None, None, BibleBook.John,    8,   10, allow_multibook_ranges=True),
-        BibleRange(BibleBook.Matt,    2, None, BibleBook.John,    8,   10, allow_multibook_ranges=True),
-        BibleRange(BibleBook.Matt,    2,    3, BibleBook.John,    8,   10, allow_multibook_ranges=True),
-     ]
+        BibleRange(BibleBook.Matt, None, None, BibleBook.John,    8,   10, allow_multibook=True),
+        BibleRange(BibleBook.Matt,    2, None, BibleBook.John,    8,   10, allow_multibook=True),
+        BibleRange(BibleBook.Matt,    2,    3, BibleBook.John,    8,   10, allow_multibook=True),
+    ]
     pprint(ranges)
 
 if __name__ == "__main__":
