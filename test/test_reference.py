@@ -9,6 +9,7 @@ class TestBibleReference(unittest.TestCase):
         self.assertEqual(BibleBook.from_name("Rev"), BibleBook.Rev)
     
     def test_bible_ranges(self):
+        # TODO Add test when the end verse is just a verse
         self.assertEqual(BibleRange(BibleBook.Matt, None, None,           None, None, None), BibleRange(BibleBook.Matt, 1, 1, BibleBook.Matt, 28, 20))
         self.assertEqual(BibleRange(BibleBook.Matt,    2, None,           None, None, None), BibleRange(BibleBook.Matt, 2, 1, BibleBook.Matt, 2, 23))
         self.assertEqual(BibleRange(BibleBook.Matt,    2,    3,           None, None, None), BibleRange(BibleBook.Matt, 2, 3, BibleBook.Matt, 2, 3))
