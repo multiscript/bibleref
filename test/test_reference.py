@@ -28,4 +28,15 @@ class TestBibleReference(unittest.TestCase):
         self.assertEqual(BibleRange(BibleBook.Matt, None, None, BibleBook.John,    8,   10, allow_multibook=True), BibleRange(BibleBook.Matt, 1, 1, BibleBook.John, 8, 10, allow_multibook=True))
         self.assertEqual(BibleRange(BibleBook.Matt,    2, None, BibleBook.John,    8,   10, allow_multibook=True), BibleRange(BibleBook.Matt, 2, 1, BibleBook.John, 8, 10, allow_multibook=True))
         self.assertEqual(BibleRange(BibleBook.Matt,    2,    3, BibleBook.John,    8,   10, allow_multibook=True), BibleRange(BibleBook.Matt, 2, 3, BibleBook.John, 8, 10, allow_multibook=True))
-         
+
+    def test_range_iteration(self):
+        bible_range = BibleRange(BibleBook.Matt, 28, 18, BibleBook.Mark, 1, 3, allow_multibook=True)
+        expected_list = [
+            BibleVerse(BibleBook.Matt, 28, 18),
+            BibleVerse(BibleBook.Matt, 28, 19),
+            BibleVerse(BibleBook.Matt, 28, 20),
+            BibleVerse(BibleBook.Mark, 1, 1),
+            BibleVerse(BibleBook.Mark, 1, 2),
+            BibleVerse(BibleBook.Mark, 1, 3),                         
+        ]
+        self.assertEqual(list(bible_range), expected_list)       

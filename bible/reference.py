@@ -491,6 +491,12 @@ class BibleRange:
     def __str__(self):
         return self.string()
 
+    def __iter__(self):
+        verse = self.start
+        while verse <= self.end:
+            yield verse
+            verse = verse.add(1, allow_multibook=True)
+
     def string(self, abbrev=False, periods=False, nospace=False, nobook=False):
         '''Returns a string representation of this BibleRange.
 
