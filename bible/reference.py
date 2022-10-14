@@ -510,6 +510,97 @@ class BibleRange:
         return self.start.string(abbrev, periods, nospace, nobook) + f"-{self.end.chap}{sep}{self.end.verse}"
 
 
+class BibleRangeList:
+    '''A list of BibleRanges, with the ability to also group BibleRanges.
+
+    TODO: Fix comments below, which needs updating:
+    Groups are themselves just BibleRangeLists. They are accessed using the
+    groups property and created using append_group(). Adding groups also
+    updates the main list, but making any direct changes to the main list
+    will remove all stored groups.
+    '''
+    # Derived from https://github.com/Superbird11/ranges/blob/master/ranges/_helper.py (MIT Licence)
+    class Node:
+        def __init__(self, data: BibleRange, prev=None, next=None, parent=None):
+            self.data: BibleRange = data
+            self.prev: 'BibleRangeList.Node' = prev
+            self.next: 'BibleRangeList.Node' = next
+            self.group_start: bool = False  # True if this node is the start of a group.
+            self.parent: 'BibleRangeList' = parent
+
+        def __eq__(self, other):
+            return self.data.__eq__(other.data)
+
+        def __lt__(self, other):
+            return self.data.__lt__(other.data)
+
+        def __gt__(self, other):
+            return self.data.__gt__(other.data)
+
+        def __ge__(self, other):
+            return self.data.__ge__(other.data)
+
+        def __le__(self, other):
+            return self.data.__le__(other.data)
+
+        def __str__(self):
+            return f"Node({str(self.data)})"
+
+        def __repr__(self):
+            return str(self)
+
+    def __init__(self, bible_ranges=None):
+        self.first: BibleRangeList.Node = None
+        self.last: BibleRangeList.Node = None
+        self._len = 0
+
+    def node_at(self, index):
+        if index < 0:
+            index += self._len
+        if index >= self._len:
+            raise IndexError(f"List index {index} out of range")
+        elif index <= self._len // 2:
+            # Node is closer to the start, so search from there
+            node = self.first
+            for i in range(index):
+                node = node.next
+            return node
+        else:
+            node = self.last
+            for i in range(self._len - index - 1):
+                node = node.prev
+            return node
+
+    def __len__(self):
+        return self._len
+    
+    def __iter__(self):
+        node = self.first
+        while node is not None:
+            yield node.data
+            node = node.next
+    
+    def __contains__(self, item):
+        if not isinstance(item, BibleRange):
+            raise Exception(f"Item is not a BibleRange: {item}")
+        for node in self:
+            if node.data == item:
+                return True
+        # At this point item not found
+        return False
+
+    def __getitem__(self, index):
+        return self.node_at(index).data
+
+    def __setitem__(self, index, value: BibleRange):
+        if not isinstance(value, BibleRange):
+            raise Exception(f"Item is not a BibleRange: {value}")
+        self.node_at(index).data = value
+
+    
+
+
+
 name_data = {
     # Keys: Bible Book
     # Values: (Abbrev title, Full title, Min unique chars (excl. numbers), List of extra recognised abbrevs)
