@@ -521,12 +521,12 @@ class BibleRangeList:
     '''
     # Derived from https://github.com/Superbird11/ranges/blob/master/ranges/_helper.py (MIT Licence)
     class Node:
-        def __init__(self, data: BibleRange, prev=None, next=None, parent=None):
-            self.data: BibleRange = data
-            self.prev: 'BibleRangeList.Node' = prev
-            self.next: 'BibleRangeList.Node' = next
+        def __init__(self, data, prev=None, next=None, parent=None):
+            self.data = data
+            self.prev = prev
+            self.next = next
             self.group_start: bool = False  # True if this node is the start of a group.
-            self.parent: 'BibleRangeList' = parent
+            self.parent = parent
 
         def __eq__(self, other):
             return self.data.__eq__(other.data)
@@ -550,26 +550,96 @@ class BibleRangeList:
             return str(self)
 
     def __init__(self, bible_ranges=None):
-        self.first: BibleRangeList.Node = None
-        self.last: BibleRangeList.Node = None
+        self.first = None
+        self.last = None
         self._len = 0
 
-    def node_at(self, index):
+    def _check_is_bible_range(self, obj):
+        if not isinstance(obj, BibleRange):
+            raise TypeError(f"Item is not a BibleRange: {obj}")
+
+    def _conform_index(self, index):
+        ''' Check the index is within range. If negative, convert to its
+        positive equivalent. Return the resulting index.
+        '''
         if index < 0:
             index += self._len
         if index >= self._len:
             raise IndexError(f"List index {index} out of range")
-        elif index <= self._len // 2:
+        return index
+
+    def _node_at(self, index):
+        index = self._conform_index(index)
+        if index <= self._len // 2:
             # Node is closer to the start, so search from there
             node = self.first
             for i in range(index):
                 node = node.next
             return node
         else:
+            # Node is closer to the end, so seach from there
             node = self.last
             for i in range(self._len - index - 1):
                 node = node.prev
             return node
+
+    def _insert_first(self, value):
+        self.first = self.Node(value, parent=self)
+        self.last = self.first
+        self._len += 1
+
+    def prepend(self, value):
+        self._check_is_bible_range(value)
+        if self._len == 0:
+            self._insert_first(value)
+        else:
+            new = self.Node(value, next=self.first, parent=self)
+            self.first.prev = new
+            self.first = new
+            self._len += 1
+
+    def append(self, value):
+        self._check_is_bible_range(value)
+        if self._len == 0:
+            self._insert_first(value)
+        else:
+            new = self.Node(value, prev=self.last, parent=self)
+            self.last.next = new
+            self.last = new
+            self._len += 1
+    
+    def _insert_before(self, node, value):
+        if node.parent != self:
+            raise ValueError(f"This list is not the parent of this node: {node}")
+        elif node == self.first:
+            self.prepend(value)
+        else:
+            new = self.Node(value, prev=node.prev, next=node, parent=self)
+            node.prev.next = new
+            node.prev = new
+            self._len += 1
+
+    def _insert_after(self, node, value):
+        if node.parent != self:
+            raise ValueError(f"This list is not the parent of this node: {node}")
+        elif node == self.last:
+            self.append(value)
+        else:
+            new = self.Node(value, prev=node, next=node.next, parent=self)
+            node.next.prev = new
+            node.next = new
+            self._len += 1
+
+    def insert(self, index, value):
+        self._check_is_bible_range(value)
+        if index < 0:
+            index = self._len + index
+        if index == 0:
+            self.prepend(value)
+        elif index == self._len:
+            self.append(value)
+        else:
+            self.insert_before(self.node_at(index), value)
 
     def __len__(self):
         return self._len
@@ -579,23 +649,49 @@ class BibleRangeList:
         while node is not None:
             yield node.data
             node = node.next
-    
-    def __contains__(self, item):
-        if not isinstance(item, BibleRange):
-            raise Exception(f"Item is not a BibleRange: {item}")
+
+    def __reversed__(self):
+        node = self.last
+        while node is not None:
+            yield node.data
+            node = node.prev
+
+    def __contains__(self, value):
+        self._check_is_bible_range(value)
         for node in self:
-            if node.data == item:
+            if node.data == value:
                 return True
         # At this point item not found
         return False
 
-    def __getitem__(self, index):
-        return self.node_at(index).data
+    def index(self, value, min_index, limit_index):
+        self._check_is_bible_range(value)
+        min_index = self._conform_index(min_index)
+        limit_index = self._conform_index(limit_index)
+        if min_index > limit_index: # Swap
+            (limit_index, min_index) = (min_index, limit_index)
+        node: BibleRangeList.Node = self.start
+        for index in range(limit_index):
+            if node.data == value and index <= min_index:
+                return index
+            node = node.next
+        # At this point item not found
+        raise ValueError(f"Item {value} not found in list")        
+            
+    def count(self, value):
+        self._check_is_bible_range(value)
+        count = 0
+        for node in self:
+            if node.data == value:
+                count += 1
+        return count         
 
-    def __setitem__(self, index, value: BibleRange):
-        if not isinstance(value, BibleRange):
-            raise Exception(f"Item is not a BibleRange: {value}")
-        self.node_at(index).data = value
+    def __getitem__(self, index):
+        return self._node_at(index).data
+
+    def __setitem__(self, index, value):
+        self._check_is_bible_range(value)
+        self._node_at(index).data = value
 
     
 
