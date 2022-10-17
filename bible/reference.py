@@ -707,6 +707,23 @@ class _LinkedList:
         self.last = None
         self._length = 0
 
+    def __len__(self):
+        return self._node_count
+    
+    def __iter__(self):
+        node = self.first_node
+        while node is not None:
+            yield node.value
+            node = node.next_node
+
+    def __contains__(self, value):
+        self._check_type(value)
+        for node in self:
+            if node.data == value:
+                return True
+        # At this point item not found
+        return False
+ 
     def __getitem__(self, index):
         return self._node_at(index).value
 
@@ -717,28 +734,11 @@ class _LinkedList:
     def __delitem__(self, index):
         self.pop(index)
 
-    def __len__(self):
-        return self._node_count
-    
-    def __iter__(self):
-        node = self.first_node
-        while node is not None:
-            yield node.value
-            node = node.next_node
-
     def __reversed__(self):
         node = self.last_node
         while node is not None:
             yield node.value
             node = node.prev_node
-
-    def __contains__(self, value):
-        self._check_type(value)
-        for node in self:
-            if node.data == value:
-                return True
-        # At this point item not found
-        return False
 
 
 class BibleRangeList(_LinkedList):
