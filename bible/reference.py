@@ -510,188 +510,260 @@ class BibleRange:
         return self.start.string(abbrev, periods, nospace, nobook) + f"-{self.end.chap}{sep}{self.end.verse}"
 
 
-class BibleRangeList:
-    '''A list of BibleRanges, with the ability to also group BibleRanges.
+class _LinkedList:
+    '''A linked list, with the ability to also group items.
 
-    TODO: Fix comments below, which needs updating:
-    Groups are themselves just BibleRangeLists. They are accessed using the
-    groups property and created using append_group(). Adding groups also
-    updates the main list, but making any direct changes to the main list
-    will remove all stored groups.
+    Groups are accessed using the groups property and created using append_group().
     '''
     # Derived from https://github.com/Superbird11/ranges/blob/master/ranges/_helper.py (MIT Licence)
     class Node:
-        def __init__(self, data, prev=None, next=None, parent=None):
-            self.data = data
-            self.prev = prev
-            self.next = next
-            self.group_start: bool = False  # True if this node is the start of a group.
+        def __init__(self, value, prev_node=None, next_node=None, parent=None):
+            self.value = value
+            self.prev_node = prev_node
+            self.next_node = next_node
+            self.is_group_head: bool = False  # True if this node is the start of a group.
+            self.prev_group = None # If this is a group head, link to next group head.
+            self.next_group = None # If this is a group head, link to prev group head.
             self.parent = parent
 
         def __eq__(self, other):
-            return self.data.__eq__(other.data)
+            return self.value.__eq__(other.data)
 
         def __lt__(self, other):
-            return self.data.__lt__(other.data)
+            return self.value.__lt__(other.data)
 
         def __gt__(self, other):
-            return self.data.__gt__(other.data)
+            return self.value.__gt__(other.data)
 
         def __ge__(self, other):
-            return self.data.__ge__(other.data)
+            return self.value.__ge__(other.data)
 
         def __le__(self, other):
-            return self.data.__le__(other.data)
+            return self.value.__le__(other.data)
 
         def __str__(self):
-            return f"Node({str(self.data)})"
+            return f"Node({str(self.value)})"
 
         def __repr__(self):
             return str(self)
 
     def __init__(self, bible_ranges=None):
-        self.first = None
-        self.last = None
-        self._len = 0
+        self.first_node = None
+        self.last_node = None
+        self._node_count = 0
 
-    def _check_is_bible_range(self, obj):
-        if not isinstance(obj, BibleRange):
-            raise TypeError(f"Item is not a BibleRange: {obj}")
+    def _check_type(self, obj):
+        '''Subclasses can override to ensure list items are of a certain type'''
+        pass
 
     def _conform_index(self, index):
         ''' Check the index is within range. If negative, convert to its
         positive equivalent. Return the resulting index.
         '''
         if index < 0:
-            index += self._len
-        if index >= self._len:
+            index += self._node_count
+        if index >= self._node_count:
             raise IndexError(f"List index {index} out of range")
         return index
 
     def _node_at(self, index):
         index = self._conform_index(index)
-        if index <= self._len // 2:
+        if index <= self._node_count // 2:
             # Node is closer to the start, so search from there
-            node = self.first
+            node = self.first_node
             for i in range(index):
-                node = node.next
+                node = node.next_node
             return node
         else:
             # Node is closer to the end, so seach from there
-            node = self.last
-            for i in range(self._len - index - 1):
-                node = node.prev
+            node = self.last_node
+            for i in range(self._node_count - index - 1):
+                node = node.prev_node
             return node
 
     def _insert_first(self, value):
-        self.first = self.Node(value, parent=self)
-        self.last = self.first
-        self._len += 1
+        self.first_node = self.Node(value, parent=self)
+        self.last_node = self.first_node
+        self._node_count += 1
 
-    def prepend(self, value):
-        self._check_is_bible_range(value)
-        if self._len == 0:
-            self._insert_first(value)
-        else:
-            new = self.Node(value, next=self.first, parent=self)
-            self.first.prev = new
-            self.first = new
-            self._len += 1
-
-    def append(self, value):
-        self._check_is_bible_range(value)
-        if self._len == 0:
-            self._insert_first(value)
-        else:
-            new = self.Node(value, prev=self.last, parent=self)
-            self.last.next = new
-            self.last = new
-            self._len += 1
-    
     def _insert_before(self, node, value):
-        if node.parent != self:
-            raise ValueError(f"This list is not the parent of this node: {node}")
-        elif node == self.first:
+        if node.parent is not self:
+            raise ValueError(f"List is not the parent of this node: {node}")
+        elif node is self.first_node:
             self.prepend(value)
         else:
-            new = self.Node(value, prev=node.prev, next=node, parent=self)
-            node.prev.next = new
-            node.prev = new
-            self._len += 1
+            new = self.Node(value, prev_node=node.prev_node, next_node=node, parent=self)
+            node.prev_node.next_node = new
+            node.prev_node = new
+            self._node_count += 1
 
     def _insert_after(self, node, value):
-        if node.parent != self:
-            raise ValueError(f"This list is not the parent of this node: {node}")
-        elif node == self.last:
+        if node.parent is not self:
+            raise ValueError(f"List is not the parent of this node: {node}")
+        elif node is self.last_node:
             self.append(value)
         else:
-            new = self.Node(value, prev=node, next=node.next, parent=self)
-            node.next.prev = new
-            node.next = new
-            self._len += 1
+            new = self.Node(value, prev_node=node, next_node=node.next_node, parent=self)
+            node.next_node.prev_node = new
+            node.next_node = new
+            self._node_count += 1
 
+    def _pop_node(self, node):
+        if node.parent is not self:
+            raise ValueError(f"List is not the parent of this node: {node}")
+        if node is self.first:
+            return self.pop(0)
+        elif node is self.last:
+            return self.pop()
+        else:
+            node.prev_node.next_node = node.next_node
+            node.next_node.prev_node = node.prev_node
+            node.parent = None
+            self._node_count -= 1
+            return node.value
+
+    def _pop_after(self, node):
+        if node.parent is not self:
+            raise ValueError(f"List is not the parent of this node: {node}")
+        if node is self.last:
+            raise IndexError("Can't pop after last node")
+        return self.pop_node(node.next_node)
+
+    def _pop_before(self, node):
+        if node.parent is not self:
+            raise ValueError(f"List is not the parent of this node: {node}")
+        if node is self.first:
+            raise IndexError("Can't pop before first node")
+        return self.pop_node(node.prev_node)
+
+    def prepend(self, value):
+        self._check_type(value)
+        if self._node_count == 0:
+            self._insert_first(value)
+        else:
+            new = self.Node(value, next_node=self.first_node, parent=self)
+            self.first_node.prev_node = new
+            self.first_node = new
+            self._node_count += 1
+
+    def append(self, value):
+        self._check_type(value)
+        if self._node_count == 0:
+            self._insert_first(value)
+        else:
+            new = self.Node(value, prev_node=self.last_node, parent=self)
+            self.last_node.next_node = new
+            self.last_node = new
+            self._node_count += 1
+    
     def insert(self, index, value):
-        self._check_is_bible_range(value)
-        if index < 0:
-            index = self._len + index
+        self._check_type(value)
+        index = self._conform_index(index)
         if index == 0:
             self.prepend(value)
-        elif index == self._len:
+        elif index == self._node_count:
             self.append(value)
         else:
             self.insert_before(self.node_at(index), value)
 
+    def index(self, value, min_index, limit_index):
+        self._check_type(value)
+        min_index = self._conform_index(min_index)
+        limit_index = self._conform_index(limit_index)
+        if min_index > limit_index: # Swap
+            (limit_index, min_index) = (min_index, limit_index)
+        node: _LinkedList.Node = self.start
+        for index in range(limit_index):
+            if node.value == value and index <= min_index:
+                return index
+            node = node.next_node
+        # At this point item not found
+        raise ValueError(f"Item {value} not found in list")        
+            
+    def count(self, value):
+        self._check_type(value)
+        count = 0
+        for node in self:
+            if node.value == value:
+                count += 1
+        return count         
+
+    def pop(self, index=None):
+        if index is None:
+            index = self._node_count - 1
+        index = self._conform_index(index)
+        # pop only element
+        if self._node_count == 1:
+            result_node = self.first_node
+            result_node.parent = None
+            self.first_node = None
+            self.last_node = None
+            self._node_count -= 1
+            return result_node.value
+        # pop at end
+        elif index == self._node_count - 1:
+            result_node = self.last_node
+            result_node.parent = None
+            self.last_node = result_node.prev_node
+            self.last_node.next_node = None
+            self._node_count -= 1
+            return result_node.value
+        # pop from start
+        elif index == 0:
+            result_node = self.first_node
+            result_node.parent = None
+            self.first_node = self.first_node.next_node
+            self.first_node.prev_node = None
+            self._node_count -= 1
+            return result_node.value
+        # otherwise, find index and pop it
+        else:
+            return self.pop_node(self.node_at(index))
+
+    def clear(self):
+        self.first = None
+        self.last = None
+        self._length = 0
+
+    def __getitem__(self, index):
+        return self._node_at(index).value
+
+    def __setitem__(self, index, value):
+        self._check_type(value)
+        self._node_at(index).value = value
+
+    def __delitem__(self, index):
+        self.pop(index)
+
     def __len__(self):
-        return self._len
+        return self._node_count
     
     def __iter__(self):
-        node = self.first
+        node = self.first_node
         while node is not None:
-            yield node.data
-            node = node.next
+            yield node.value
+            node = node.next_node
 
     def __reversed__(self):
-        node = self.last
+        node = self.last_node
         while node is not None:
-            yield node.data
-            node = node.prev
+            yield node.value
+            node = node.prev_node
 
     def __contains__(self, value):
-        self._check_is_bible_range(value)
+        self._check_type(value)
         for node in self:
             if node.data == value:
                 return True
         # At this point item not found
         return False
 
-    def index(self, value, min_index, limit_index):
-        self._check_is_bible_range(value)
-        min_index = self._conform_index(min_index)
-        limit_index = self._conform_index(limit_index)
-        if min_index > limit_index: # Swap
-            (limit_index, min_index) = (min_index, limit_index)
-        node: BibleRangeList.Node = self.start
-        for index in range(limit_index):
-            if node.data == value and index <= min_index:
-                return index
-            node = node.next
-        # At this point item not found
-        raise ValueError(f"Item {value} not found in list")        
-            
-    def count(self, value):
-        self._check_is_bible_range(value)
-        count = 0
-        for node in self:
-            if node.data == value:
-                count += 1
-        return count         
 
-    def __getitem__(self, index):
-        return self._node_at(index).data
+class BibleRangeList(_LinkedList):
+    def _check_type(self, obj):
+        if not isinstance(obj, BibleRange):
+            raise TypeError(f"Item is not a BibleRange: {obj}")
 
-    def __setitem__(self, index, value):
-        self._check_is_bible_range(value)
-        self._node_at(index).data = value
 
     
 
