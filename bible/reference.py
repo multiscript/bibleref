@@ -611,16 +611,24 @@ class _LinkedList:
     def _pop_node(self, node):
         if node.parent is not self:
             raise ValueError(f"List is not the parent of this node: {node}")
-        if node is self.first:
-            return self.pop(0)
-        elif node is self.last:
-            return self.pop()
+        # pop only element
+        if self._node_count == 1:
+            self.first_node = None
+            self.last_node = None
+        # pop from start
+        if node is self.first_node:
+            self.first_node = self.first_node.next_node
+            self.first_node.prev_node = None
+        # pop at end
+        elif node is self.last_node:
+            self.last_node = self.last_node.prev_node
+            self.last_node.next_node = None
         else:
             node.prev_node.next_node = node.next_node
             node.next_node.prev_node = node.prev_node
-            node.parent = None
-            self._node_count -= 1
-            return node.value
+        node.parent = None
+        self._node_count -= 1
+        return node.value
 
     def _pop_after(self, node):
         if node.parent is not self:
@@ -692,33 +700,7 @@ class _LinkedList:
         if index is None:
             index = self._node_count - 1
         index = self._conform_index(index)
-        # pop only element
-        if self._node_count == 1:
-            result_node = self.first_node
-            result_node.parent = None
-            self.first_node = None
-            self.last_node = None
-            self._node_count -= 1
-            return result_node.value
-        # pop at end
-        elif index == self._node_count - 1:
-            result_node = self.last_node
-            result_node.parent = None
-            self.last_node = result_node.prev_node
-            self.last_node.next_node = None
-            self._node_count -= 1
-            return result_node.value
-        # pop from start
-        elif index == 0:
-            result_node = self.first_node
-            result_node.parent = None
-            self.first_node = self.first_node.next_node
-            self.first_node.prev_node = None
-            self._node_count -= 1
-            return result_node.value
-        # otherwise, find index and pop it
-        else:
-            return self.pop_node(self.node_at(index))
+        return self.pop_node(self.node_at(index))
 
     def clear(self):
         self.first = None
