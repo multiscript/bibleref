@@ -517,10 +517,10 @@ class _LinkedList:
     '''
     # Derived from https://github.com/Superbird11/ranges/blob/master/ranges/_helper.py (MIT Licence)
     class Node:
-        def __init__(self, value, prev_node=None, next_node=None, parent=None):
+        def __init__(self, value, prev=None, next=None, parent=None):
             self.value = value
-            self.prev_node = prev_node
-            self.next_node = next_node
+            self.prev = prev
+            self.next = next
             self.is_group_head: bool = False  # True if this node is the start of a group.
             self.prev_group = None # If this is a group head, link to next group head.
             self.next_group = None # If this is a group head, link to prev group head.
@@ -548,8 +548,8 @@ class _LinkedList:
             return str(self)
 
     def __init__(self, bible_ranges=None):
-        self.first_node = None
-        self.last_node = None
+        self._first = None
+        self._last = None
         self._node_count = 0
 
     def _check_type(self, obj):
@@ -570,42 +570,42 @@ class _LinkedList:
         index = self._conform_index(index)
         if index <= self._node_count // 2:
             # Node is closer to the start, so search from there
-            node = self.first_node
+            node = self._first
             for i in range(index):
-                node = node.next_node
+                node = node.next
             return node
         else:
             # Node is closer to the end, so seach from there
-            node = self.last_node
+            node = self._last
             for i in range(self._node_count - index - 1):
-                node = node.prev_node
+                node = node.prev
             return node
 
     def _insert_first(self, value):
-        self.first_node = self.Node(value, parent=self)
-        self.last_node = self.first_node
+        self._first = self.Node(value, parent=self)
+        self._last = self._first
         self._node_count += 1
 
     def _insert_before(self, node, value):
         if node.parent is not self:
             raise ValueError(f"List is not the parent of this node: {node}")
-        elif node is self.first_node:
+        elif node is self._first:
             self.prepend(value)
         else:
-            new = self.Node(value, prev_node=node.prev_node, next_node=node, parent=self)
-            node.prev_node.next_node = new
-            node.prev_node = new
+            new = self.Node(value, prev=node.prev, next=node, parent=self)
+            node.prev.next = new
+            node.prev = new
             self._node_count += 1
 
     def _insert_after(self, node, value):
         if node.parent is not self:
             raise ValueError(f"List is not the parent of this node: {node}")
-        elif node is self.last_node:
+        elif node is self._last:
             self.append(value)
         else:
-            new = self.Node(value, prev_node=node, next_node=node.next_node, parent=self)
-            node.next_node.prev_node = new
-            node.next_node = new
+            new = self.Node(value, prev=node, next=node.next, parent=self)
+            node.next.prev = new
+            node.next = new
             self._node_count += 1
 
     def _pop_node(self, node):
@@ -613,19 +613,19 @@ class _LinkedList:
             raise ValueError(f"List is not the parent of this node: {node}")
         # pop only element
         if self._node_count == 1:
-            self.first_node = None
-            self.last_node = None
+            self._first = None
+            self._last = None
         # pop from start
-        if node is self.first_node:
-            self.first_node = self.first_node.next_node
-            self.first_node.prev_node = None
+        if node is self._first:
+            self._first = self._first.next
+            self._first.prev = None
         # pop at end
-        elif node is self.last_node:
-            self.last_node = self.last_node.prev_node
-            self.last_node.next_node = None
+        elif node is self._last:
+            self._last = self._last.prev
+            self._last.next = None
         else:
-            node.prev_node.next_node = node.next_node
-            node.next_node.prev_node = node.prev_node
+            node.prev.next = node.next
+            node.next.prev = node.prev
         node.parent = None
         self._node_count -= 1
         return node.value
@@ -635,23 +635,23 @@ class _LinkedList:
             raise ValueError(f"List is not the parent of this node: {node}")
         if node is self.last:
             raise IndexError("Can't pop after last node")
-        return self.pop_node(node.next_node)
+        return self.pop_node(node.next)
 
     def _pop_before(self, node):
         if node.parent is not self:
             raise ValueError(f"List is not the parent of this node: {node}")
         if node is self.first:
             raise IndexError("Can't pop before first node")
-        return self.pop_node(node.prev_node)
+        return self.pop_node(node.prev)
 
     def prepend(self, value):
         self._check_type(value)
         if self._node_count == 0:
             self._insert_first(value)
         else:
-            new = self.Node(value, next_node=self.first_node, parent=self)
-            self.first_node.prev_node = new
-            self.first_node = new
+            new = self.Node(value, next=self._first, parent=self)
+            self._first.prev = new
+            self._first = new
             self._node_count += 1
 
     def append(self, value):
@@ -659,9 +659,9 @@ class _LinkedList:
         if self._node_count == 0:
             self._insert_first(value)
         else:
-            new = self.Node(value, prev_node=self.last_node, parent=self)
-            self.last_node.next_node = new
-            self.last_node = new
+            new = self.Node(value, prev=self._last, parent=self)
+            self._last.next = new
+            self._last = new
             self._node_count += 1
     
     def insert(self, index, value):
@@ -684,7 +684,7 @@ class _LinkedList:
         for index in range(limit_index):
             if node.value == value and index <= min_index:
                 return index
-            node = node.next_node
+            node = node.next
         # At this point item not found
         raise ValueError(f"Item {value} not found in list")        
             
@@ -711,10 +711,10 @@ class _LinkedList:
         return self._node_count
     
     def __iter__(self):
-        node = self.first_node
+        node = self._first
         while node is not None:
             yield node.value
-            node = node.next_node
+            node = node.next
 
     def __contains__(self, value):
         self._check_type(value)
@@ -735,10 +735,10 @@ class _LinkedList:
         self.pop(index)
 
     def __reversed__(self):
-        node = self.last_node
+        node = self._last
         while node is not None:
             yield node.value
-            node = node.prev_node
+            node = node.prev
 
 
 class BibleRangeList(_LinkedList):
