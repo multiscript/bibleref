@@ -555,9 +555,13 @@ class _LinkedList:
             for item in iterable:
                 self.append(item)
 
-    def _check_type(self, obj):
+    def _check_type(self, value):
         '''Subclasses can override to ensure list items are of a certain type'''
         pass
+
+    def _check_is_child(self, node):
+        if not isinstance(node, _LinkedList.Node) or node.parent is not self:
+            raise ValueError(f"List is not the parent of this node: {node}")
 
     def _conform_index(self, index):
         ''' Check the index is within range. If negative, convert to its
@@ -590,9 +594,8 @@ class _LinkedList:
         self._node_count += 1
 
     def _insert_before(self, node, value):
-        if node.parent is not self:
-            raise ValueError(f"List is not the parent of this node: {node}")
-        elif node is self._first:
+        self._check_is_child(node)
+        if node is self._first:
             self.prepend(value)
         else:
             new = self.Node(value, prev=node.prev, next=node, parent=self)
@@ -601,9 +604,8 @@ class _LinkedList:
             self._node_count += 1
 
     def _insert_after(self, node, value):
-        if node.parent is not self:
-            raise ValueError(f"List is not the parent of this node: {node}")
-        elif node is self._last:
+        self._check_is_child(node)
+        if node is self._last:
             self.append(value)
         else:
             new = self.Node(value, prev=node, next=node.next, parent=self)
@@ -612,14 +614,13 @@ class _LinkedList:
             self._node_count += 1
 
     def _pop_node(self, node):
-        if node.parent is not self:
-            raise ValueError(f"List is not the parent of this node: {node}")
+        self._check_is_child(node)
         # pop only element
         if self._node_count == 1:
             self._first = None
             self._last = None
         # pop from start
-        if node is self._first:
+        elif node is self._first:
             self._first = self._first.next
             self._first.prev = None
         # pop at end
@@ -629,23 +630,22 @@ class _LinkedList:
         else:
             node.prev.next = node.next
             node.next.prev = node.prev
+        
         node.parent = None
         self._node_count -= 1
         return node.value
 
-    def _pop_after(self, node):
-        if node.parent is not self:
-            raise ValueError(f"List is not the parent of this node: {node}")
-        if node is self.last:
-            raise IndexError("Can't pop after last node")
-        return self.pop_node(node.next)
-
     def _pop_before(self, node):
-        if node.parent is not self:
-            raise ValueError(f"List is not the parent of this node: {node}")
-        if node is self.first:
+        self._check_is_child(node)
+        if node is self._first:
             raise IndexError("Can't pop before first node")
-        return self.pop_node(node.prev)
+        return self._pop_node(node.prev)
+
+    def _pop_after(self, node):
+        self._check_is_child(node)
+        if node is self._last:
+            raise IndexError("Can't pop after last node")
+        return self._pop_node(node.next)
 
     def prepend(self, value):
         self._check_type(value)
@@ -706,8 +706,8 @@ class _LinkedList:
         return self.pop_node(self.node_at(index))
 
     def clear(self):
-        self.first = None
-        self.last = None
+        self._first = None
+        self._last = None
         self._length = 0
 
     def __len__(self):
@@ -745,9 +745,9 @@ class _LinkedList:
 
 
 class BibleRangeList(_LinkedList):
-    def _check_type(self, obj):
-        if not isinstance(obj, BibleRange):
-            raise TypeError(f"Item is not a BibleRange: {obj}")
+    def _check_type(self, value):
+        if not isinstance(value, BibleRange):
+            raise TypeError(f"Item is not a BibleRange: {value}")
 
 
     

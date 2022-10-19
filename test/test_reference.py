@@ -42,14 +42,72 @@ class TestBibleReference(unittest.TestCase):
         self.assertEqual(list(bible_range), expected_list)       
 
 
-class TestLinkedList(unittest.TestCase):
-    def setUp(self):
-        self.empty = _LinkedList()
-        self.single = _LinkedList([1])
-        self.list_A = _LinkedList([5,8,2,7,3,10])
-    
+class TestLinkedList(unittest.TestCase):    
     def test_construction(self):
-        self.assertListEqual(list(self.empty), [])
-        self.assertListEqual(list(self.single), [1])
-        self.assertListEqual(list(self.list_A), [5,8,2,7,3,10])
+        self.assertListEqual(list(_LinkedList()), [])
+        self.assertListEqual(list(_LinkedList([1])), [1])
+        list_A = _LinkedList([5,8,2,7,3,10])
+        self.assertListEqual(list(list_A), [5,8,2,7,3,10])
+    
+    def test_conform_index(self):
+        list_A = _LinkedList([5,8,2,7,3,10])
+        self.assertEqual(list_A._conform_index(-2), -2 + len(list_A))
+        self.assertRaises(IndexError, lambda: list_A._conform_index(len(list_A)))
+    
+    def test_node_at(self):
+        list_A = _LinkedList([5,8,2,7,3,10])
+        self.assertIs(list_A._node_at(0), list_A._first)
+        self.assertIs(list_A._node_at(-1), list_A._last)
+        self.assertIs(list_A._node_at(2), list_A._first.next.next)
+    
+    def test_insert_first(self):
+        list_A = _LinkedList()
+        list_A._insert_first(6)
+        self.assertIs(list_A._first, list_A._last)
+        self.assertEqual(list_A._first.value, 6)
+        self.assertEqual(len(list_A), 1)
+    
+    def test_insert_before(self):
+        list_A = _LinkedList([5,8,2,7,3,10])
+        list_A._insert_before(list_A._node_at(3), 12)
+        self.assertListEqual(list(list_A), [5,8,2,12,7,3,10])
+        list_A._insert_before(list_A._node_at(0), 14)
+        self.assertListEqual(list(list_A), [14, 5,8,2,12,7,3,10])  
 
+    def test_insert_after(self):
+        list_A = _LinkedList([5,8,2,7,3,10])
+        list_A._insert_after(list_A._node_at(3), 12)
+        self.assertListEqual(list(list_A), [5,8,2,7,12,3,10])
+        list_A._insert_after(list_A._node_at(-1), 14)
+        self.assertListEqual(list(list_A), [5,8,2,7,12,3,10,14])
+
+    def test_pop_node(self):
+        list_A = _LinkedList([1])
+        value = list_A._pop_node(list_A._node_at(0))
+        self.assertEqual(value, 1)
+        self.assertListEqual(list(list_A), [])
+        self.assertEqual(len(list_A), 0)
+
+        list_A = _LinkedList([5,8,2,7,3,10])
+        value = list_A._pop_node(list_A._node_at(0))
+        self.assertEqual(value, 5)
+        self.assertListEqual(list(list_A), [8,2,7,3,10])
+        self.assertEqual(len(list_A), 5)
+        value = list_A._pop_node(list_A._node_at(-1))
+        self.assertEqual(value, 10)
+        self.assertListEqual(list(list_A), [8,2,7,3])
+        self.assertEqual(len(list_A), 4)
+
+    def test_pop_before(self):
+        list_A = _LinkedList([5,8,2,7,3,10])
+        self.assertRaises(IndexError, lambda: list_A._pop_before(list_A._node_at(0)))
+        value = list_A._pop_before(list_A._node_at(3))
+        self.assertEqual(value, 2)
+        self.assertListEqual(list(list_A), [5,8,7,3,10])
+
+    def test_pop_after(self):
+        list_A = _LinkedList([5,8,2,7,3,10])
+        self.assertRaises(IndexError, lambda: list_A._pop_after(list_A._node_at(-1)))
+        value = list_A._pop_after(list_A._node_at(2))
+        self.assertEqual(value, 7)
+        self.assertListEqual(list(list_A), [5,8,2,3,10])
