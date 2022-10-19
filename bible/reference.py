@@ -547,10 +547,13 @@ class _LinkedList:
         def __repr__(self):
             return str(self)
 
-    def __init__(self, bible_ranges=None):
+    def __init__(self, iterable=None):
         self._first = None
         self._last = None
         self._node_count = 0
+        if iterable is not None:
+            for item in iterable:
+                self.append(item)
 
     def _check_type(self, obj):
         '''Subclasses can override to ensure list items are of a certain type'''

@@ -1,5 +1,5 @@
 import unittest
-from bible.reference import BibleBook, BibleVerse, BibleRange
+from bible.reference import BibleBook, BibleVerse, BibleRange, _LinkedList
 
 
 class TestBibleReference(unittest.TestCase):
@@ -40,3 +40,16 @@ class TestBibleReference(unittest.TestCase):
             BibleVerse(BibleBook.Mark, 1, 3),                         
         ]
         self.assertEqual(list(bible_range), expected_list)       
+
+
+class TestLinkedList(unittest.TestCase):
+    def setUp(self):
+        self.empty = _LinkedList()
+        self.single = _LinkedList([1])
+        self.list_A = _LinkedList([5,8,2,7,3,10])
+    
+    def test_construction(self):
+        self.assertListEqual(list(self.empty), [])
+        self.assertListEqual(list(self.single), [1])
+        self.assertListEqual(list(self.list_A), [5,8,2,7,3,10])
+
