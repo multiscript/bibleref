@@ -1,3 +1,4 @@
+from collections.abc import MutableSequence
 import copy
 from dataclasses import dataclass
 from enum import Enum
@@ -510,7 +511,7 @@ class BibleRange:
         return self.start.string(abbrev, periods, nospace, nobook) + f"-{self.end.chap}{sep}{self.end.verse}"
 
 
-class _LinkedList:
+class _LinkedList(MutableSequence):
     '''A linked list, with the ability to also group items.
 
     Groups are accessed using the groups property and created using append_group().
@@ -669,23 +670,26 @@ class _LinkedList:
     
     def insert(self, index, value):
         self._check_type(value)
-        index = self._conform_index(index)
         if index == 0:
             self.prepend(value)
         elif index == self._node_count:
             self.append(value)
         else:
-            self.insert_before(self.node_at(index), value)
+            self._insert_before(self._node_at(index), value)
 
-    def index(self, value, min_index, limit_index):
+    def index(self, value, min_index=None, limit_index=None):
+        if min_index is None:
+            min_index = 0
+        if limit_index is None:
+            limit_index = self._node_count
         self._check_type(value)
         min_index = self._conform_index(min_index)
-        limit_index = self._conform_index(limit_index)
+        limit_index = self._conform_index(limit_index-1) + 1
         if min_index > limit_index: # Swap
             (limit_index, min_index) = (min_index, limit_index)
-        node: _LinkedList.Node = self.start
+        node: _LinkedList.Node = self._first
         for index in range(limit_index):
-            if node.value == value and index <= min_index:
+            if node.value == value and index >= min_index:
                 return index
             node = node.next
         # At this point item not found
@@ -694,8 +698,8 @@ class _LinkedList:
     def count(self, value):
         self._check_type(value)
         count = 0
-        for node in self:
-            if node.value == value:
+        for node_value in self:
+            if node_value == value:
                 count += 1
         return count         
 
@@ -703,7 +707,7 @@ class _LinkedList:
         if index is None:
             index = self._node_count - 1
         index = self._conform_index(index)
-        return self.pop_node(self.node_at(index))
+        return self._pop_node(self._node_at(index))
 
     def clear(self):
         self._first = None
@@ -721,8 +725,8 @@ class _LinkedList:
 
     def __contains__(self, value):
         self._check_type(value)
-        for node in self:
-            if node.data == value:
+        for node_value in self:
+            if node_value == value:
                 return True
         # At this point item not found
         return False
