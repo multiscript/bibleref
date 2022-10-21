@@ -13,8 +13,8 @@ class _LinkedList(MutableSequence):
             self.prev = prev
             self.next = next
             self.is_group_head: bool = False  # True if this node is the start of a group.
-            self.prev_group = None # If this is a group head, link to next group head.
-            self.next_group = None # If this is a group head, link to prev group head.
+            self.prev_head = None # If this is a group head, link to next group head.
+            self.next_head = None # If this is a group head, link to prev group head.
             self.parent = parent
 
         def __eq__(self, other):
@@ -39,9 +39,12 @@ class _LinkedList(MutableSequence):
             return str(self)
 
     def __init__(self, iterable=None):
-        self._first = None
-        self._last = None
-        self._node_count = 0
+        self._first = None          # First node
+        self._last = None           # Last node
+        self._node_count = 0        # Count of nodes
+        self._first_head = None     # First node that is a group head
+        self._last_head = None      # Last node that is a group head
+        self._group_count = 0       # Count of groups
         if iterable is not None:
             self.extend(iterable)
 
@@ -111,9 +114,12 @@ class _LinkedList(MutableSequence):
         if self._node_count == 1:
             self._first = None
             self._last = None
+            self._first_head = None
+            self._last_head = None
+            self._group_count = 0
         # pop from start
         elif node is self._first:
-            self._first = self._first.next
+            self._first = node.next
             self._first.prev = None
         # pop at end
         elif node is self._last:
@@ -125,6 +131,26 @@ class _LinkedList(MutableSequence):
         
         node.parent = None
         self._node_count -= 1
+
+        if node.is_group_head:
+            # Try pushing the group head forward one node
+            if node.next is None or node.next.is_group_head:
+                # The next node either doesn't exist or is already the start of another group.
+                # Either way we're losing the group this node belongs to.
+                self._group_count -= 1
+                if self._first_head is node:
+                    self._first_head = node.next_head
+                if self._last_head is node:
+                    self._last_head = node.prev_head
+                if node.prev_head is not None:
+                    node.prev_head.next_head = node.next_head
+                if node.next_head is not None:
+                    node.next_head.prev_head = node.prev_head
+            else:
+                node.next.is_group_head = True
+                node.next.prev_head = node.prev_head
+                node.next.next_head = node.next_head
+
         return node.value
 
     def _pop_before(self, node):
@@ -221,13 +247,22 @@ class _LinkedList(MutableSequence):
         self._length = 0
 
     def reverse(self):
+        '''For simplicity, this also clears any groups.
+        '''
         if self._node_count == 0:
             return
         node = self._last
         while node is not None:
             (node.next, node.prev) = (node.prev, node.next) # Swap next and prev links
+            # Clear groups:
+            node.is_group_head = False
+            node.prev_head = None
+            node.next_head = None
             node = node.next
         (self._first, self._last) = (self._last, self._first) # Swap first and last links
+        node._first_head = None
+        self._last_head = None
+        self._group_count = 0
 
     def __len__(self):
         return self._node_count
