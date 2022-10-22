@@ -54,10 +54,20 @@ class LinkedList(MutableSequence):
             positive equivalent. Return the resulting index.
             '''
             if group_index < 0:
-                group_index += self._group_count
-            if group_index >= self._group_count:
+                group_index += self.parent._group_count
+            if group_index >= self.parent._group_count:
                 raise IndexError(f"Group index {index} out of range")
             return group_index
+
+        def _group_at(self, group_index: int):
+            group_index = self._conform_group_index(group_index)
+            group_head = self.parent._first_head
+            for i in range(group_index):
+                group_head = group_head.next_head
+            return group_head
+
+        def __len__(self):
+            return self.parent._group_count
 
         def __iter__(self):
             '''Yields a LinkedList.Group for each group in the list. 
@@ -66,13 +76,6 @@ class LinkedList(MutableSequence):
             while group_head is not None:
                 yield LinkedList.Group(group_head)
                 group_head = group_head.next_head
-
-        def _group_at(self, group_index: int):
-            group_index = self._conform_group_index(group_index)
-            group_head = self._first_head
-            for i in range(group_index):
-                group_head = group_head.next_head
-            return group_head
 
         def __getitem__(self, group_index):
             group_head = self._group_at(group_index)
@@ -261,6 +264,7 @@ class LinkedList(MutableSequence):
             yield node
             node = node.next
 
+    @property
     def groups(self):
         return LinkedList.Groups(self)
     
@@ -325,6 +329,7 @@ class LinkedList(MutableSequence):
             new_head.prev_head = self._last_head
             self._last_head.next_head = new_head
             self._last_head = new_head
+            self._group_count += 1
     
     def append_group(self, iterable):
         is_first_item = True

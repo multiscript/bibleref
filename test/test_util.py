@@ -10,13 +10,6 @@ class TestLinkedList(unittest.TestCase):
         test_list = LinkedList([5, 8, 2, 7, 3, 10])
         self.assertListEqual(list(test_list), [5, 8, 2, 7, 3, 10])
     
-    def test_group_construction(self):
-        test_list = LinkedList()
-        test_list.append_group([2, 8, 4])
-        test_list.append_group([1, 9, 6])
-        test_list.append_group([3, 7, 5])
-        self.assertEqual(test_list.to_nested_lists(), [[2, 8, 4], [1, 9, 6], [3, 7, 5]])
-
     def test_conform_index(self):
         test_list = LinkedList([5, 8, 2, 7, 3, 10])
         self.assertEqual(test_list._conform_index(-2), -2 + len(test_list))
@@ -189,4 +182,36 @@ class TestLinkedList(unittest.TestCase):
         test_list = LinkedList([5, 8, 2, 7, 3, 10])
         test_list += [12, 9, 20]
         self.assertListEqual(list(test_list), [5, 8, 2, 7, 3, 10, 12, 9, 20])
-        
+
+    def test_group_construction(self):
+        test_list = LinkedList()
+        test_list.append_group([2, 8, 4])
+        test_list.append_group([1, 9, 6])
+        test_list.append_group([3, 7, 5])
+        self.assertEqual(test_list.to_nested_lists(), [[2, 8, 4], [1, 9, 6], [3, 7, 5]])
+
+    def test_groups_object(self):
+        test_list = LinkedList()
+        test_list.append_group([2, 8, 4])
+        test_list.append_group([1, 9, 6])
+        test_list.append_group([3, 7, 5])
+        self.assertEqual(len(test_list.groups), 3)
+        self.assertEqual(test_list.groups[2].group_head.value, 3)
+        group_list = list(test_list.groups)
+        self.assertEqual(group_list[0].group_head.value, 2)
+        self.assertEqual(group_list[1].group_head.value, 1)
+        self.assertEqual(group_list[2].group_head.value, 3)
+
+    def test_group_object(self):
+        test_list = LinkedList()
+        test_list.append_group([2, 8, 4])
+        test_list.append_group([1, 9, 6])
+        test_list.append_group([3, 7, 5])
+        group_0 = test_list.groups[0]
+        self.assertEqual(group_0[0], 2)
+        self.assertEqual(group_0[1], 8)
+        self.assertEqual(group_0[2], 4)
+
+        self.assertEqual(test_list.groups[2][0], 3)
+        self.assertEqual(test_list.groups[2][1], 7)
+        self.assertEqual(test_list.groups[2][2], 5)
