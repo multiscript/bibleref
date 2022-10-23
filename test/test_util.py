@@ -1,6 +1,6 @@
 import unittest
 
-from bible.util import LinkedList
+from bible.util import LinkedList, ListError
 
 
 class TestLinkedList(unittest.TestCase):    
@@ -215,3 +215,34 @@ class TestLinkedList(unittest.TestCase):
         self.assertEqual(test_list.groups[2][0], 3)
         self.assertEqual(test_list.groups[2][1], 7)
         self.assertEqual(test_list.groups[2][2], 5)
+
+    def test_group_head_deletion(self):
+        test_list = LinkedList()
+        test_list.append_group([2, 8, 4])
+        test_list.append_group([1, 9, 6])
+        test_list.append_group([3, 7, 5])
+        group_1 = test_list.groups[1]
+        group_2 = test_list.groups[2]
+        # print("\n",[str(node) for node in test_list._node_iter()])
+        self.assertEqual(test_list.to_nested_lists(), [[2, 8, 4], [1, 9, 6], [3, 7, 5]])
+        self.assertEqual(len(test_list.groups), 3)
+        self.assertEqual(group_1[0], 1)
+        self.assertEqual(group_2[0], 3)
+
+        del test_list[3]
+        self.assertEqual(test_list.to_nested_lists(), [[2, 8, 4], [9, 6], [3, 7, 5]])
+        self.assertEqual(len(test_list.groups), 3)
+        self.assertRaises(ListError, lambda: group_1[0])
+        self.assertEqual(group_2[0], 3)
+
+        del test_list[3]
+        self.assertEqual(test_list.to_nested_lists(), [[2, 8, 4], [6], [3, 7, 5]])
+        self.assertEqual(len(test_list.groups), 3)
+        self.assertRaises(ListError, lambda: group_1[0])
+        self.assertEqual(group_2[0], 3)
+
+        del test_list[3]
+        self.assertEqual(test_list.to_nested_lists(), [[2, 8, 4], [3, 7, 5]])
+        self.assertEqual(len(test_list.groups), 2)
+        self.assertRaises(ListError, lambda: group_1[0])
+        self.assertEqual(group_2[0], 3)
