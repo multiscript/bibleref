@@ -48,7 +48,7 @@ class LinkedList(MutableSequence):
         def __repr__(self):
             return str(self)
 
-    class Groups:
+    class GroupsView:
         def __init__(self, parent: 'LinkedList'):
             self.parent = parent
 
@@ -77,14 +77,14 @@ class LinkedList(MutableSequence):
             '''
             group_head = self.parent._first_head
             while group_head is not None:
-                yield LinkedList.Group(group_head)
+                yield LinkedList.GroupView(group_head)
                 group_head = group_head.next_head
 
         def __getitem__(self, group_index):
             group_head = self._group_at(group_index)
-            return LinkedList.Group(group_head)
+            return LinkedList.GroupView(group_head)
 
-    class Group:
+    class GroupView:
         def __init__(self, group_head: 'LinkedList.Node'):
             self.group_head = group_head
 
@@ -176,12 +176,16 @@ class LinkedList(MutableSequence):
         self._last = self._first
         self._node_count += 1
         # First node also forms the head of the first group
+        self._setup_single_group()
+
+    def _setup_single_group(self):
+        # Assumes no other groups are set up
         self._first.is_group_head = True
         self._first.prev_head = None
         self._first.next_head = None
         self._first_head = self._first
         self._last_head = self._first
-        self._group_count += 1
+        self._group_count = 1
 
     def _insert_before(self, node: 'LinkedList.Node', value):
         self._check_is_child(node)
@@ -276,7 +280,7 @@ class LinkedList(MutableSequence):
 
     @property
     def groups(self):
-        return LinkedList.Groups(self)
+        return LinkedList.GroupsView(self)
     
     def to_nested_lists(self):
         outer_list = []
@@ -396,13 +400,7 @@ class LinkedList(MutableSequence):
             node.next_head = None
             node = node.next
         (self._first, self._last) = (self._last, self._first) # Swap first and last links
-        # Set up new first group
-        self._first_head = self._first
-        self._last_head = self._last
-        self._group_count = 1
-        self._first.is_group_head = True
-        self._first.prev_head = None
-        self._first.next_head = None
+        self._setup_single_group()
 
     def __len__(self):
         return self._node_count
