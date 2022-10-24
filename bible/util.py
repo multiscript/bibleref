@@ -187,15 +187,58 @@ class LinkedList(MutableSequence):
         self._last_head = self._first
         self._group_count = 1
 
-    def _insert_before(self, node: 'LinkedList.Node', value):
+    def _insert_before(self, node: 'LinkedList.Node', value, new_group: bool = False):
         self._check_is_child(node)
-        if node is self._first:
-            self.prepend(value)
-        else:
-            new = self.Node(value, prev=node.prev, next=node, parent=self)
+        inserting_first = True if node is self._first else None
+        new = self.Node(value, prev=node.prev, next=node, parent=self)
+        if node.prev is not None:
             node.prev.next = new
-            node.prev = new
-            self._node_count += 1
+        node.prev = new
+        if node is self._first:
+            self._first = new
+        self._node_count += 1
+
+        if new_group:
+            new.is_group_head = True
+            if inserting_first:
+                # New node becomes new stand-alone group at start of list
+                old_first_node = new.next
+                new.prev_head = None
+                new.next_head = old_first_node
+                old_first_node.prev_head = new
+                self._first_head = new
+            else:
+                # New node breaks up an existing group to start a new group
+                group_head = self._find_group_head(new.prev) # Previous group head
+                new.prev_head = group_head
+                new.next_head = group_head.next_head
+                if group_head.next_head is not None:
+                    group_head.next_head.prev_head = new
+                group_head.next_head = new
+        else:
+            if new.next is not None and new.next.is_group_head:
+                # New node displaces the existing head of an existing group
+                old_head = new.next
+                new.is_group_head = True
+                new.prev_head = old_head.prev_head
+                if old_head.prev_head is not None:
+                    old_head.prev_head.next_head = new
+                new.next_head = old_head.next_head
+                if old_head.next_head is not None:
+                    old_head.next_head.prev_head = new
+                old_head.is_group_head = False
+                old_head.next_head = None
+                old_head.prev_head = None
+                if inserting_first:
+                    self._first_head = new
+            else:
+                # New node will automatically become part of an existing group
+                pass
+
+    def _find_group_head(self, node: 'LinkedList.Node'):
+        while not node.is_group_head:
+            node = node.prev
+        return node
 
     def _insert_after(self, node: 'LinkedList.Node', value):
         self._check_is_child(node)
@@ -317,15 +360,12 @@ class LinkedList(MutableSequence):
                 count += 1
         return count         
 
-    def prepend(self, value):
+    def prepend(self, value, new_group: bool = False):
         self._check_type(value)
         if self._node_count == 0:
             self._insert_first(value)
         else:
-            new = self.Node(value, next=self._first, parent=self)
-            self._first.prev = new
-            self._first = new
-            self._node_count += 1
+            self._insert_before(self._first, value, new_group)
 
     def append(self, value, new_group: bool = False):
         self._check_type(value)
