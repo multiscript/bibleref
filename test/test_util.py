@@ -190,7 +190,7 @@ class TestLinkedList(unittest.TestCase):
         test_list.append_group([3, 7, 5])
         self.assertEqual(test_list.to_nested_lists(), [[2, 8, 4], [1, 9, 6], [3, 7, 5]])
 
-    def test_groups_object(self):
+    def test_groups_view(self):
         test_list = LinkedList()
         test_list.append_group([2, 8, 4])
         test_list.append_group([1, 9, 6])
@@ -202,7 +202,7 @@ class TestLinkedList(unittest.TestCase):
         self.assertEqual(group_list[1].group_head.value, 1)
         self.assertEqual(group_list[2].group_head.value, 3)
 
-    def test_group_object(self):
+    def test_group_view(self):
         test_list = LinkedList()
         test_list.append_group([2, 8, 4])
         test_list.append_group([1, 9, 6])
@@ -275,3 +275,15 @@ class TestLinkedList(unittest.TestCase):
         self.assertEqual(test_list.to_nested_lists(), [[2, 8, 3, 4], [5], [7, 1, 9, 6]])
         test_list._insert_before(test_list._node_at(2), 10, new_group=True)
         self.assertEqual(test_list.to_nested_lists(), [[2, 8], [10, 3, 4], [5], [7, 1, 9, 6]])
+
+        test_list = LinkedList([5])
+        test_list._insert_before(test_list._node_at(0), 6, new_group=False)
+        self.assertEqual(test_list.to_nested_lists(), [[6, 5]])
+
+    def test_group_pop_node(self):
+        test_list = LinkedList()
+        test_list.append_group([2, 8, 4])
+        test_list.append_group([1, 9, 6])
+        self.assertEqual(test_list.to_nested_lists(), [[2, 8, 4], [1, 9, 6]])
+        test_list.pop(0)
+        self.assertEqual(test_list.to_nested_lists(), [[8, 4], [1, 9, 6]])
