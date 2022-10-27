@@ -316,3 +316,6 @@ class TestLinkedList(unittest.TestCase):
         self.assertEqual(test_list.to_nested_lists(), [[2, 8, 4], [1, 9, 6], [3, 7, 5]])
         test_list.groups[1][2] = 20
         self.assertEqual(test_list.to_nested_lists(), [[2, 8, 4], [1, 9, 20], [3, 7, 5]])
+
+        del test_list.groups[1][2]
+        self.assertEqual(test_list.to_nested_lists(), [[2, 8, 4], [1, 9], [3, 7, 5]])

@@ -92,8 +92,7 @@ class LinkedList(MutableSequence):
             return self.parent._group_count
 
         def __iter__(self):
-            '''Yields a LinkedList.Group for each group in the list. 
-            '''
+            '''Yields a LinkedList.Group for each group in the list.'''
             group_head = self.parent._first_head
             while group_head is not None:
                 yield LinkedList.GroupView(group_head)
