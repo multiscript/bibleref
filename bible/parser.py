@@ -163,10 +163,10 @@ _parser = None
 def _parse(string):
     global _parser
     if _parser is None:
-        grammar_path = Path(__file__, "..", GRAMMAR_FILE_NAME).resolve()
-        with open(grammar_path) as file:
-            grammar_text = file.read()
-        _parser = Lark(grammar_text, propagate_positions=True)
+        # grammar_path = Path(__file__, "..", GRAMMAR_FILE_NAME).resolve()
+        # with open(grammar_path) as file:
+        #     grammar_text = file.read()
+        _parser = Lark(_grammar, propagate_positions=True)
 
     try:
         tree = _parser.parse(string)
@@ -182,3 +182,42 @@ def _parse(string):
         raise e.orig_exc
     return bible_range_list
 
+
+_grammar = r'''
+    ?start: ref_list
+
+    ref_list: bible_ref (list_sep bible_ref)* list_sep?
+
+    ?bible_ref: (single_ref | dual_ref)
+
+    dual_ref: single_ref RANGE_SEP single_ref
+
+    ?single_ref: book_only_ref
+            | book_num_ref
+            | book_chap_verse_ref
+            | chap_verse_ref
+            | num_only_ref
+
+    book_only_ref: BOOK_NAME
+    book_num_ref: BOOK_NAME NUM
+    book_chap_verse_ref: BOOK_NAME NUM VERSE_SEP NUM
+    chap_verse_ref: NUM VERSE_SEP NUM
+    num_only_ref: NUM
+
+    NUM: INT
+
+    RANGE_SEP: "-"
+    ?list_sep: MAJOR_LIST_SEP | MINOR_LIST_SEP
+    MAJOR_LIST_SEP: ";"
+    MINOR_LIST_SEP: ","
+    VERSE_SEP: ":" | "."
+
+    BOOK_NAME: /\w(\w|\s)*[^0-9\s:.;,\-]/   // Books match as follows:
+                                            // Can start with any 'word' (\w) character (incl. numbers)
+                                            // Can include any amount of word characters or whitespace
+                                            // Cannot end with a digit, or any of these symbols -> : . ; , -
+
+    %import common.WS
+    %import common.INT
+    %ignore WS
+'''

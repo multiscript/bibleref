@@ -26,7 +26,10 @@ MAJOR_LIST_SEP: ";"
 MINOR_LIST_SEP: ","
 VERSE_SEP: ":" | "."
 
-BOOK_NAME: /\w(\w|\s)*[^0-9\s:.;,\-]/
+BOOK_NAME: /\w(\w|\s)*[^0-9\s:.;,\-]/   // Books match as follows:
+                                        // Can start with any 'word' (\w) character (incl. numbers)
+                                        // Can include any amount of word characters or whitespace
+                                        // Cannot end with a digit, or any of these symbols -> : . ; , -
 
 %import common.WS
 %import common.INT
