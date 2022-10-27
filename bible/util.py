@@ -207,7 +207,6 @@ class LinkedList(MutableSequence):
             if inserting_first:
                 # New node becomes new stand-alone group at start of list
                 self._insert_new_group_before_head(new, keep_existing_head=True)
-                self._first_head = new
             else:
                 # New node breaks up an existing group to start a new group
                 self._insert_new_group_at_node(new)
@@ -215,8 +214,6 @@ class LinkedList(MutableSequence):
             if new.next is not None and new.next.is_group_head:
                 # New node displaces the existing head of an existing group
                 self._insert_new_group_before_head(new, keep_existing_head=False)
-                if inserting_first:
-                    self._first_head = new
             else:
                 # New node will automatically become part of an existing group
                 pass
@@ -233,10 +230,7 @@ class LinkedList(MutableSequence):
         self._node_count += 1
 
         if new_group:
-            new.is_group_head = True
             self._insert_new_group_at_node(new)
-            if inserting_last:
-                self._last = new
 
     def _insert_new_group_before_head(self, node: 'LinkedList.Node', keep_existing_head: bool = False):
         old_head = node.next
@@ -253,7 +247,11 @@ class LinkedList(MutableSequence):
             node.next_head = old_head.next_head
             if old_head.next_head is not None:
                 old_head.next_head.prev_head = node
+            elif self._last_head is old_head:
+                self._last_head = node
             old_head.clear_group_head()
+        if self._first_head is old_head:
+            self._first_head = node
 
     def _insert_new_group_at_node(self, node: 'LinkedList.Node'):
         node.is_group_head = True

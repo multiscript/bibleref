@@ -267,23 +267,43 @@ class TestLinkedList(unittest.TestCase):
         test_list.append_group([2, 8, 4])
         test_list.append_group([1, 9, 6])
         self.assertEqual(test_list.to_nested_lists(), [[2, 8, 4], [1, 9, 6]])
+        self.assertIs(test_list._first_head, test_list._node_at(0))
+        self.assertIs(test_list._last_head, test_list._node_at(3))
+
         test_list._insert_before(test_list._node_at(3), 7, new_group=False)
         self.assertEqual(test_list.to_nested_lists(), [[2, 8, 4], [7, 1, 9, 6]])
+        self.assertIs(test_list._first_head, test_list._node_at(0))
+        self.assertIs(test_list._last_head, test_list._node_at(3))
+
         test_list._insert_before(test_list._node_at(3), 5, new_group=True)
         self.assertEqual(test_list.to_nested_lists(), [[2, 8, 4], [5], [7, 1, 9, 6]])
+        self.assertIs(test_list._first_head, test_list._node_at(0))
+        self.assertIs(test_list._last_head, test_list._node_at(4))
+
         test_list._insert_before(test_list._node_at(2), 3, new_group=False)
         self.assertEqual(test_list.to_nested_lists(), [[2, 8, 3, 4], [5], [7, 1, 9, 6]])
+        self.assertIs(test_list._first_head, test_list._node_at(0))
+        self.assertIs(test_list._last_head, test_list._node_at(5))
+
         test_list._insert_before(test_list._node_at(2), 10, new_group=True)
         self.assertEqual(test_list.to_nested_lists(), [[2, 8], [10, 3, 4], [5], [7, 1, 9, 6]])
+        self.assertIs(test_list._first_head, test_list._node_at(0))
+        self.assertIs(test_list._last_head, test_list._node_at(6))
 
         test_list = LinkedList([5])
         test_list._insert_before(test_list._node_at(0), 6, new_group=False)
         self.assertEqual(test_list.to_nested_lists(), [[6, 5]])
+        self.assertIs(test_list._first_head, test_list._node_at(0))
+        self.assertIs(test_list._last_head, test_list._node_at(0))
 
     def test_group_pop_node(self):
         test_list = LinkedList()
         test_list.append_group([2, 8, 4])
         test_list.append_group([1, 9, 6])
         self.assertEqual(test_list.to_nested_lists(), [[2, 8, 4], [1, 9, 6]])
+        self.assertIs(test_list._first_head, test_list._node_at(0))
+        self.assertIs(test_list._last_head, test_list._node_at(3))
         test_list.pop(0)
         self.assertEqual(test_list.to_nested_lists(), [[8, 4], [1, 9, 6]])
+        self.assertIs(test_list._first_head, test_list._node_at(0))
+        self.assertIs(test_list._last_head, test_list._node_at(2))
