@@ -3,7 +3,6 @@ from dataclasses import dataclass
 from enum import Enum
 import re
 
-from . import data
 from . import parser
 from . import util
 
@@ -523,6 +522,10 @@ class MultibookRangeNotAllowedError(Exception):
 class InvalidReferenceError(Exception):
     pass
 
+
+# We delay the import of data until this point so that BibleBook and its related classes
+# are already defined and can be used by the data submodule
+from . import data
 
 def _add_abbrevs_and_titles():
     for book, name_data in data.name_data.items():
