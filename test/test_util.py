@@ -307,3 +307,12 @@ class TestLinkedList(unittest.TestCase):
         self.assertEqual(test_list.to_nested_lists(), [[8, 4], [1, 9, 6]])
         self.assertIs(test_list._first_head, test_list._node_at(0))
         self.assertIs(test_list._last_head, test_list._node_at(2))
+
+    def test_group_item_modify(self):
+        test_list = LinkedList()
+        test_list.append_group([2, 8, 4])
+        test_list.append_group([1, 9, 6])
+        test_list.append_group([3, 7, 5])
+        self.assertEqual(test_list.to_nested_lists(), [[2, 8, 4], [1, 9, 6], [3, 7, 5]])
+        test_list.groups[1][2] = 20
+        self.assertEqual(test_list.to_nested_lists(), [[2, 8, 4], [1, 9, 20], [3, 7, 5]])
