@@ -499,3 +499,6 @@ class LinkedList(MutableSequence):
     def __iadd__(self, iterable):
         self.extend(iterable)
         return self
+    
+    def __str__(self):
+        return str(self.to_nested_lists())

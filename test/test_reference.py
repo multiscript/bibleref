@@ -1,5 +1,5 @@
 import unittest
-from bible.reference import BibleBook, BibleVerse, BibleRange
+from bible.reference import BibleBook, BibleVerse, BibleRange, BibleRangeList
 
 
 class TestBibleReference(unittest.TestCase):

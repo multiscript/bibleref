@@ -3,7 +3,8 @@ from dataclasses import dataclass
 from enum import Enum
 import re
 
-from .util import LinkedList
+from . import util
+from . import parser
 
 
 allow_multibook = False     # Set to True to default to allowing a BibleRange to span multiple books.
@@ -512,14 +513,14 @@ class BibleRange:
         return self.start.string(abbrev, periods, nospace, nobook) + f"-{self.end.chap}{sep}{self.end.verse}"
 
 
-class BibleRangeList(LinkedList):
+class BibleRangeList(util.LinkedList):
+    @classmethod
+    def new_from_text(cls, text):
+        return parser._parse(text)
+
     def _check_type(self, value):
         if not isinstance(value, BibleRange):
             raise TypeError(f"Item is not a BibleRange: {value}")
-
-
-    
-
 
 
 name_data = {
