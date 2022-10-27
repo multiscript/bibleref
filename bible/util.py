@@ -9,11 +9,24 @@ class ListError(Exception):
 # Derived from https://github.com/Superbird11/ranges/blob/master/ranges/_helper.py (MIT Licence)
 class LinkedList(MutableSequence):
     '''A linked list, with the ability to also group items.
+    
+    A group is a view of a subset
+    of the list. By default, all items are placed in one group. All items belong to one
+    group only, such that the collection of groups spans the entire list. (The current
+    implementation defines groups by marking the first item in each group.)
 
-    By default, all items are placed in one group.
-    Groups are accessed using the groups property and created using append_group().
-    '''    
+    As groups are just views of the items, updating an item in a group also updates
+    the parent list, and vice verse.
+
+    The groups property returns a GroupsView collection, which can be index and iterated
+    to return each GroupView. Groups are created by calling append_group(), or append() or
+    prepend() with new_group set to True.
+    '''
+    # Groups are defined by setting node.is_group_head to True for the first node
+    # of the group. The group continues until the next group head.
+
     class Node:
+        '''Nodes of the linked list.'''
         def __init__(self, value, prev=None, next=None, parent=None):
             self.value = value
             self.parent: 'LinkedList' = parent
@@ -53,7 +66,8 @@ class LinkedList(MutableSequence):
         def __repr__(self):
             return str(self)
 
-    class GroupsView:
+    class GroupViews:
+        '''Collection of Group views.'''
         def __init__(self, parent: 'LinkedList'):
             self.parent = parent
 
@@ -90,6 +104,7 @@ class LinkedList(MutableSequence):
             return LinkedList.GroupView(group_head)
 
     class GroupView:
+        '''Group view object. Provides access to the items in the group.'''
         def __init__(self, group_head: 'LinkedList.Node'):
             self.group_head = group_head
 
@@ -343,7 +358,7 @@ class LinkedList(MutableSequence):
 
     @property
     def groups(self):
-        return LinkedList.GroupsView(self)
+        return LinkedList.GroupViews(self)
     
     def to_nested_lists(self):
         outer_list = []
