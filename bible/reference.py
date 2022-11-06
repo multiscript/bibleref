@@ -143,6 +143,22 @@ class BibleBook(Enum):
             raise InvalidReferenceError(f"No chapter {chap} in {self.title}")
         return self._max_verses[chap-1]
 
+    def first_verse(self, chap: int = None, allow_verse_0: bool = None) -> 'BibleVerse':
+        '''Returns a BibleVerse for the first verse of the specified chapter of the BibleBook.
+        If chap is None, it uses the first chapter of the book.
+        '''
+        if chap is None:
+            chap = self.min_chap()
+        return BibleVerse(self, chap, self.min_verse(chap, allow_verse_0))        
+
+    def last_verse(self, chap: int = None) -> 'BibleVerse':
+        '''Returns a BibleVerse for the last verse of the specified chapter of the BibleBook.
+        If chap is None, it uses the last chapter of the book.
+        '''
+        if chap is None:
+            chap = self.max_chap()
+        return BibleVerse(self, chap, self.max_verse(chap))        
+
     def next(self) -> 'BibleBook':
         '''Returns the next BibleBook in the book ordering, or None if this is the final book.
         '''
@@ -349,14 +365,14 @@ class BibleVerse:
     #     '''
     #     return self.book.max_chap()
 
-    def min_chap_verse(self, allow_verse_0: bool = None):
+    def min_chap_verse(self, allow_verse_0: bool = None) -> int:
         '''Return the lowest verse number (usually indexed from 1) for the chapter of this BibleVerse.
         If allow_verse_0 is not None it overrides the module attribute of the same name. If True,
         chapters with superscriptions start with verse 0.
         '''
         return self.book.min_verse(self.chap, allow_verse_0)
 
-    def max_chap_verse(self):
+    def max_chap_verse(self) -> int:
         '''Return the highest verse number (usually indexed from 1) for the chapter of this BibleVerse.
         '''
         return self.book.max_verse(self.chap)
@@ -372,15 +388,12 @@ class BibleRange:
     start: BibleVerse
     end: BibleVerse
 
-    # TODO Remove validate arg
     def __init__(self, start_book: BibleBook, start_chap: int = None, start_verse: int = None,
                 end_book: BibleBook = None, end_chap: int = None, end_verse: int = None,
-                validate: bool = True, allow_multibook: bool = None, allow_verse_0: bool = None):
+                allow_multibook: bool = None, allow_verse_0: bool = None):
         if allow_multibook is None:
             allow_multibook = globals()['allow_multibook']
-        if allow_verse_0 is None:
-            allow_verse_0 = globals()['allow_verse_0']
-
+ 
         if start_book is None or start_book not in BibleBook:
             raise InvalidReferenceError("Start book not valid")
         if start_chap is None and start_verse is not None:
@@ -439,10 +452,7 @@ class BibleRange:
         If num_verses is specified, splits are made after no more than the specified number of verses.
         If both by_chap and num_verses are specified, splits occur both at chapter boundaries, and after
         the specified number of verses.
-        '''
-        if allow_verse_0 is None:
-            allow_verse_0 = globals()['allow_verse_0']
-        
+        '''        
         # Start by dividing our initial range into chapters, if requested.
         if by_chap:
             chap_split = []
@@ -488,43 +498,39 @@ class BibleRange:
 
     def is_whole_book(self, allow_verse_0: bool = None):
         '''Returns True if the BibleRange exactly spans a whole book, else False.'''
-        if allow_verse_0 is None:
-            allow_verse_0 = globals()['allow_verse_0']
         return  (self.start.book == self.end.book) and \
-                (self.start.chap == self.start.book.min_chap()) and \
-                (self.start.verse == self.start.book.min_verse(self.start.chap, allow_verse_0)) and \
-                (self.end.chap == self.end.book.max_chap()) and \
-                (self.end.verse == self.end.book.max_verse(self.end.chap))
+                (self.start == self.start.book.first_verse(None, allow_verse_0)) and \
+                (self.end == self.end.book.last_verse())
+
+    def spans_start_book(self, allow_verse_0: bool = None):
+        '''Returns True if the BibleRange spans the whole start book.'''
+        return  (self.start == self.start.book.first_verse(None, allow_verse_0)) and \
+                (self.end >= self.start.book.last_verse())
+
+    def spans_end_book(self, allow_verse_0: bool = None):
+        '''Returns True if the BibleRange spans the whole start book.'''
+        return  (self.end == self.end.book.last_verse()) and \
+                (self.start <= self.end.book.first_verse())
 
     def is_whole_chap(self, allow_verse_0: bool = None):
         '''Returns True if the BibleRange exactly spans a whole chapter, else False.'''
-        if allow_verse_0 is None:
-            allow_verse_0 = globals()['allow_verse_0']
         return  (self.start.book == self.end.book) and \
-                (self.start.chap == self.end.chap) and \
-                (self.start.verse == self.start.book.min_verse(self.start.chap, allow_verse_0)) and \
-                (self.end.verse == self.end.book.max_verse(self.end.chap))
-
-    def is_single_verse(self):
-        '''Returns True if the BibleRange represents a single verse, else False.'''
-        return  (self.start.book == self.end.book) and \
-                (self.start.chap == self.end.chap) and \
-                (self.start.verse == self.end.verse)
+                (self.start == self.start.book.first_verse(self.start.chap, allow_verse_0)) and \
+                (self.end == self.end.book.last_verse(self.start.chap))
 
     def spans_start_chap(self, allow_verse_0: bool = None):
         '''Returns True if the BibleRange spans the whole start chap.'''
-        if allow_verse_0 is None:
-            allow_verse_0 = globals()['allow_verse_0']
-        return  (self.start.verse == self.start.book.min_verse(self.start.chap, allow_verse_0)) and \
-                self.end >= BibleVerse(self.start.book, self.start.chap, self.start.book.max_verse(self.start.chap))
+        return  (self.start == self.start.book.first_verse(self.start.chap, allow_verse_0)) and \
+                (self.end >= self.start.book.last_verse(self.start.chap))
 
     def spans_end_chap(self, allow_verse_0: bool = None):
         '''Returns True if the BibleRange spans the whole end chap.'''
-        if allow_verse_0 is None:
-            allow_verse_0 = globals()['allow_verse_0']
-        return  (self.end.verse == self.end.book.max_verse(self.end.chap)) and \
-                self.start <= BibleVerse(self.end.book, self.end.chap,
-                                         self.end.book.min_verse(self.end.chap, allow_verse_0))
+        return  (self.end == self.end.book.last_verse(self.end.chap)) and \
+                (self.start <= self.end.book.first_verse(self.end.chap, allow_verse_0))
+
+    def is_single_verse(self):
+        '''Returns True if the BibleRange represents a single verse, else False.'''
+        return  (self.start == self.end)
 
     def __repr__(self):
         return str((self.start.book.abbrev, self.start.chap, self.start.verse,
@@ -560,7 +566,10 @@ class BibleRange:
         else:
             # We need to stringify both the start and the end
             # TODO Need to test if it spans the whole start book or whole end book
-            if self.spans_start_chap():
+            if self.spans_start_book():
+                start_str = start_name
+                at_verse_level = False
+            elif self.spans_start_chap():
                 start_str = f"{start_name} {self.start.chap}"
                 at_verse_level = False
             else:
@@ -570,8 +579,12 @@ class BibleRange:
             if self.start.book == self.end.book:
                 nobook = True
                 end_name = ""
+            else:
+                at_verse_level = False
             
-            if not at_verse_level and self.spans_end_chap():
+            if not nobook and self.spans_end_book():
+                end_str = end_name
+            elif not at_verse_level and self.spans_end_chap():
                 end_str = f"{end_name} {self.end.chap}".strip()
             else:
                 end_str = self.end.string(abbrev, periods, nospace, nobook)

@@ -59,15 +59,30 @@ class TestBibleReference(unittest.TestCase):
     def test_bible_range_to_string(self):
         rng = BibleRange(BibleBook.Rom, 1, 1, None, 16, 27)
         self.assertEqual(str(rng), "Romans")
-        
+
+        rng = BibleRange(BibleBook.Matt, 1, 1, BibleBook.John, 21, 25, allow_multibook=True)
+        self.assertEqual(str(rng), "Matthew-John")
+
+        rng = BibleRange(BibleBook.Matt, 5, 6, BibleBook.John, 21, 25, allow_multibook=True)
+        self.assertEqual(str(rng), "Matthew 5:6-John")
+
+        rng = BibleRange(BibleBook.Matt, 1, 1, BibleBook.John, 10, 11, allow_multibook=True)
+        self.assertEqual(str(rng), "Matthew-John 10:11")
+
         rng = BibleRange(BibleBook.Exod, 7, 1, None, 7, 25)
         self.assertEqual(str(rng), "Exodus 7")
 
+        rng = BibleRange(BibleBook.Exod, 7, 1, None, 10, 29)
+        self.assertEqual(str(rng), "Exodus 7-10")
+
+        rng = BibleRange(BibleBook.Exod, 7, 4, None, 10, 29)
+        self.assertEqual(str(rng), "Exodus 7:4-10:29")
+
+        rng = BibleRange(BibleBook.Exod, 7, 1, None, 10, 12)
+        self.assertEqual(str(rng), "Exodus 7-10:12")
+
         rng = BibleRange(BibleBook._1Cor, 15, 1, BibleBook._2Cor, 1, 24, allow_multibook=True)
         self.assertEqual(str(rng), "1 Corinthians 15-2 Corinthians 1")
-
-        rng = BibleRange(BibleBook.Rev, 2, 1, None, 3, 22)
-        self.assertEqual(str(rng), "Revelation 2-3")
 
         rng = BibleRange(BibleBook.Obad, 1, 10, None, 1, 12)
         self.assertEqual(str(rng), "Obadiah 10-12")
@@ -75,14 +90,17 @@ class TestBibleReference(unittest.TestCase):
         rng = BibleRange(BibleBook.Obad, 1, 10, BibleBook.Jonah, 1, 4, allow_multibook=True)
         self.assertEqual(str(rng), "Obadiah 10-Jonah 1:4")
 
-        rng = BibleRange(BibleBook.Mark, 4, 1, None, 5, 20)
-        self.assertEqual(str(rng), "Mark 4-5:20")
+        rng = BibleRange(BibleBook.Obad, 1, 10, BibleBook.Jonah, 2, 10, allow_multibook=True)
+        self.assertEqual(str(rng), "Obadiah 10-Jonah 2")
 
-        rng = BibleRange(BibleBook.Mark, 4, 35, None, 5, 20)
-        self.assertEqual(str(rng), "Mark 4:35-5:20")
+        rng = BibleRange(BibleBook._1Jn, 5, 18, BibleBook._3Jn, 1, 14, allow_multibook=True)
+        self.assertEqual(str(rng), "1 John 5:18-3 John")
 
-        rng = BibleRange(BibleBook.Mark, 4, 35, None, 5, 43)
-        self.assertEqual(str(rng), "Mark 4:35-5:43")
+        rng = BibleRange(BibleBook._2Jn, 1, 1, BibleBook._3Jn, 1, 14, allow_multibook=True)
+        self.assertEqual(str(rng), "2 John-3 John")
 
-        # rng = BibleRange(BibleBook._1Jn, 5, 18, BibleBook._2Jn, 1, 13, allow_multibook=True)
-        # self.assertEqual(str(rng), "1 John 5:18-2 Jn")
+        rng = BibleRange(BibleBook._2Jn, 1, 6, BibleBook._3Jn, 1, 14, allow_multibook=True)
+        self.assertEqual(str(rng), "2 John 6-3 John")
+
+        rng = BibleRange(BibleBook._2Jn, 1, 1, BibleBook._3Jn, 1, 8, allow_multibook=True)
+        self.assertEqual(str(rng), "2 John-3 John 8")
