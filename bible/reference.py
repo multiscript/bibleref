@@ -402,43 +402,38 @@ class BibleRange:
         no_end = (end_book is None and end_chap is None and end_verse is None)
 
         if start_chap is None: # Start is book only
-            start_chap = start_book.min_chap()
-            start_verse = start_book.min_verse(start_chap, allow_verse_0)
+            start = start_book.first_verse(None, allow_verse_0)
             if no_end:
-                end_book = start_book
-                end_chap = end_book.max_chap()
-                end_verse = end_book.max_verse(end_chap)
+                end = start_book.last_verse()
         elif start_verse is None: # Start is book and chap only
-            start_verse = start_book.min_verse(start_chap, allow_verse_0)
+            start = start_book.first_verse(start_chap, allow_verse_0)
             if no_end:
-                end_book = start_book
-                end_chap = start_chap
-                end_verse = end_book.max_verse(end_chap)
+                end = start_book.last_verse(start_chap)
         else: # Start is book, chap and verse
-            if no_end:
-                end_book = start_book
-                end_chap = start_chap
-                end_verse = start_verse
+            start = BibleVerse(start_book, start_chap, start_verse)
+            if no_end: # Single verse reference, so end is same as start
+                end = BibleVerse(start_book, start_chap, start_verse)
         
         if not no_end: # We have end-point info
             if end_book is None:
                 end_book = start_book
             if end_chap is None and end_verse is None: # End is book only
-                end_chap = end_book.max_chap()
-                end_verse = end_book.max_verse(end_chap)
+                end = end_book.last_verse()
             elif end_verse is None: # End is book and chap only
-                end_verse = end_book.max_verse(end_chap)
+                end = end_book.last_verse(end_chap)
             elif end_chap is None: # End is book and verse only
                 if start_book != end_book:
                     raise InvalidReferenceError("End verse is missing an end chapter")
                 else:
-                    end_chap = start_chap
+                    end = BibleVerse(end_book, start.chap, end_verse)
+            else:
+                end = BibleVerse(end_book, end_chap, end_verse)
 
-        if not allow_multibook and start_book != end_book:
+        if not allow_multibook and start.book != end.book:
             raise MultibookRangeNotAllowedError()
 
-        object.__setattr__(self, "start", BibleVerse(start_book, start_chap, start_verse))
-        object.__setattr__(self, "end", BibleVerse(end_book, end_chap, end_verse))
+        object.__setattr__(self, "start", start)
+        object.__setattr__(self, "end", end)
 
     def contains(self, bible_verse: BibleVerse) -> bool:
         '''Returns True if this BibleRange contains the given BibleVerse, otherwise False.
