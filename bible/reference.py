@@ -560,7 +560,6 @@ class BibleRange:
             result = self.start.string(abbrev, periods, nospace, nobook) 
         else:
             # We need to stringify both the start and the end
-            # TODO Need to test if it spans the whole start book or whole end book
             if self.spans_start_book():
                 start_str = start_name
                 at_verse_level = False
