@@ -73,6 +73,9 @@ class TestBibleReference(unittest.TestCase):
         rng = BibleRange(BibleBook.Matt, 1, 1, BibleBook.John, 10, 11, allow_multibook=True)
         self.assertEqual(str(rng), "Matthew-John 10:11")
 
+        rng = BibleRange(BibleBook.Matt, 5, 6, BibleBook.John, 10, 11, allow_multibook=True)
+        self.assertEqual(str(rng), "Matthew 5:6-John 10:11")
+
         rng = BibleRange(BibleBook.Exod, 7, 1, None, 7, 25)
         self.assertEqual(str(rng), "Exodus 7")
 
