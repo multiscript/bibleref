@@ -2,6 +2,12 @@
 from . import reference as ref
 
 
+RANGE_SEP           = "-"
+MAJOR_LIST_SEP      = ";"
+MINOR_LIST_SEP      = ","
+VERSE_SEP_STANDARD  = ":"
+VERSE_SEP_ALT   = "."
+
 name_data = {
     # Keys: Bible Book
     # Values: (Abbrev title, Full title, Min unique chars (excl. numbers), List of extra recognised abbrevs)

@@ -1,6 +1,6 @@
 import copy
 from dataclasses import dataclass
-from enum import Enum
+from enum import Enum, Flag, auto
 import re
 
 from . import parser
@@ -200,6 +200,22 @@ class BibleBook(Enum):
             return self.order >= other.order
 
 
+# We delay the import of data until this point so that BibleBook and its related classes
+# are already defined and can be used by the data submodule
+from . import data
+
+
+class BibleVersePart(Flag):
+    NONE    = 0
+    BOOK    = auto()
+    CHAP    = auto()
+    VERSE   = auto()
+    FULL_REF    = BOOK | CHAP | VERSE
+    BOOK_CHAP   = BOOK | CHAP
+    BOOK_VERSE  = BOOK | VERSE
+    CHAP_VERSE  = CHAP | VERSE
+
+
 @dataclass(init=False, repr=False, eq=True, order=False, frozen=True)
 class BibleVerse:
     '''A reference to a single Bible verse. Contains 3 attributes:
@@ -235,20 +251,35 @@ class BibleVerse:
     def __str__(self):
         return self.string()
 
-    def string(self, abbrev: bool = False, periods: bool = False, nospace: bool = False, nobook: bool = False):
+    def string(self, abbrev: bool = False, alt_sep: bool = False, nospace: bool = False,
+               verse_parts: BibleVersePart = BibleVersePart.FULL_REF):
         '''Returns a string representation of this BibleVerse.
 
         If abbrev is True, the abbreviated name of the book is used (instead of the full name).
-        If periods is True, chapter and verse numbers are separated by '.' instead of ':'.
+        If alt_sep is True, chapter and verse numbers are separated by the alternate
+          separator (defaults to '.') instead of the standard separator (defaults to ':').
         If nospace is True, no spaces are included in the string.
-        If nobook is True, the book name is omitted.
+        verse_parts is a combination of BibleVersePart flags, controlling what combination of book,
+          chap & verse are displayed.
         '''
-        name = "" if nobook else (self.book.abbrev if abbrev else self.book.title)
-        sep = "." if periods else ":"
         if self.book.chap_count() == 1:
-            result = f"{name} {self.verse}"
+            verse_parts &= ~BibleVersePart.CHAP # Don't display chap
+        
+        if BibleVersePart.BOOK in verse_parts:
+            book_name = self.book.abbrev if abbrev else self.book.title
         else:
-            result = f"{name} {self.chap}{sep}{self.verse}"
+            book_name = ""
+        
+        chap_str = str(self.chap) if BibleVersePart.CHAP in verse_parts else ""
+        verse_str = str(self.verse) if BibleVersePart.VERSE in verse_parts else ""
+        
+        if BibleVersePart.CHAP_VERSE in verse_parts:
+            verse_sep = data.VERSE_SEP_ALT if alt_sep else data.VERSE_SEP_STANDARD
+        else:
+            verse_sep = ""
+
+        result = f"{book_name} {chap_str}{verse_sep}{verse_str}"
+
         if nospace:
             return result.replace(" ", "")
         else:
@@ -540,55 +571,61 @@ class BibleRange:
             yield verse
             verse = verse.add(1, allow_multibook=True)
 
-    def string(self, abbrev=False, periods=False, nospace=False, nobook=False):
+    def string(self, abbrev=False, alt_sep=False, nospace=False):
         '''Returns a string representation of this BibleRange.
 
         If abbrev is True, the abbreviated name of the book is used (instead of the full name).
-        If periods is True, chapter and verse numbers are separated by '.' instead of ':'.
+        If alt_sep is True, chapter and verse numbers are separated by the alternate
+          separator (defaults to '.') instead of the standard separator (defaults to ':').
         If nospace is True, no spaces are included in the string.
-        If nobook is True, the book name is omitted.
         '''        
-        start_name = "" if nobook else (self.start.book.abbrev if abbrev else self.start.book.title)
-        end_name = "" if nobook else (self.end.book.abbrev if abbrev else self.end.book.title)
-        range_sep = "-"
+        # start_name = self.start.book.abbrev if abbrev else self.start.book.title
+        # end_name = self.end.book.abbrev if abbrev else self.end.book.title
 
         if self.is_whole_book():
-            result = start_name
+            start_parts = BibleVersePart.BOOK
+            end_parts = BibleVersePart.NONE
         elif self.is_whole_chap():
-            result = f"{start_name} {self.start.chap}"
+            start_parts = BibleVersePart.BOOK_CHAP
+            end_parts = BibleVersePart.NONE
         elif self.is_single_verse():
-            result = self.start.string(abbrev, periods, nospace, nobook) 
+            start_parts = BibleVersePart.FULL_REF
+            end_parts = BibleVersePart.NONE
         else:
             # We need to stringify both the start and the end
             if self.spans_start_book():
-                start_str = start_name
+                start_parts = BibleVersePart.BOOK
                 at_verse_level = False
             elif self.spans_start_chap():
-                start_str = f"{start_name} {self.start.chap}"
+                start_parts = BibleVersePart.BOOK_CHAP
                 at_verse_level = False
             else:
-                start_str = self.start.string(abbrev, periods, nospace, nobook)
+                start_parts = BibleVersePart.FULL_REF
                 at_verse_level = True
             
-            if self.start.book == self.end.book:
-                nobook = True
-                end_name = ""
-            else:
+            same_book = (self.start.book == self.end.book)
+            if not same_book:
                 at_verse_level = False
             
-            if not nobook and self.spans_end_book():
-                end_str = end_name
+            if not same_book and self.spans_end_book():
+                end_parts = BibleVersePart.BOOK
             elif not at_verse_level and self.spans_end_chap():
-                end_str = f"{end_name} {self.end.chap}".strip()
+                end_parts = BibleVersePart.BOOK_CHAP
             else:
-                end_str = self.end.string(abbrev, periods, nospace, nobook)
+                end_parts = BibleVersePart.FULL_REF
+            if same_book:
+                end_parts &= ~BibleVersePart.BOOK
 
-            result = f"{start_str}{range_sep}{end_str}"
+        start_str = self.start.string(abbrev, alt_sep, nospace, start_parts) 
+        end_str = self.end.string(abbrev, alt_sep, nospace, end_parts) 
+        range_sep = data.RANGE_SEP if end_parts != BibleVersePart.NONE else ""
+        result = f"{start_str}{range_sep}{end_str}"
 
         if nospace:
             return result.replace(" ", "")
         else:
             return result.strip()
+
 
 class BibleRangeList(util.LinkedList):
     @classmethod
@@ -599,6 +636,70 @@ class BibleRangeList(util.LinkedList):
         if not isinstance(value, BibleRange):
             raise TypeError(f"Item is not a BibleRange: {value}")
 
+    def __str__(self):
+        return self.string()
+
+    def string(self, abbrev=False, periods=False, nospace=False, preserve_groups=True):
+        '''Returns a string representation of this BibleRangeList.
+
+        If abbrev is True, the abbreviated name of the book is used (instead of the full name).
+        If periods is True, chapter and verse numbers are separated by '.' instead of ':'.
+        If nospace is True, no spaces are included in the string.
+        If preserve_groups is True, the major group separator is only used between groups, and
+           not within groups. Parsing the resulting string should yield an equivalent BibleRangeList.
+        '''
+        cur_book = None
+        cur_chap = None
+        at_verse_level = False
+
+
+        for group in self.groups:
+            for br in group:
+                bible_range: BibleRange = br
+                start_name = bible_range.start.book.abbrev if abbrev else bible_range.start.book.title
+                end_name = bible_range.end.book.abbrev if abbrev else bible_range.end.book.title
+                range_sep = data.RANGE_SEP
+
+                if bible_range.is_whole_book():
+                    range_str = start_name
+                elif self.is_whole_chap():
+                    range_str = f"{start_name} {self.start.chap}"
+                elif self.is_single_verse():
+                    range_str = bible_range.start.string(abbrev, periods, nospace) 
+                else:
+                    # We need to stringify both the start and the end
+                    if self.spans_start_book():
+                        start_str = start_name
+                        at_verse_level = False
+                    elif self.spans_start_chap():
+                        start_str = f"{start_name} {self.start.chap}"
+                        at_verse_level = False
+                    else:
+                        start_str = self.start.string(abbrev, periods, nospace)
+                        at_verse_level = True
+                    
+                    if self.start.book == self.end.book:
+                        nobook = True
+                        end_name = ""
+                    else:
+                        nobook = False
+                        at_verse_level = False
+                    
+                    if not nobook and self.spans_end_book():
+                        end_str = end_name
+                    elif not at_verse_level and self.spans_end_chap():
+                        end_str = f"{end_name} {self.end.chap}".strip()
+                    else:
+                        end_str = self.end.string(abbrev, periods, nospace, nobook)
+
+                    range_str = f"{start_str}{range_sep}{end_str}"
+
+                if nospace:
+                    return range_str.replace(" ", "")
+                else:
+                    return range_str.strip()
+
+
 
 class MultibookRangeNotAllowedError(Exception):
     pass
@@ -607,10 +708,6 @@ class MultibookRangeNotAllowedError(Exception):
 class InvalidReferenceError(Exception):
     pass
 
-
-# We delay the import of data until this point so that BibleBook and its related classes
-# are already defined and can be used by the data submodule
-from . import data
 
 def _add_abbrevs_and_titles():
     for book, name_data in data.name_data.items():

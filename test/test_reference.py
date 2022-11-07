@@ -1,5 +1,6 @@
 import unittest
-from bible.reference import BibleBook, BibleVerse, BibleRange, BibleRangeList, InvalidReferenceError
+from bible.reference import BibleBook, BibleVerse, BibleRange, BibleRangeList, \
+                            BibleVersePart as BVP, InvalidReferenceError
 
 
 class TestBibleReference(unittest.TestCase):
@@ -12,16 +13,16 @@ class TestBibleReference(unittest.TestCase):
         verse = BibleVerse(BibleBook.Matt, 5, 3)
         self.assertEqual(str(verse), "Matthew 5:3")
         self.assertEqual(verse.string(abbrev=True), "Matt 5:3")
-        self.assertEqual(verse.string(periods=True), "Matthew 5.3")
+        self.assertEqual(verse.string(alt_sep=True), "Matthew 5.3")
         self.assertEqual(verse.string(nospace=True), "Matthew5:3")
-        self.assertEqual(verse.string(nobook=True), "5:3")
+        self.assertEqual(verse.string(verse_parts=BVP.CHAP_VERSE), "5:3")
 
         verse = BibleVerse(BibleBook._3Jn, 1, 4)
         self.assertEqual(str(verse), "3 John 4")
         self.assertEqual(verse.string(abbrev=True), "3Jn 4")
-        self.assertEqual(verse.string(periods=True), "3 John 4")
+        self.assertEqual(verse.string(), "3 John 4")
         self.assertEqual(verse.string(nospace=True), "3John4")
-        self.assertEqual(verse.string(nobook=True), "4")
+        self.assertEqual(verse.string(verse_parts=BVP.CHAP_VERSE), "4")
 
     def test_bible_ranges(self):
         self.assertEqual(BibleRange(BibleBook.Matt, None, None,           None, None, None), BibleRange(BibleBook.Matt, 1, 1, BibleBook.Matt, 28, 20))
