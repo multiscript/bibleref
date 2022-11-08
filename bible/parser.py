@@ -136,7 +136,10 @@ class BibleRefTransformer(Transformer):
             else: # Book, chapter ref
                 bible_range = reference.BibleRange(book, num)
         except Exception as e:
-            raise BibleRefParsingError(str(e), meta)
+            if isinstance(e, BibleRefParsingError):
+                raise e
+            else:
+                raise BibleRefParsingError(str(e), meta)
         return bible_range
 
     def MAJOR_LIST_SEP(self, token):

@@ -112,3 +112,9 @@ class TestBibleReference(unittest.TestCase):
 
         rng = BibleRange(BibleBook._2Jn, 1, 1, BibleBook._3Jn, 1, 8, allow_multibook=True)
         self.assertEqual(str(rng), "2 John-3 John 8")
+
+    def test_bible_range_list_to_string(self):
+        text_ranges = "Matthew; Mark 2; Jude 5; 8; Obadiah 2-3; John 3:16-18; 10-14:2; " + \
+                      "Romans 1:10-22; 2; 3:20-22, 24, 4:2-5:2, 10"
+        range_list = BibleRangeList.new_from_text(text_ranges)
+        self.assertEqual(text_ranges, str(range_list))

@@ -578,49 +578,37 @@ class BibleRange:
         If alt_sep is True, chapter and verse numbers are separated by the alternate
           separator (defaults to '.') instead of the standard separator (defaults to ':').
         If nospace is True, no spaces are included in the string.
-        '''        
-        # start_name = self.start.book.abbrev if abbrev else self.start.book.title
-        # end_name = self.end.book.abbrev if abbrev else self.end.book.title
-
-        if self.is_whole_book():
+        '''
+        if self.spans_start_book():
             start_parts = BibleVersePart.BOOK
-            end_parts = BibleVersePart.NONE
-        elif self.is_whole_chap():
+            at_verse_level = False
+        elif self.spans_start_chap():
             start_parts = BibleVersePart.BOOK_CHAP
-            end_parts = BibleVersePart.NONE
-        elif self.is_single_verse():
-            start_parts = BibleVersePart.FULL_REF
-            end_parts = BibleVersePart.NONE
+            at_verse_level = False
         else:
-            # We need to stringify both the start and the end
-            if self.spans_start_book():
-                start_parts = BibleVersePart.BOOK
-                at_verse_level = False
-            elif self.spans_start_chap():
-                start_parts = BibleVersePart.BOOK_CHAP
-                at_verse_level = False
-            else:
-                start_parts = BibleVersePart.FULL_REF
-                at_verse_level = True
-            
-            same_book = (self.start.book == self.end.book)
-            if not same_book:
+            start_parts = BibleVersePart.FULL_REF
+            at_verse_level = True
+        start_str = self.start.string(abbrev, alt_sep, nospace, start_parts) 
+        
+        if self.is_whole_book() or self.is_whole_chap() or self.is_single_verse(): # Single reference
+            end_str = ""
+            range_sep = ""
+        else: 
+            range_sep = data.RANGE_SEP
+            if self.end.book != self.start.book:
                 at_verse_level = False
             
-            if not same_book and self.spans_end_book():
+            if self.spans_end_book():
                 end_parts = BibleVersePart.BOOK
             elif not at_verse_level and self.spans_end_chap():
                 end_parts = BibleVersePart.BOOK_CHAP
             else:
                 end_parts = BibleVersePart.FULL_REF
-            if same_book:
-                end_parts &= ~BibleVersePart.BOOK
-
-        start_str = self.start.string(abbrev, alt_sep, nospace, start_parts) 
-        end_str = self.end.string(abbrev, alt_sep, nospace, end_parts) 
-        range_sep = data.RANGE_SEP if end_parts != BibleVersePart.NONE else ""
+            if self.start.book == self.end.book:
+                end_parts &= ~BibleVersePart.BOOK # Omit book
+            end_str = self.end.string(abbrev, alt_sep, nospace, end_parts) 
+        
         result = f"{start_str}{range_sep}{end_str}"
-
         if nospace:
             return result.replace(" ", "")
         else:
@@ -639,67 +627,124 @@ class BibleRangeList(util.LinkedList):
     def __str__(self):
         return self.string()
 
-    def string(self, abbrev=False, periods=False, nospace=False, preserve_groups=True):
+    def string(self, abbrev=False, alt_sep=False, nospace=False, preserve_groups=True):
         '''Returns a string representation of this BibleRangeList.
 
         If abbrev is True, the abbreviated name of the book is used (instead of the full name).
-        If periods is True, chapter and verse numbers are separated by '.' instead of ':'.
+        If alt_sep is True, chapter and verse numbers are separated by the alternate
+          separator (defaults to '.') instead of the standard separator (defaults to ':').
         If nospace is True, no spaces are included in the string.
-        If preserve_groups is True, the major group separator is only used between groups, and
+         If preserve_groups is True, the major group separator is only used between groups, and
            not within groups. Parsing the resulting string should yield an equivalent BibleRangeList.
         '''
         cur_book = None
         cur_chap = None
         at_verse_level = False
-
+        first_range = True
+        list_sep = ""
+        result_str = ""
+        force_dual_ref = False # True if we require a single reference to display as a dual_reference_range
 
         for group in self.groups:
             for br in group:
-                bible_range: BibleRange = br
-                start_name = bible_range.start.book.abbrev if abbrev else bible_range.start.book.title
-                end_name = bible_range.end.book.abbrev if abbrev else bible_range.end.book.title
-                range_sep = data.RANGE_SEP
+                bible_range: BibleRange = br # Typecast                
+                if bible_range.spans_start_book(): # Range start includes an entire book
+                    # Even if already in same book, whole book references repeat the whole book name.
+                    start_parts = BibleVersePart.BOOK
+                    cur_chap = None
+                    at_verse_level = False
+                elif bible_range.spans_start_chap(): # Range start includes an entire chap
+                    if cur_book == bible_range.start.book: # Continuing same book
+                        if at_verse_level: # We're in a list of verses
+                            if not preserve_groups: # Use major list sep to return to chapters
+                                list_sep = data.MAJOR_LIST_SEP
+                                start_parts = BibleVersePart.CHAP
+                                at_verse_level = False
+                            else: # Preserving groups
+                                if list_sep == data.MAJOR_LIST_SEP:
+                                    # We're straight after a major list ref, so must return to chaps
+                                    start_parts = BibleVersePart.CHAP
+                                    at_verse_level = False
+                                else: # We're after a minor list ref, so we can't return to chaps,
+                                      # so we force display the whole range
+                                    start_parts = BibleVersePart.CHAP_VERSE
+                                    at_verse_level = True
+                                    force_dual_ref = True
+                        else: # We're in a list of chapters
+                            if not preserve_groups: # Use major list sep between chapters
+                                list_sep = data.MAJOR_LIST_SEP
+                            start_parts = BibleVersePart.CHAP
+                            at_verse_level = False
+                    else: # Start of a different book
+                        if not preserve_groups: # Use major list sep between books
+                            list_sep = data.MAJOR_LIST_SEP
+                        start_parts = BibleVersePart.BOOK_CHAP
+                        at_verse_level = False
+                    cur_chap = bible_range.start.chap
+                else: # Range start is just a particular verse
+                    if cur_book == bible_range.start.book: # Continuing same book
+                        if at_verse_level and cur_chap == bible_range.start.chap: # Continuing same chap
+                            start_parts = BibleVersePart.VERSE
+                        else: # At chap level or verse level in a different chap
+                            if not preserve_groups: # Use major list sep between chapters
+                                list_sep = data.MAJOR_LIST_SEP
+                            start_parts = BibleVersePart.CHAP_VERSE
+                    else: # Different book
+                        if not preserve_groups: # Use major list sep between books
+                            list_sep = data.MAJOR_LIST_SEP
+                        start_parts = BibleVersePart.FULL_REF
+                    cur_chap = bible_range.start.chap
+                    at_verse_level = True # All single verses move us to verse level
+                cur_book = bible_range.start.book
+                start_str = bible_range.start.string(abbrev, alt_sep, nospace, start_parts) 
 
-                if bible_range.is_whole_book():
-                    range_str = start_name
-                elif self.is_whole_chap():
-                    range_str = f"{start_name} {self.start.chap}"
-                elif self.is_single_verse():
-                    range_str = bible_range.start.string(abbrev, periods, nospace) 
+                if not force_dual_ref and (bible_range.is_whole_book() or bible_range.is_whole_chap() or \
+                                           bible_range.is_single_verse()):
+                    # Single reference
+                    end_str = ""
+                    range_sep = ""
                 else:
-                    # We need to stringify both the start and the end
-                    if self.spans_start_book():
-                        start_str = start_name
+                    range_sep = data.RANGE_SEP
+                    if bible_range.end.book != bible_range.start.book:
                         at_verse_level = False
-                    elif self.spans_start_chap():
-                        start_str = f"{start_name} {self.start.chap}"
-                        at_verse_level = False
-                    else:
-                        start_str = self.start.string(abbrev, periods, nospace)
-                        at_verse_level = True
-                    
-                    if self.start.book == self.end.book:
-                        nobook = True
-                        end_name = ""
-                    else:
-                        nobook = False
-                        at_verse_level = False
-                    
-                    if not nobook and self.spans_end_book():
-                        end_str = end_name
-                    elif not at_verse_level and self.spans_end_chap():
-                        end_str = f"{end_name} {self.end.chap}".strip()
-                    else:
-                        end_str = self.end.string(abbrev, periods, nospace, nobook)
 
-                    range_str = f"{start_str}{range_sep}{end_str}"
+                    if bible_range.spans_end_book(): # Range end includes an entire book
+                        end_parts = BibleVersePart.BOOK
+                        cur_chap = None
+                        at_verse_level = False
+                    elif not at_verse_level and bible_range.spans_end_chap(): # Range end includes an entire chap
+                        if cur_book == bible_range.end.book: # Continuing same book
+                            end_parts = BibleVersePart.CHAP
+                        else: # Different book
+                            end_parts = BibleVersePart.BOOK_CHAP
+                        cur_chap = bible_range.end.chap
+                        at_verse_level = False
+                    else: # Range end is a whole chap after a particular verse, or a particular verse
+                        if cur_book == bible_range.end.book: # Continuing same book
+                            if cur_chap == bible_range.end.chap: # Continuing same chap
+                                end_parts = BibleVersePart.VERSE
+                            else: # Different chap
+                                end_parts = BibleVersePart.CHAP_VERSE
+                        else: # Different book
+                            end_parts = BibleVersePart.FULL_REF
+                        cur_chap = bible_range.end.chap
+                        at_verse_level = True
+                    cur_book = bible_range.end.book
+                    end_str = bible_range.end.string(abbrev, alt_sep, nospace, end_parts) 
+                
+                if first_range:
+                    list_sep = ""
+                    first_range = False
+                range_str = f"{list_sep} {start_str}{range_sep}{end_str}"
 
                 if nospace:
-                    return range_str.replace(" ", "")
+                    result_str += range_str.replace(" ", "")
                 else:
-                    return range_str.strip()
+                    result_str += range_str.strip()
 
-
+                list_sep = data.MINOR_LIST_SEP # Minor list separator between groups
+            list_sep = data.MAJOR_LIST_SEP # Major list separator between groups
+        return result_str
 
 class MultibookRangeNotAllowedError(Exception):
     pass
