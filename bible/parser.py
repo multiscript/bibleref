@@ -163,6 +163,7 @@ class BibleRefTransformer(Transformer):
 
 _parser = None
 
+# TODO Allow caller to provide allow_multibook and allow_verse_0 args
 def _parse(string):
     global _parser
     if _parser is None:
@@ -180,7 +181,7 @@ def _parse(string):
         new_error.orig = orig
         raise new_error
     try:
-        bible_range_list = BibleRefTransformer().transform(tree)
+        bible_range_list = BibleRefTransformer(allow_multibook=True).transform(tree)
     except VisitError as e:
         raise e.orig_exc
     return bible_range_list

@@ -114,7 +114,143 @@ class TestBibleReference(unittest.TestCase):
         self.assertEqual(str(rng), "2 John-3 John 8")
 
     def test_bible_range_list_to_string(self):
-        text_ranges = "Matthew; Mark 2; Jude 5; 8; Obadiah 2-3; John 3:16-18; 10-14:2; " + \
-                      "Romans 1:10-22; 2; 3:20-22, 24, 4:2-5:2, 10"
-        range_list = BibleRangeList.new_from_text(text_ranges)
-        self.assertEqual(text_ranges, str(range_list))
+        # Start range spans a book, after a ref from same book
+        self.assertEqual(BibleRangeList.new_from_text(
+            "Matthew 2:3-4:5; Matthew-Mark").string(),  # Start range spans book
+            "Matthew 2:3-4:5; Matthew-Mark")
+
+        # Start range spans a chapter from same book, when at verse level
+        self.assertEqual(BibleRangeList.new_from_text(  # Don't preserve groups
+            "Matthew 2:3, Matthew 3-4:5").string(preserve_groups=False),
+            "Matthew 2:3; 3-4:5")
+        self.assertEqual(BibleRangeList.new_from_text(  # Preserve groups, after major sep
+            "Matthew 2:3; Matthew 3-4:5").string(),
+            "Matthew 2:3; 3-4:5")
+        self.assertEqual(BibleRangeList.new_from_text(  # Preserve groups, after minor sep
+            "Matthew 2:3, Matthew 3-4").string(),
+            "Matthew 2:3, 3:1-4:25")
+        # Start range spans a chapter from same book, when at chap level
+        self.assertEqual(BibleRangeList.new_from_text(  # Don't preserve groups
+            "Matthew 2, Matthew 3-4:5").string(preserve_groups=False),
+            "Matthew 2; 3-4:5")
+        self.assertEqual(BibleRangeList.new_from_text(  # Preserve groups, after major sep
+            "Matthew 2; Matthew 3-4:5").string(preserve_groups=False),
+            "Matthew 2; 3-4:5")
+        self.assertEqual(BibleRangeList.new_from_text(  # Preserve groups, after minor sep, spanning whole chaps
+            "Matthew 2, Matthew 3:1-4:25").string(),
+            "Matthew 2, 3-4")
+        self.assertEqual(BibleRangeList.new_from_text(  # Preserve groups, after minor sep, spanning partial chaps
+            "Matthew 2, Matthew 3:1-4:5").string(),
+            "Matthew 2, 3:1-4:5")
+        # Start range spans a chapter from different book
+        self.assertEqual(BibleRangeList.new_from_text(  # Don't preserve groups
+            "Matthew 2:3, Mark 3-4:5").string(preserve_groups=False),
+            "Matthew 2:3; Mark 3-4:5")
+        self.assertEqual(BibleRangeList.new_from_text(  # Preserve groups
+            "Matthew 2:3, Mark 3-4:5").string(),
+            "Matthew 2:3, Mark 3-4:5")
+  
+        # Start range is just a verse from same book
+        self.assertEqual(BibleRangeList.new_from_text(  # Same chap at verse level
+            "Matthew 2:3, Matthew 2:6-5:7").string(),
+            "Matthew 2:3, 6-5:7")
+        self.assertEqual(BibleRangeList.new_from_text(  # Same chap at chap level, don't preserve groups
+            "Matthew 2, Matthew 2:6-5:7").string(preserve_groups=False),
+            "Matthew 2; 2:6-5:7")
+        self.assertEqual(BibleRangeList.new_from_text(  # Same chap at chap level, preserve groups
+            "Matthew 2, Matthew 2:6-5:7").string(),
+            "Matthew 2, 2:6-5:7")
+        self.assertEqual(BibleRangeList.new_from_text(  # Different chap, don't preserve groups
+            "Matthew 2:3, Matthew 3:6-5:7").string(preserve_groups=False),
+            "Matthew 2:3; 3:6-5:7")
+        self.assertEqual(BibleRangeList.new_from_text(  # Different chap, preserve groups
+            "Matthew 2:3, Matthew 3:6-5:7").string(),
+            "Matthew 2:3, 3:6-5:7")
+        # Start range is just a verse from a different book
+        self.assertEqual(BibleRangeList.new_from_text(  # Don't preserve groups
+            "Matthew 2:3, Mark 2:6-5:7").string(preserve_groups=False),
+            "Matthew 2:3; Mark 2:6-5:7")
+        self.assertEqual(BibleRangeList.new_from_text(  # Preserve groups
+            "Matthew 2:3, Mark 2:6-5:7").string(),
+            "Matthew 2:3, Mark 2:6-5:7")
+
+        # Start range is a whole book, after same book
+        self.assertEqual(BibleRangeList.new_from_text(
+            "Matthew 2:3-4:5; Matthew").string(),
+            "Matthew 2:3-4:5; Matthew")
+        # Start range is a whole chapter, after same book
+        self.assertEqual(BibleRangeList.new_from_text( # After major group separator
+            "Matthew 2:3-4:5; Matthew 7").string(), 
+            "Matthew 2:3-4:5; 7")
+        self.assertEqual(BibleRangeList.new_from_text( # After minor group separator, don't preserve groups
+            "Matthew 2:3-4:5, Matthew 7").string(preserve_groups=False),
+            "Matthew 2:3-4:5; 7")
+        self.assertEqual(BibleRangeList.new_from_text( # After minor group separator, preserve groups
+            "Matthew 2:3-4:5, Matthew 7").string(),
+            "Matthew 2:3-4:5, 7:1-29")
+        # Start range is a single verse, after same book
+        self.assertEqual(BibleRangeList.new_from_text( # After major group separator
+            "Matthew 2:3-4:5; Matthew 10:3").string(),
+            "Matthew 2:3-4:5; 10:3")
+        self.assertEqual(BibleRangeList.new_from_text( # After minor group separator, don't preserve groups
+            "Matthew 2:3-4:5, Matthew 10:3").string(preserve_groups=False),
+            "Matthew 2:3-4:5; 10:3")
+        self.assertEqual(BibleRangeList.new_from_text( # After minor group separator, preserve groups
+            "Matthew 2:3-4:5, Matthew 10:3").string(),
+            "Matthew 2:3-4:5, 10:3")
+
+        # End range spans a book
+        self.assertEqual(BibleRangeList.new_from_text(
+            "Matthew 2:3-4:5; 6:7-Mark").string(),  # Start range spans book
+            "Matthew 2:3-4:5; 6:7-Mark")
+        # End range spans a chapter while at chapter level
+        self.assertEqual(BibleRangeList.new_from_text(
+            "Matthew 2:3-4:5; Matthew 6-9").string(),  # From same book
+            "Matthew 2:3-4:5; 6-9")
+        self.assertEqual(BibleRangeList.new_from_text(
+            "Matthew 2:3-4:5; Matthew 6-Mark 3").string(),  # From different book
+            "Matthew 2:3-4:5; 6-Mark 3")
+        # End range spans a chapter while at verse level
+        self.assertEqual(BibleRangeList.new_from_text(
+            "Matthew 2:3-4:5; Matthew 6:2-9:38").string(),  # From same book
+            "Matthew 2:3-4:5; 6:2-9:38")
+        self.assertEqual(BibleRangeList.new_from_text(
+            "Matthew 2:3-4:5; Matthew 6:4-Mark 3").string(),  # From different book
+            "Matthew 2:3-4:5; 6:4-Mark 3")
+        # End range is a particular verse
+        self.assertEqual(BibleRangeList.new_from_text(
+            "Matthew 2:3-4:5; Matthew 6:2-9:5").string(),  # From same book
+            "Matthew 2:3-4:5; 6:2-9:5")
+        self.assertEqual(BibleRangeList.new_from_text(
+            "Matthew 2:3-4:5; Matthew 6:4-Mark 3:8").string(),  # From different book
+            "Matthew 2:3-4:5; 6:4-Mark 3:8")
+
+        # Major group separator returns us to chap level
+        self.assertEqual(BibleRangeList.new_from_text( # After minor group separator, preserve groups
+            "Matthew 2:3-4:5, 7, 9; 11-12").string(),
+            "Matthew 2:3-4:5, 7, 9; 11-12")
+         
+        # Test a variety of types
+        self.assertEqual(BibleRangeList.new_from_text(
+            "Matthew; Mark 2; Jude 5; 8; Obadiah 2-3; John 3:16-18; 10-14:2; " + 
+            "Romans 1:10-22; 2; 3:20-22, 24, 4:2-5:2, 10").string(),
+            "Matthew; Mark 2; Jude 5; 8; Obadiah 2-3; John 3:16-18; 10-14:2; " +
+            "Romans 1:10-22; 2; 3:20-22, 24, 4:2-5:2, 10")
+        # Test a variety of types, with abbreviations
+        self.assertEqual(BibleRangeList.new_from_text(
+            "Matthew; Mark 2; Jude 5; 8; Obadiah 2-3; John 3:16-18; 10-14:2; " + 
+            "Romans 1:10-22; 2; 3:20-22, 24, 4:2-5:2, 10").string(abbrev=True),
+            "Matt; Mark 2; Jude 5; 8; Obad 2-3; John 3:16-18; 10-14:2; " +
+            "Rom 1:10-22; 2; 3:20-22, 24, 4:2-5:2, 10")
+        # Test a variety of types, with abbreviations, with alt verse separator
+        self.assertEqual(BibleRangeList.new_from_text(
+            "Matthew; Mark 2; Jude 5; 8; Obadiah 2-3; John 3:16-18; 10-14:2; " + 
+            "Romans 1:10-22; 2; 3:20-22, 24, 4:2-5:2, 10").string(abbrev=True, alt_sep=True),
+            "Matt; Mark 2; Jude 5; 8; Obad 2-3; John 3.16-18; 10-14.2; " +
+            "Rom 1.10-22; 2; 3.20-22, 24, 4.2-5.2, 10")
+        # Test a variety of types, with abbreviations, with alt verse separator, with no space
+        self.assertEqual(BibleRangeList.new_from_text(
+            "Matthew; Mark 2; Jude 5; 8; Obadiah 2-3; John 3:16-18; 10-14:2; " + 
+            "Romans 1:10-22; 2; 3:20-22, 24, 4:2-5:2, 10").string(abbrev=True, alt_sep=True, nospace=True),
+            "Matt;Mark2;Jude5;8;Obad2-3;John3.16-18;10-14.2;" +
+            "Rom1.10-22;2;3.20-22,24,4.2-5.2,10")

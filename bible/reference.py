@@ -662,10 +662,10 @@ class BibleRangeList(util.LinkedList):
                                 at_verse_level = False
                             else: # Preserving groups
                                 if list_sep == data.MAJOR_LIST_SEP:
-                                    # We're straight after a major list ref, so must return to chaps
+                                    # We're straight after a major list ref, so must return to chap level
                                     start_parts = BibleVersePart.CHAP
                                     at_verse_level = False
-                                else: # We're after a minor list ref, so we can't return to chaps,
+                                else: # We're after a minor list ref, so we can't return to chap level,
                                       # so we force display the whole range
                                     start_parts = BibleVersePart.CHAP_VERSE
                                     at_verse_level = True
@@ -673,8 +673,24 @@ class BibleRangeList(util.LinkedList):
                         else: # We're in a list of chapters
                             if not preserve_groups: # Use major list sep between chapters
                                 list_sep = data.MAJOR_LIST_SEP
-                            start_parts = BibleVersePart.CHAP
-                            at_verse_level = False
+                                start_parts = BibleVersePart.CHAP
+                                at_verse_level = False
+                            else: # Preserving groups
+                                if list_sep == data.MAJOR_LIST_SEP:
+                                    # We're straight after a major list ref, so can return to chap level
+                                    start_parts = BibleVersePart.CHAP
+                                    at_verse_level = False
+                                else: # We're after a minor list ref
+                                    if bible_range.spans_end_chap():
+                                        # This range is a whole set of chapters, do just display chapters
+                                        start_parts = BibleVersePart.CHAP
+                                        at_verse_level = False
+                                    else:
+                                        # This range involves verses, in a list that's otherwise chapters,
+                                        # so it's clearer to display using verses
+                                        start_parts = BibleVersePart.CHAP_VERSE
+                                        at_verse_level = True
+                                        force_dual_ref = True
                     else: # Start of a different book
                         if not preserve_groups: # Use major list sep between books
                             list_sep = data.MAJOR_LIST_SEP
@@ -744,6 +760,7 @@ class BibleRangeList(util.LinkedList):
 
                 list_sep = data.MINOR_LIST_SEP # Minor list separator between groups
             list_sep = data.MAJOR_LIST_SEP # Major list separator between groups
+            at_verse_level=False
         return result_str
 
 class MultibookRangeNotAllowedError(Exception):
