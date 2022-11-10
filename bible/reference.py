@@ -230,20 +230,50 @@ class BibleVerse:
     chap:   int
     verse:  int
 
-    def __init__(self, book: BibleBook, chap: int, verse: int):
-        '''Returns a new BibleVerse.
+    def __init__(self, *args):
+        '''Returns a new BibleVerse. Valid examples of arguments are:
+            BibleVerse("Mark 2:3")
+            BibleVerse("Mark", 2, 3)
+            BibleVerse(BibleBook.Mark, 2, 3)
+            BibleVerse(another_bible_verse)
 
         If the supplied data is not valid, raises an InvalidReferenceError.
         '''
-        if not isinstance(book, BibleBook):
-            raise InvalidReferenceError(f"{book} is not an instance of BibleBook")
-        if chap < book.min_chap() or chap > book.max_chap():
-            raise InvalidReferenceError(f"No chapter {chap} in {book.title}")
-        if verse < book.min_verse(chap) or verse > book.max_verse(chap):
-            raise InvalidReferenceError(f"No verse {verse} in {book.title} {chap}")
-        object.__setattr__(self, "book", book) # We have to use object.__setattr__ because the class is frozen
-        object.__setattr__(self, "chap", chap)
-        object.__setattr__(self, "verse", verse)
+        if len(args) > 3:
+            raise ValueError("Too many arguments supplied to BibleVerse")
+        if len(args) == 1:
+            if isinstance(args[0], str):
+                pass # Create from string
+            elif isinstance(args[0], BibleVerse):
+                # We have to use object.__setattr__ because the class is frozen
+                object.__setattr__(self, "book", args[0].book)
+                object.__setattr__(self, "chap", args[0].chap)
+                object.__setattr__(self, "verse", args[0].verse)
+            else:
+                raise ValueError("Single argument to BibleVerse can only be a string or another BibleVerse")
+        elif len(args) < 3:
+            raise ValueError("Too few arguments supplied to BibleVerse")
+        else:
+            book = args[0]
+            chap: int = args[1]
+            verse: int = args[2]
+            if isinstance(book, str):
+                book = BibleBook.from_str(book)
+                if book is None:
+                    raise InvalidReferenceError(f"No book found for string '{args[0]}'")
+            elif not isinstance(book, BibleBook):
+                raise ValueError(f"{book} must be a string or an instance of BibleBook")
+            if not isinstance(chap, int):
+                raise ValueError(f"{chap} is not an integer chapter number")
+            if not isinstance(verse, int):
+                raise ValueError(f"{chap} is not an integer verse number")
+            if chap < book.min_chap() or chap > book.max_chap():
+                raise InvalidReferenceError(f"No chapter {chap} in {book.title}")
+            if verse < book.min_verse(chap) or verse > book.max_verse(chap):
+                raise InvalidReferenceError(f"No verse {verse} in {book.title} {chap}")
+            object.__setattr__(self, "book", book) # We have to use object.__setattr__ because the class is frozen
+            object.__setattr__(self, "chap", chap)
+            object.__setattr__(self, "verse", verse)
        
     def __repr__(self):
         return str((self.book.abbrev, self.chap, self.verse))

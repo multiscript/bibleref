@@ -8,7 +8,21 @@ class TestBibleReference(unittest.TestCase):
         self.assertEqual(BibleBook.from_str("Gen"), BibleBook.Gen)
         self.assertEqual(BibleBook.from_str("Mt"), BibleBook.Matt)
         self.assertEqual(BibleBook.from_str("Rev"), BibleBook.Rev)
-    
+
+    def test_bible_verses(self):
+        self.assertRaises(ValueError, lambda: BibleVerse(BibleBook.Matt, 2, 3, 4))
+        self.assertRaises(ValueError, lambda: BibleVerse(BibleBook.Matt, 2))
+        self.assertRaises(ValueError, lambda: BibleVerse(True))
+        self.assertRaises(InvalidReferenceError, lambda: BibleVerse("Not real book", 2, 3))
+        self.assertRaises(ValueError, lambda: BibleVerse(BibleBook.Matt, [], []))
+        self.assertRaises(InvalidReferenceError, lambda: BibleVerse(BibleBook.Matt, 50, 3))
+        self.assertRaises(InvalidReferenceError, lambda: BibleVerse(BibleBook.Matt, 2, 100))
+        self.assertEqual(BibleVerse("Matthew", 2, 3), BibleVerse(BibleBook.Matt, 2, 3))
+
+        bible_verse = BibleVerse(BibleBook.Mark, 2, 3)
+        verse_copy = BibleVerse(bible_verse)
+        self.assertEquals(bible_verse, verse_copy)
+
     def test_bible_verse_to_string(self):
         verse = BibleVerse(BibleBook.Matt, 5, 3)
         self.assertEqual(str(verse), "Matthew 5:3")
