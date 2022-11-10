@@ -5,9 +5,9 @@ from bible.reference import BibleBook, BibleVerse, BibleRange, BibleRangeList, \
 
 class TestBibleReference(unittest.TestCase):
     def test_bible_books(self):
-        self.assertEqual(BibleBook.from_name("Gen"), BibleBook.Gen)
-        self.assertEqual(BibleBook.from_name("Mt"), BibleBook.Matt)
-        self.assertEqual(BibleBook.from_name("Rev"), BibleBook.Rev)
+        self.assertEqual(BibleBook.from_str("Gen"), BibleBook.Gen)
+        self.assertEqual(BibleBook.from_str("Mt"), BibleBook.Matt)
+        self.assertEqual(BibleBook.from_str("Rev"), BibleBook.Rev)
     
     def test_bible_verse_to_string(self):
         verse = BibleVerse(BibleBook.Matt, 5, 3)

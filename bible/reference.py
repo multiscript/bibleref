@@ -100,13 +100,13 @@ class BibleBook(Enum):
     Rev = "Rev"
 
     @classmethod
-    def from_name(cls, name: str) -> 'BibleBook':
+    def from_str(cls, string: str) -> 'BibleBook':
         '''Return BibleBook matching the given string name, or None if no book matches.
         '''
-        name = name.strip()
+        string = string.strip()
         match = False
         for book in BibleBook:
-            if book.regex.fullmatch(name) is not None:
+            if book.regex.fullmatch(string) is not None:
                 match = True
                 break
         return book if match else None

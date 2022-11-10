@@ -151,7 +151,7 @@ class BibleRefTransformer(Transformer):
         return MINOR_LIST_SEP_SENTINEL
 
     def BOOK_NAME(self, token):
-        book = reference.BibleBook.from_name(str(token))
+        book = reference.BibleBook.from_str(str(token))
         if book is None:
             raise BibleRefParsingError(f"{str(token)} is not a valid book name", None,
                                        token.start_pos, token.end_pos)
