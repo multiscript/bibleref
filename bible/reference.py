@@ -100,8 +100,10 @@ class BibleBook(Enum):
     Rev = "Rev"
 
     @classmethod
-    def from_str(cls, string: str) -> 'BibleBook':
-        '''Return BibleBook matching the given string name, or None if no book matches.
+    def from_str(cls, string: str, raise_error: bool = False) -> 'BibleBook':
+        '''Return BibleBook matching the given string name.
+        If no book matches, returns None by default. If raise_error is True,
+        raises an InvalidReferenceError is no book matches.
         '''
         string = string.strip()
         match = False
@@ -109,7 +111,13 @@ class BibleBook(Enum):
             if book.regex.fullmatch(string) is not None:
                 match = True
                 break
-        return book if match else None
+        if match:
+            return book
+        else:
+            if raise_error:
+                raise InvalidReferenceError(f"No book found for string '{string}'")
+            else:
+                return None
 
     def min_chap(self) -> int:
         '''Return lowest chapter number (indexed from 1) for this BibleBook.
@@ -239,8 +247,6 @@ class BibleVerse:
 
         If the supplied data is not valid, raises an InvalidReferenceError.
         '''
-        if len(args) > 3:
-            raise ValueError("Too many arguments supplied to BibleVerse")
         if len(args) == 1:
             if isinstance(args[0], str):
                 pass # Create from string
@@ -251,6 +257,8 @@ class BibleVerse:
                 object.__setattr__(self, "verse", args[0].verse)
             else:
                 raise ValueError("Single argument to BibleVerse can only be a string or another BibleVerse")
+        elif len(args) > 3:
+            raise ValueError("Too many arguments supplied to BibleVerse")
         elif len(args) < 3:
             raise ValueError("Too few arguments supplied to BibleVerse")
         else:
@@ -258,9 +266,7 @@ class BibleVerse:
             chap: int = args[1]
             verse: int = args[2]
             if isinstance(book, str):
-                book = BibleBook.from_str(book)
-                if book is None:
-                    raise InvalidReferenceError(f"No book found for string '{args[0]}'")
+                book = BibleBook.from_str(book, raise_error=True)
             elif not isinstance(book, BibleBook):
                 raise ValueError(f"{book} must be a string or an instance of BibleBook")
             if not isinstance(chap, int):
@@ -449,14 +455,38 @@ class BibleRange:
     start: BibleVerse
     end: BibleVerse
 
-    def __init__(self, start_book: BibleBook, start_chap: int = None, start_verse: int = None,
-                end_book: BibleBook = None, end_chap: int = None, end_verse: int = None,
-                allow_multibook: bool = None, allow_verse_0: bool = None):
+    def __init__(self, *args, start: BibleVerse = None, end: BibleVerse = None,
+                 allow_multibook: bool = None, allow_verse_0: bool = None):
+    # def __init__(self, start_book: BibleBook, start_chap: int = None, start_verse: int = None,
+    #             end_book: BibleBook = None, end_chap: int = None, end_verse: int = None,
+    #             allow_multibook: bool = None, allow_verse_0: bool = None):
         if allow_multibook is None:
             allow_multibook = globals()['allow_multibook']
- 
-        if start_book is None or start_book not in BibleBook:
-            raise InvalidReferenceError("Start book not valid")
+        if len(args) == 0:
+            object.__setattr__(self, "start", start)
+            object.__setattr__(self, "end", end)
+        elif len(args) > 6:
+            raise ValueError("Too many arguments supplied to BibleRange")
+        if len(args) == 1:
+            if isinstance(args[0], str):
+                pass # Convert from string
+                return
+            elif isinstance(args[0], BibleRange):
+                object.__setattr__(self, "start", args[0].start)
+                object.__setattr__(self, "end", args[0].end)
+                return
+            elif not isinstance(args[0], BibleBook):
+                raise ValueError("Single argument to BibleRange can only be a string, BibleBook or another BibleRange")
+
+        start_book = args[0]
+        start_chap = args[1] if len(args) > 1 else None
+        start_verse = args[2] if len(args) > 2 else None
+        end_book = args[3] if len(args) > 3 else None
+        end_chap = args[4] if len(args) > 4 else None
+        end_verse = args[5] if len(args) > 5 else None
+
+        if start_book is None or not isinstance(start_book, BibleBook):
+            raise InvalidReferenceError(f"{start_book} is not a valid BibleBook")
         if start_chap is None and start_verse is not None:
             raise InvalidReferenceError("Start verse is missing a start chapter")
 
@@ -467,28 +497,30 @@ class BibleRange:
             if no_end:
                 end = start_book.last_verse()
         elif start_verse is None: # Start is book and chap only
-            start = start_book.first_verse(start_chap, allow_verse_0)
+            start = start_book.first_verse(int(start_chap), allow_verse_0)
             if no_end:
                 end = start_book.last_verse(start_chap)
         else: # Start is book, chap and verse
-            start = BibleVerse(start_book, start_chap, start_verse)
+            start = BibleVerse(start_book, int(start_chap), int(start_verse))
             if no_end: # Single verse reference, so end is same as start
-                end = BibleVerse(start_book, start_chap, start_verse)
+                end = BibleVerse(start_book, int(start_chap), int(start_verse))
         
         if not no_end: # We have end-point info
             if end_book is None:
                 end_book = start_book
+            elif not isinstance(end_book, BibleBook):
+                raise InvalidReferenceError(f"{end_book} is not a valid BibleBook")
             if end_chap is None and end_verse is None: # End is book only
                 end = end_book.last_verse()
             elif end_verse is None: # End is book and chap only
-                end = end_book.last_verse(end_chap)
+                end = end_book.last_verse(int(end_chap))
             elif end_chap is None: # End is book and verse only
                 if start_book != end_book:
                     raise InvalidReferenceError("End verse is missing an end chapter")
                 else:
-                    end = BibleVerse(end_book, start.chap, end_verse)
+                    end = BibleVerse(end_book, int(start.chap), int(end_verse))
             else:
-                end = BibleVerse(end_book, end_chap, end_verse)
+                end = BibleVerse(end_book, int(end_chap), int(end_verse))
 
         if not allow_multibook and start.book != end.book:
             raise MultibookRangeNotAllowedError()
