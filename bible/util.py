@@ -33,11 +33,11 @@ class LinkedList(MutableSequence):
         def __init__(self, value, prev=None, next=None, parent=None):
             self.value = value
             self.parent: 'LinkedList' = parent
-            self.prev: 'Node' = prev
-            self.next: 'Node' = next
+            self.prev: 'LinkedList.Node' = prev
+            self.next: 'LinkedList.Node' = next
             self.is_group_head: bool = False  # True if this node is the start of a group.
-            self.prev_head: 'Node' = None # If this is a group head, link to next group head.
-            self.next_head: 'Node' = None # If this is a group head, link to prev group head.
+            self.prev_head: 'LinkedList.Node' = None # If this is a group head, link to next group head.
+            self.next_head: 'LinkedList.Node' = None # If this is a group head, link to prev group head.
 
         def clear_group_head(self):
             self.is_group_head = False
