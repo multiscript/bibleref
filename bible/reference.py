@@ -6,7 +6,7 @@ This module defines the following primary classes:
     BibleRange:     A reference to a continuous range of Bible verses (e.g. Matt 2:3-4:5)
     BibleRangeList: A list of BibleRanges, allowing for grouping and set-style operations.
 
-    (There is no BibleChapter class, as this is usually best handled as a BibleRange.)
+    (There is no BibleChapter class, as chapters are usually best handled as a BibleRange.)
 
 Two module attributes affect the behaviour of these classes:
     allow_multibook: Defaults to False. If True, BibleRanges can be constructed that span
