@@ -1,5 +1,4 @@
 from collections.abc import MutableSequence
-from lib2to3.pytree import Node
 
 
 class ListError(Exception):
@@ -10,23 +9,27 @@ class ListError(Exception):
 class LinkedList(MutableSequence):
     '''A linked list, with the ability to also group items.
     
-    A group is a view of a subset
-    of the list. By default, all items are placed in one group. All items belong to one
-    group only, such that the collection of groups spans the entire list. (The current
-    implementation defines groups by marking the first item in each group.)
+    A group is a view of a subset of the list. By default, all items are placed in one
+    group. All items belong to one group only, such that the collection of groups spans
+    the entire list. (The current implementation defines groups by marking the first
+    item in each group, but this should not be relied upon.)
 
     As groups are just views of the items, updating an item in a group also updates
-    the parent list, and vice verse.
+    the main list, and vice verse.
 
-    The groups property returns a GroupsView collection, which can be index and iterated
-    to return each GroupView. Groups are created by calling append_group(), or append() or
-    prepend() with new_group set to True.
+    The groups property returns a GroupsView collection, which can be indexed and iterated
+    over. Each iteration returns GroupView, which can be indexed and iterated over to return
+    the items in the group.
+    
+    Groups are created by calling append_group(), or append() or prepend() with new_group
+    set to True.
     '''
-    # Groups are defined by setting node.is_group_head to True for the first node
-    # of the group. The group continues until the next group head.
-
     class Node:
-        '''Nodes of the linked list.'''
+        '''Nodes of the linked list.
+        
+        Groups are defined by setting node.is_group_head to True for the first node
+        of the group. The group continues until the next group head.
+        '''
         def __init__(self, value, prev=None, next=None, parent=None):
             self.value = value
             self.parent: 'LinkedList' = parent
@@ -450,7 +453,8 @@ class LinkedList(MutableSequence):
         self._length = 0
 
     def reverse(self):
-        '''For simplicity, this also clears all existing groups and places all elements in one new group.
+        '''For simplicity, this also clears all existing groups and places all elements
+        in one new group.
         '''
         if self._node_count == 0:
             return
