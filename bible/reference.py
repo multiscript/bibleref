@@ -721,11 +721,6 @@ class BibleRangeList(util.LinkedList):
     Currently implemented as a doubly-linked list, though this should be treated
     as an implementation detail, and not relied upon.
     '''
-    @classmethod
-    def new_from_text(cls, text):
-        # TODO Replace this method with a smarter __init__method.
-        return BibleRangeList(text)
-
     def __init__(self, *args):
         if len(args) == 1:
             if isinstance(args[0], str):
