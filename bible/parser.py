@@ -27,7 +27,7 @@ class BibleRefParsingError(Exception):
 
 @v_args(meta=True)
 class BibleRefTransformer(Transformer):
-    def __init__(self, allow_multibook: bool = None, allow_verse_0: bool = None, *args, **kwargs):
+    def __init__(self, *args, allow_multibook: bool = None, allow_verse_0: bool = None, **kwargs):
         super().__init__(*args, **kwargs)
         self.cur_book = None            # Tracks implied current book
         self.cur_chap_num = None        # Tracks implied current chapter
@@ -61,7 +61,8 @@ class BibleRefTransformer(Transformer):
         try:
             bible_range = reference.BibleRange(first.start.book, first.start.chap, first.start.verse,
                                                second.end.book, second.end.chap, second.end.verse,
-                                               allow_multibook=self.allow_multibook)
+                                               allow_multibook=self.allow_multibook,
+                                               allow_verse_0=self.allow_verse_0)
         except Exception as e:
             raise BibleRefParsingError(str(e), meta)
         return bible_range
@@ -71,7 +72,8 @@ class BibleRefTransformer(Transformer):
         self.cur_book = book
         self.at_verse_level = False
         try:
-            bible_range = reference.BibleRange(book)
+            bible_range = reference.BibleRange(book, allow_multibook=self.allow_multibook,
+                                                     allow_verse_0=self.allow_verse_0)
         except Exception as e:
             raise BibleRefParsingError(str(e), meta)
         return bible_range
@@ -86,10 +88,12 @@ class BibleRefTransformer(Transformer):
         try:
             if is_single_chap:
                 self.cur_chap_num = book.min_chap()
-                bible_range = reference.BibleRange(book, self.cur_chap_num, num)
+                bible_range = reference.BibleRange(book, self.cur_chap_num, num, allow_multibook=self.allow_multibook,
+                                                   allow_verse_0=self.allow_verse_0)
             else:
                 self.cur_chap_num = num
-                bible_range = reference.BibleRange(book, num)
+                bible_range = reference.BibleRange(book, num, allow_multibook=self.allow_multibook,
+                                                   allow_verse_0=self.allow_verse_0)
         except Exception as e:
             raise BibleRefParsingError(str(e), meta)
         return bible_range
@@ -102,7 +106,8 @@ class BibleRefTransformer(Transformer):
         self.cur_chap_num = chap_num
         self.at_verse_level = True
         try:
-            bible_range = reference.BibleRange(book, chap_num, verse_num)
+            bible_range = reference.BibleRange(book, chap_num, verse_num, allow_multibook=self.allow_multibook,
+                                               allow_verse_0=self.allow_verse_0)
         except Exception as e:
             raise BibleRefParsingError(str(e), meta)
         return bible_range
@@ -116,7 +121,8 @@ class BibleRefTransformer(Transformer):
         self.cur_chap_num = chap_num
         self.at_verse_level = True
         try:
-            bible_range = reference.BibleRange(book, chap_num, verse_num)
+            bible_range = reference.BibleRange(book, chap_num, verse_num, allow_multibook=self.allow_multibook,
+                                               allow_verse_0=self.allow_verse_0)
         except Exception as e:
             raise BibleRefParsingError(str(e), meta)
         return bible_range
@@ -133,9 +139,11 @@ class BibleRefTransformer(Transformer):
                     self.cur_chap_num = book.min_chap()
                 elif self.cur_chap_num is None:
                     raise BibleRefParsingError("No chapter specified", meta)
-                bible_range = reference.BibleRange(book, self.cur_chap_num, num)
+                bible_range = reference.BibleRange(book, self.cur_chap_num, num, allow_multibook=self.allow_multibook,
+                                                   allow_verse_0=self.allow_verse_0)
             else: # Book, chapter ref
-                bible_range = reference.BibleRange(book, num)
+                bible_range = reference.BibleRange(book, num, allow_multibook=self.allow_multibook,
+                                                   allow_verse_0=self.allow_verse_0)
         except Exception as e:
             if isinstance(e, BibleRefParsingError):
                 raise e
@@ -164,8 +172,7 @@ class BibleRefTransformer(Transformer):
 
 _parser = None
 
-# TODO Allow caller to provide allow_multibook and allow_verse_0 args
-def _parse(string):
+def _parse(string, allow_multibook: bool = None, allow_verse_0: bool = None):
     global _parser
     if _parser is None:
         # grammar_path = Path(__file__, "..", GRAMMAR_FILE_NAME).resolve()
@@ -182,7 +189,8 @@ def _parse(string):
         new_error.orig = orig
         raise new_error
     try:
-        range_groups_list = BibleRefTransformer(allow_multibook=True).transform(tree)
+        range_groups_list = BibleRefTransformer(allow_multibook=allow_multibook,
+                                                allow_verse_0=allow_verse_0).transform(tree)
     except VisitError as e:
         raise e.orig_exc
     return range_groups_list

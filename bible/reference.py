@@ -262,7 +262,7 @@ class BibleVerse:
     chap:   int
     verse:  int
 
-    def __init__(self, *args):
+    def __init__(self, *args, allow_verse_0: bool = None):
         '''BibleVerses can be constructed in the following ways:
 
             1. From a single string: BibleVerse("Mark 2:3")
@@ -274,7 +274,7 @@ class BibleVerse:
         '''
         if len(args) == 1:
             if isinstance(args[0], str):
-                range_list = BibleRangeList(args[0])
+                range_list = BibleRangeList(args[0], allow_verse_0=allow_verse_0)
                 if len(range_list) != 1 or not range_list[0].is_single_verse():
                     raise InvalidReferenceError(f"String is not a single verse: {args[0]}")
                 object.__setattr__(self, "book", range_list[0].start.book)
@@ -305,14 +305,14 @@ class BibleVerse:
                 raise ValueError(f"{chap} is not an integer verse number")
             if chap < book.min_chap() or chap > book.max_chap():
                 raise InvalidReferenceError(f"No chapter {chap} in {book.title}")
-            if verse < book.min_verse(chap) or verse > book.max_verse(chap):
+            if verse < book.min_verse(chap, allow_verse_0) or verse > book.max_verse(chap):
                 raise InvalidReferenceError(f"No verse {verse} in {book.title} {chap}")
             object.__setattr__(self, "book", book) # We have to use object.__setattr__ because the class is frozen
             object.__setattr__(self, "chap", chap)
             object.__setattr__(self, "verse", verse)
        
     def __repr__(self):
-        return f"BibleRange({self.string(abbrev=True)})"
+        return f"BibleVerse({self.string(abbrev=True)})"
 
     def __str__(self):
         return self.string()
@@ -386,7 +386,7 @@ class BibleVerse:
             new_verse = new_verse - max_verse - 1 + new_book.min_verse(new_chap, allow_verse_0)
             max_verse = new_book.max_verse(new_chap)
 
-        return BibleVerse(new_book, new_chap, new_verse)
+        return BibleVerse(new_book, new_chap, new_verse, allow_verse_0=allow_verse_0)
 
     def subtract(self, num_verses: int, allow_multibook: bool = None, allow_verse_0: bool = None):
         '''Return a new BibleVerse that is num_verses before this BibleVerse.
@@ -418,7 +418,7 @@ class BibleVerse:
             new_verse = new_verse + new_book.max_verse(new_chap)
             min_verse = new_book.min_verse(new_chap)
 
-        return BibleVerse(new_book, new_chap, new_verse)
+        return BibleVerse(new_book, new_chap, new_verse, allow_verse_0=allow_verse_0)
 
     def __lt__(self, other):
         if not isinstance(self, BibleVerse):
@@ -508,7 +508,7 @@ class BibleRange:
             raise ValueError("Too many arguments supplied to BibleRange")
         if len(args) == 1:
             if isinstance(args[0], str):
-                range_list = BibleRangeList(args[0])
+                range_list = BibleRangeList(args[0], allow_multibook=allow_multibook, allow_verse_0=allow_verse_0)
                 if len(range_list) != 1:
                     raise InvalidReferenceError(f"String is not a single verse range: {args[0]}")
                 object.__setattr__(self, "start", range_list[0].start)
@@ -544,9 +544,9 @@ class BibleRange:
             if no_end:
                 end = start_book.last_verse(start_chap)
         else: # Start is book, chap and verse
-            start = BibleVerse(start_book, int(start_chap), int(start_verse))
+            start = BibleVerse(start_book, int(start_chap), int(start_verse), allow_verse_0=allow_verse_0)
             if no_end: # Single verse reference, so end is same as start
-                end = BibleVerse(start_book, int(start_chap), int(start_verse))
+                end = BibleVerse(start_book, int(start_chap), int(start_verse), allow_verse_0=allow_verse_0)
         
         if not no_end: # We have end-point info
             if end_book is None:
@@ -561,12 +561,13 @@ class BibleRange:
                 if start_book != end_book:
                     raise InvalidReferenceError("End verse is missing an end chapter")
                 else:
-                    end = BibleVerse(end_book, int(start.chap), int(end_verse))
+                    end = BibleVerse(end_book, int(start.chap), int(end_verse), allow_verse_0=allow_verse_0)
             else:
-                end = BibleVerse(end_book, int(end_chap), int(end_verse))
+                end = BibleVerse(end_book, int(end_chap), int(end_verse), allow_verse_0=allow_verse_0)
 
         if not allow_multibook and start.book != end.book:
-            raise MultibookRangeNotAllowedError()
+            raise MultibookRangeNotAllowedError(f"Multi-book ranges not allowed " + 
+                                                f"({start.book.abbrev} and {end.book.abbrev} are different)")
 
         object.__setattr__(self, "start", start)
         object.__setattr__(self, "end", end)
@@ -668,8 +669,7 @@ class BibleRange:
         return  (self.start == self.end)
 
     def __repr__(self):
-        return str((self.start.book.abbrev, self.start.chap, self.start.verse,
-                    self.end.book.abbrev, self.end.chap, self.end.verse))
+        return f"BibleRange({self.string()})"
     
     def __str__(self):
         return self.string()
@@ -730,10 +730,16 @@ class BibleRangeList(util.LinkedList):
     Currently implemented as a doubly-linked list, though this should be treated
     as an implementation detail, and not relied upon.
     '''
-    def __init__(self, *args):
+    def __init__(self, *args, allow_multibook: bool = None, allow_verse_0: bool = None):
+        if allow_multibook is None:
+            allow_multibook = globals()['allow_multibook']
+        if allow_verse_0 is None:
+            allow_verse_0 = globals()['allow_verse_0']
+
         if len(args) == 1:
             if isinstance(args[0], str):
-                range_groups_list = parser._parse(args[0])
+                range_groups_list = parser._parse(args[0], allow_multibook=allow_multibook,
+                                                           allow_verse_0=allow_verse_0)
                 super().__init__()
                 for group in range_groups_list:
                     self.append_group(group)

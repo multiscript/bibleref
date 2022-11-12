@@ -136,7 +136,7 @@ class TestBibleReference(unittest.TestCase):
     def test_bible_range_list_to_string(self):
         # Start range spans a book, after a ref from same book
         self.assertEqual(BibleRangeList(
-            "Matthew 2:3-4:5; Matthew-Mark").string(),  # Start range spans book
+            "Matthew 2:3-4:5; Matthew-Mark", allow_multibook=True).string(),  # Start range spans book
             "Matthew 2:3-4:5; Matthew-Mark")
 
         # Start range spans a chapter from same book, when at verse level
@@ -221,28 +221,28 @@ class TestBibleReference(unittest.TestCase):
 
         # End range spans a book
         self.assertEqual(BibleRangeList(
-            "Matthew 2:3-4:5; 6:7-Mark").string(),  # Start range spans book
+            "Matthew 2:3-4:5; 6:7-Mark", allow_multibook=True).string(),  # Start range spans book
             "Matthew 2:3-4:5; 6:7-Mark")
         # End range spans a chapter while at chapter level
         self.assertEqual(BibleRangeList(
             "Matthew 2:3-4:5; Matthew 6-9").string(),  # From same book
             "Matthew 2:3-4:5; 6-9")
         self.assertEqual(BibleRangeList(
-            "Matthew 2:3-4:5; Matthew 6-Mark 3").string(),  # From different book
+            "Matthew 2:3-4:5; Matthew 6-Mark 3", allow_multibook=True).string(),  # From different book
             "Matthew 2:3-4:5; 6-Mark 3")
         # End range spans a chapter while at verse level
         self.assertEqual(BibleRangeList(
             "Matthew 2:3-4:5; Matthew 6:2-9:38").string(),  # From same book
             "Matthew 2:3-4:5; 6:2-9:38")
         self.assertEqual(BibleRangeList(
-            "Matthew 2:3-4:5; Matthew 6:4-Mark 3").string(),  # From different book
+            "Matthew 2:3-4:5; Matthew 6:4-Mark 3", allow_multibook=True).string(),  # From different book
             "Matthew 2:3-4:5; 6:4-Mark 3")
         # End range is a particular verse
         self.assertEqual(BibleRangeList(
             "Matthew 2:3-4:5; Matthew 6:2-9:5").string(),  # From same book
             "Matthew 2:3-4:5; 6:2-9:5")
         self.assertEqual(BibleRangeList(
-            "Matthew 2:3-4:5; Matthew 6:4-Mark 3:8").string(),  # From different book
+            "Matthew 2:3-4:5; Matthew 6:4-Mark 3:8", allow_multibook=True).string(),  # From different book
             "Matthew 2:3-4:5; 6:4-Mark 3:8")
 
         # Major group separator returns us to chap level
