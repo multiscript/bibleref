@@ -17,7 +17,11 @@ class TestBibleReference(unittest.TestCase):
         self.assertRaises(ValueError, lambda: BibleVerse(BibleBook.Matt, [], []))
         self.assertRaises(InvalidReferenceError, lambda: BibleVerse(BibleBook.Matt, 50, 3))
         self.assertRaises(InvalidReferenceError, lambda: BibleVerse(BibleBook.Matt, 2, 100))
+        self.assertRaises(InvalidReferenceError, lambda: BibleVerse("Matthew 2:3; 4:5"))
+        self.assertRaises(InvalidReferenceError, lambda: BibleVerse("Matthew 2:3-4"))
         self.assertEqual(BibleVerse("Matthew", 2, 3), BibleVerse(BibleBook.Matt, 2, 3))
+        self.assertEqual(BibleVerse("Matthew 2:3"), BibleVerse(BibleBook.Matt, 2, 3))
+
 
         bible_verse = BibleVerse(BibleBook.Mark, 2, 3)
         verse_copy = BibleVerse(bible_verse)

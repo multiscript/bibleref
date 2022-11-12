@@ -274,7 +274,12 @@ class BibleVerse:
         '''
         if len(args) == 1:
             if isinstance(args[0], str):
-                pass # Create from string
+                range_list = BibleRangeList(args[0])
+                if len(range_list) != 1 or not range_list[0].is_single_verse():
+                    raise InvalidReferenceError(f"String is not a single verse: {args[0]}")
+                object.__setattr__(self, "book", range_list[0].start.book)
+                object.__setattr__(self, "chap", range_list[0].start.chap)
+                object.__setattr__(self, "verse", range_list[0].start.verse)
             elif isinstance(args[0], BibleVerse):
                 # We have to use object.__setattr__ because the class is frozen
                 object.__setattr__(self, "book", args[0].book)
