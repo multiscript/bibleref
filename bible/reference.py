@@ -724,7 +724,21 @@ class BibleRangeList(util.LinkedList):
     @classmethod
     def new_from_text(cls, text):
         # TODO Replace this method with a smarter __init__method.
-        return parser._parse(text)
+        return BibleRangeList(text)
+
+    def __init__(self, *args):
+        if len(args) == 1:
+            if isinstance(args[0], str):
+                range_groups_list = parser._parse(args[0])
+                super().__init__()
+                for group in range_groups_list:
+                    self.append_group(group)
+            elif isinstance(args[0], BibleRangeList):
+                super().__init__()
+                for group in args[0].groups:
+                    self.append_group(group)
+        else:
+            super().__init__(args)
 
     def _check_type(self, value):
         if not isinstance(value, BibleRange):

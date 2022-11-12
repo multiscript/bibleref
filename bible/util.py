@@ -1,4 +1,4 @@
-from collections.abc import MutableSequence
+from collections.abc import MutableSequence, Iterable
 
 
 class ListError(Exception):
@@ -148,7 +148,7 @@ class LinkedList(MutableSequence):
             node = self._node_at(index)
             self.group_head.parent._pop_node(node)
 
-    def __init__(self, iterable=None):
+    def __init__(self, iterable: Iterable = None):
         self._first: LinkedList.Node = None          # First node
         self._last: LinkedList.Node = None           # Last node
         self._node_count: int = 0                       # Count of nodes

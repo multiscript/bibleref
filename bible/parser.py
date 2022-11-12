@@ -36,21 +36,22 @@ class BibleRefTransformer(Transformer):
         self.allow_verse_0 = allow_verse_0
 
     def ref_list(self, meta, children):
-        bible_range_list = reference.BibleRangeList()
-        group = []
+        '''Returns a list of group lists.'''
+        parent_list = []
+        group_list = []
         for child in children:
             if child is MAJOR_LIST_SEP_SENTINEL:
-                if len(group) > 0:
-                    bible_range_list.append_group(group)
-                    group = []
+                if len(group_list) > 0:
+                    parent_list.append(group_list)
+                    group_list = []
             elif child is MINOR_LIST_SEP_SENTINEL:
                 pass
             else: # It's a BibleRange
-                group.append(child)
-        if len(group) > 0:
-            bible_range_list.append_group(group)
-            group = []
-        return bible_range_list
+                group_list.append(child)
+        if len(group_list) > 0:
+            parent_list.append(group_list)
+            group_list = []
+        return parent_list
 
     def dual_ref(self, meta, children): # Children: single_ref RANGE_SEP single_ref
         first: reference.BibleRange = children[0]
@@ -181,10 +182,10 @@ def _parse(string):
         new_error.orig = orig
         raise new_error
     try:
-        bible_range_list = BibleRefTransformer(allow_multibook=True).transform(tree)
+        range_groups_list = BibleRefTransformer(allow_multibook=True).transform(tree)
     except VisitError as e:
         raise e.orig_exc
-    return bible_range_list
+    return range_groups_list
 
 def create_parser():
     from . import data
