@@ -508,8 +508,12 @@ class BibleRange:
             raise ValueError("Too many arguments supplied to BibleRange")
         if len(args) == 1:
             if isinstance(args[0], str):
-                pass # Convert from string
-                return
+                range_list = BibleRangeList(args[0])
+                if len(range_list) != 1:
+                    raise InvalidReferenceError(f"String is not a single verse range: {args[0]}")
+                object.__setattr__(self, "start", range_list[0].start)
+                object.__setattr__(self, "end", range_list[0].end)
+                return                
             elif isinstance(args[0], BibleRange):
                 object.__setattr__(self, "start", args[0].start)
                 object.__setattr__(self, "end", args[0].end)
