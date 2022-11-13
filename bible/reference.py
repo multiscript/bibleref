@@ -25,12 +25,13 @@ from dataclasses import dataclass
 from enum import Enum, Flag, auto
 import re
 
-from . import parser
-from . import util
 
+class BibleFlag(Flag):
+    NONE = 0
+    ALLOW_MULTIBOOK = auto()
+    ALLOW_VERSE_0 = auto()
 
-allow_multibook = False
-allow_verse_0 = False
+flags = BibleFlag.NONE
 
 
 class BibleBook(Enum):
@@ -153,15 +154,14 @@ class BibleBook(Enum):
         '''
         return (self.max_chap() - self.min_chap() + 1)
 
-    def min_verse(self, chap: int, allow_verse_0: bool = None) -> int:
+    def min_verse(self, chap: int, flags: BibleFlag = None) -> int:
         '''Return the lowest verse number (usually indexed from 1) for the specified chapter
         of this BibleBook.
         '''
-        if allow_verse_0 is None:
-            allow_verse_0 = globals()['allow_verse_0']
+        flags = flags or globals()['flags']
         if chap < self.min_chap() or chap > self.max_chap():
             raise InvalidReferenceError(f"No chapter {chap} in {self.title}")
-        return 0 if (allow_verse_0 and chap in self._verse_0s) else 1
+        return 0 if (BibleFlag.ALLOW_VERSE_0 in flags and chap in self._verse_0s) else 1
 
     def max_verse(self, chap: int) -> int:
         '''Return the highest verse number (usually indexed from 1) for the specified chapter
@@ -171,13 +171,13 @@ class BibleBook(Enum):
             raise InvalidReferenceError(f"No chapter {chap} in {self.title}")
         return self._max_verses[chap-1]
 
-    def first_verse(self, chap: int = None, allow_verse_0: bool = None) -> 'BibleVerse':
+    def first_verse(self, chap: int = None, flags: BibleFlag = None) -> 'BibleVerse':
         '''Returns a BibleVerse for the first verse of the specified chapter of the BibleBook.
         If chap is None, it uses the first chapter of the book.
         '''
         if chap is None:
             chap = self.min_chap()
-        return BibleVerse(self, chap, self.min_verse(chap, allow_verse_0))        
+        return BibleVerse(self, chap, self.min_verse(chap, flags))        
 
     def last_verse(self, chap: int = None) -> 'BibleVerse':
         '''Returns a BibleVerse for the last verse of the specified chapter of the BibleBook.
@@ -228,8 +228,10 @@ class BibleBook(Enum):
             return self.order >= other.order
 
 
-# We delay the import of data until this point so that BibleBook and its related classes
+# We delay these imports until this point so that BibleBook and its related classes
 # are already defined and can be used by the data submodule
+from . import parser
+from . import util
 from . import data
 
 
@@ -262,7 +264,7 @@ class BibleVerse:
     chap:   int
     verse:  int
 
-    def __init__(self, *args, allow_verse_0: bool = None):
+    def __init__(self, *args, flags: BibleFlag = None):
         '''BibleVerses can be constructed in the following ways:
 
             1. From a single string: BibleVerse("Mark 2:3")
@@ -274,7 +276,7 @@ class BibleVerse:
         '''
         if len(args) == 1:
             if isinstance(args[0], str):
-                range_list = BibleRangeList(args[0], allow_verse_0=allow_verse_0)
+                range_list = BibleRangeList(args[0], flags=flags)
                 if len(range_list) != 1 or not range_list[0].is_single_verse():
                     raise InvalidReferenceError(f"String is not a single verse: {args[0]}")
                 object.__setattr__(self, "book", range_list[0].start.book)
@@ -305,7 +307,7 @@ class BibleVerse:
                 raise ValueError(f"{chap} is not an integer verse number")
             if chap < book.min_chap() or chap > book.max_chap():
                 raise InvalidReferenceError(f"No chapter {chap} in {book.title}")
-            if verse < book.min_verse(chap, allow_verse_0) or verse > book.max_verse(chap):
+            if verse < book.min_verse(chap, flags) or verse > book.max_verse(chap):
                 raise InvalidReferenceError(f"No verse {verse} in {book.title} {chap}")
             object.__setattr__(self, "book", book) # We have to use object.__setattr__ because the class is frozen
             object.__setattr__(self, "chap", chap)
@@ -356,18 +358,14 @@ class BibleVerse:
         '''
         return copy.copy(self)
 
-    def add(self, num_verses: int, allow_multibook: bool = None, allow_verse_0: bool = None):
+    def add(self, num_verses: int, flags: BibleFlag = None):
         '''Returns a new BibleVerse that is num_verses after this BibleVerse.
         
         If allow_multibook is True (either set by the argument or, if None, the module attribute),
         and the result would be beyond the current book, a verse in the subsequent book is returned.
         Otherwise, if the verse does not exist, None is returned.
         '''
-        if allow_multibook is None:
-            allow_multibook = globals()['allow_multibook']
-        if allow_verse_0 is None:
-            allow_verse_0 = globals()['allow_verse_0']
-        
+        flags = flags or globals()['flags']
         new_book = self.book
         new_chap = self.chap
         new_verse = self.verse + num_verses
@@ -375,7 +373,7 @@ class BibleVerse:
         while new_verse > max_verse:
             new_chap += 1
             if new_chap > new_book.max_chap():
-                if not allow_multibook:
+                if BibleFlag.ALLOW_MULTIBOOK not in flags:
                     return None
                 else:
                     new_book = new_book.next()
@@ -383,31 +381,27 @@ class BibleVerse:
                         return None
                     new_chap = new_book.min_chap()
             
-            new_verse = new_verse - max_verse - 1 + new_book.min_verse(new_chap, allow_verse_0)
+            new_verse = new_verse - max_verse - 1 + new_book.min_verse(new_chap, flags)
             max_verse = new_book.max_verse(new_chap)
 
-        return BibleVerse(new_book, new_chap, new_verse, allow_verse_0=allow_verse_0)
+        return BibleVerse(new_book, new_chap, new_verse, flags=flags)
 
-    def subtract(self, num_verses: int, allow_multibook: bool = None, allow_verse_0: bool = None):
+    def subtract(self, num_verses: int, flags: BibleFlag = None):
         '''Return a new BibleVerse that is num_verses before this BibleVerse.
         
         If allow_multibook is True (either set by the argument or, if None, the module attribute),
         and the result would be before the current book, a verse in the prior book is returned.
         Otherwise, if the verse does not exist, None is returned.
         '''
-        if allow_multibook is None:
-            allow_multibook = globals()['allow_multibook']
-        if allow_verse_0 is None:
-            allow_verse_0 = globals()['allow_verse_0']
-        
+        flags = flags or globals()['flags']        
         new_book = self.book
         new_chap = self.chap
         new_verse = self.verse - num_verses
-        min_verse = new_book.min_verse(new_chap, allow_verse_0)
+        min_verse = new_book.min_verse(new_chap, flags)
         while new_verse < min_verse:
             new_chap -= 1
             if new_chap < new_book.min_chap():
-                if not allow_multibook:
+                if BibleFlag.ALLOW_MULTIBOOK not in flags:
                     return None
                 else:
                     new_book = new_book.prev()
@@ -418,7 +412,7 @@ class BibleVerse:
             new_verse = new_verse + new_book.max_verse(new_chap)
             min_verse = new_book.min_verse(new_chap)
 
-        return BibleVerse(new_book, new_chap, new_verse, allow_verse_0=allow_verse_0)
+        return BibleVerse(new_book, new_chap, new_verse, flags=flags)
 
     def __lt__(self, other):
         if not isinstance(self, BibleVerse):
@@ -452,10 +446,10 @@ class BibleVerse:
                    (self.book == other.book and self.chap > other.chap) or \
                    (self.book == other.book and self.chap == other.chap and self.verse >= other.verse)
 
-    def min_chap_verse(self, allow_verse_0: bool = None) -> int:
+    def min_chap_verse(self, flags: BibleFlag = None) -> int:
         '''Return the lowest verse number (usually indexed from 1) for the chapter of this BibleVerse.
         '''
-        return self.book.min_verse(self.chap, allow_verse_0)
+        return self.book.min_verse(self.chap, flags)
 
     def max_chap_verse(self) -> int:
         '''Return the highest verse number (usually indexed from 1) for the chapter of this BibleVerse.
@@ -477,7 +471,7 @@ class BibleRange:
     end: BibleVerse
 
     def __init__(self, *args, start: BibleVerse = None, end: BibleVerse = None,
-                 allow_multibook: bool = None, allow_verse_0: bool = None):
+                 flags: BibleFlag = None):
         '''A BibleRange can be constructed in the following ways:
 
             1. From a single string: e.g. BibleRange("Mark 3:1-4:2")
@@ -499,8 +493,7 @@ class BibleRange:
                start and end.
                e.g. BibleRange(start=BibleVerse("Mark 3:1"), end=BibleVerse("Mark 4:2"))            
         '''
-        if allow_multibook is None:
-            allow_multibook = globals()['allow_multibook']
+        flags = flags or globals()['flags']
         if len(args) == 0:
             object.__setattr__(self, "start", start)
             object.__setattr__(self, "end", end)
@@ -508,7 +501,7 @@ class BibleRange:
             raise ValueError("Too many arguments supplied to BibleRange")
         if len(args) == 1:
             if isinstance(args[0], str):
-                range_list = BibleRangeList(args[0], allow_multibook=allow_multibook, allow_verse_0=allow_verse_0)
+                range_list = BibleRangeList(args[0], flags=flags)
                 if len(range_list) != 1:
                     raise InvalidReferenceError(f"String is not a single verse range: {args[0]}")
                 object.__setattr__(self, "start", range_list[0].start)
@@ -536,17 +529,17 @@ class BibleRange:
         no_end = (end_book is None and end_chap is None and end_verse is None)
 
         if start_chap is None: # Start is book only
-            start = start_book.first_verse(None, allow_verse_0)
+            start = start_book.first_verse(None, flags)
             if no_end:
                 end = start_book.last_verse()
         elif start_verse is None: # Start is book and chap only
-            start = start_book.first_verse(int(start_chap), allow_verse_0)
+            start = start_book.first_verse(int(start_chap), flags)
             if no_end:
                 end = start_book.last_verse(start_chap)
         else: # Start is book, chap and verse
-            start = BibleVerse(start_book, int(start_chap), int(start_verse), allow_verse_0=allow_verse_0)
+            start = BibleVerse(start_book, int(start_chap), int(start_verse), flags=flags)
             if no_end: # Single verse reference, so end is same as start
-                end = BibleVerse(start_book, int(start_chap), int(start_verse), allow_verse_0=allow_verse_0)
+                end = BibleVerse(start_book, int(start_chap), int(start_verse), flags=flags)
         
         if not no_end: # We have end-point info
             if end_book is None:
@@ -561,11 +554,11 @@ class BibleRange:
                 if start_book != end_book:
                     raise InvalidReferenceError("End verse is missing an end chapter")
                 else:
-                    end = BibleVerse(end_book, int(start.chap), int(end_verse), allow_verse_0=allow_verse_0)
+                    end = BibleVerse(end_book, int(start.chap), int(end_verse), flags=flags)
             else:
-                end = BibleVerse(end_book, int(end_chap), int(end_verse), allow_verse_0=allow_verse_0)
+                end = BibleVerse(end_book, int(end_chap), int(end_verse), flags=flags)
 
-        if not allow_multibook and start.book != end.book:
+        if BibleFlag.ALLOW_MULTIBOOK not in flags and start.book != end.book:
             raise MultibookRangeNotAllowedError(f"Multi-book ranges not allowed " + 
                                                 f"({start.book.abbrev} and {end.book.abbrev} are different)")
 
@@ -577,7 +570,7 @@ class BibleRange:
         '''
         return (bible_verse >= self.start and bible_verse <= self.end)
 
-    def split(self, by_chap: bool = True, num_verses: bool = None, allow_verse_0: bool = None):
+    def split(self, by_chap: bool = True, num_verses: bool = None, flags: BibleFlag = None):
         '''Split this range into a BibleRangeList of smaller consecutive ranges.
         
         If by_chap is true, splits are made end of each chapter.
@@ -595,7 +588,7 @@ class BibleRange:
                 if book == self.start.book and chap == self.start.chap:
                     start_verse = self.start.verse
                 else:
-                    start_verse = book.min_verse(chap, allow_verse_0)
+                    start_verse = book.min_verse(chap, flags)
                 if book == self.end.book and chap == self.end.chap:
                     end_verse = self.end.verse
                     done = True
@@ -617,54 +610,54 @@ class BibleRange:
             verse_split = []
             for bible_range in chap_split:
                 start = BibleVerse(bible_range.start.book, bible_range.start.chap, bible_range.start.verse)
-                end = start.add(num_verses-1, allow_verse_0=allow_verse_0)
+                end = start.add(num_verses - 1, flags)
                 while end is not None and end < bible_range.end:
                     verse_split.append(BibleRange(start.book, start.chap, start.verse, end.book, end.chap, end.verse))
-                    start = end.add(1, allow_verse_0=allow_verse_0)
-                    end = start.add(num_verses-1, allow_verse_0=allow_verse_0)
+                    start = end.add(1, flags)
+                    end = start.add(num_verses-1, flags)
                 verse_split.append(BibleRange(start.book, start.chap, start.verse,
                                    bible_range.end.book, bible_range.end.chap, bible_range.end.verse))
             return BibleRangeList(verse_split)
         else:
             return BibleRangeList(chap_split)
 
-    def is_whole_book(self, allow_verse_0: bool = None):
+    def is_whole_book(self, flags: BibleFlag = None) -> bool:
         '''Returns True if this BibleRange exactly spans a whole book, else False.'''
         return  (self.start.book == self.end.book) and \
-                (self.start == self.start.book.first_verse(None, allow_verse_0)) and \
+                (self.start == self.start.book.first_verse(None, flags)) and \
                 (self.end == self.end.book.last_verse())
 
-    def spans_start_book(self, allow_verse_0: bool = None):
+    def spans_start_book(self, flags: BibleFlag = None) -> bool:
         '''Returns True if this BibleRange includes the whole book containing the
         starting verse, else False.'''
-        return  (self.start == self.start.book.first_verse(None, allow_verse_0)) and \
+        return  (self.start == self.start.book.first_verse(None, flags)) and \
                 (self.end >= self.start.book.last_verse())
 
-    def spans_end_book(self, allow_verse_0: bool = None):
+    def spans_end_book(self, flags: BibleFlag = None) -> bool:
         '''Returns True if this BibleRange includes the whole book containing the
         ending verse, else False.'''
         return  (self.end == self.end.book.last_verse()) and \
-                (self.start <= self.end.book.first_verse())
+                (self.start <= self.end.book.first_verse(None, flags))
 
-    def is_whole_chap(self, allow_verse_0: bool = None):
+    def is_whole_chap(self, flags: BibleFlag = None) -> bool:
         '''Returns True if this BibleRange exactly spans one whole chapter, else False.'''
         return  (self.start.book == self.end.book) and \
-                (self.start == self.start.book.first_verse(self.start.chap, allow_verse_0)) and \
+                (self.start == self.start.book.first_verse(self.start.chap, flags)) and \
                 (self.end == self.end.book.last_verse(self.start.chap))
 
-    def spans_start_chap(self, allow_verse_0: bool = None):
+    def spans_start_chap(self, flags: BibleFlag = None) -> bool:
         '''Returns True if this BibleRange exactly spans the whole chapter containing the
         starting verse, else False.'''
-        return  (self.start == self.start.book.first_verse(self.start.chap, allow_verse_0)) and \
+        return  (self.start == self.start.book.first_verse(self.start.chap, flags)) and \
                 (self.end >= self.start.book.last_verse(self.start.chap))
 
-    def spans_end_chap(self, allow_verse_0: bool = None):
+    def spans_end_chap(self, flags: BibleFlag = None) -> bool:
         '''Returns True if this BibleRange exactly spans the whole chapter containing the
         ending verse, else False.'''
         return  (self.end == self.end.book.last_verse(self.end.chap)) and \
-                (self.start <= self.end.book.first_verse(self.end.chap, allow_verse_0))
+                (self.start <= self.end.book.first_verse(self.end.chap, flags))
 
-    def is_single_verse(self):
+    def is_single_verse(self) -> bool:
         '''Returns True if the BibleRange exactly spans a single verse, else False.'''
         return  (self.start == self.end)
 
@@ -678,9 +671,9 @@ class BibleRange:
         verse = self.start
         while verse <= self.end:
             yield verse
-            verse = verse.add(1, allow_multibook=True)
+            verse = verse.add(1, BibleFlag.ALLOW_MULTIBOOK)
 
-    def string(self, abbrev=False, alt_sep=False, nospace=False):
+    def string(self, abbrev=False, alt_sep=False, nospace=False, flags: BibleFlag = None):
         '''Returns a configurable string representation of this BibleRange.
 
         If abbrev is True, the abbreviated name of the book is used (instead of the full name).
@@ -699,7 +692,7 @@ class BibleRange:
             at_verse_level = True
         start_str = self.start.string(abbrev, alt_sep, nospace, start_parts) 
         
-        if self.is_whole_book() or self.is_whole_chap() or self.is_single_verse(): # Single reference
+        if self.is_whole_book(flags) or self.is_whole_chap(flags) or self.is_single_verse(): # Single reference
             end_str = ""
             range_sep = ""
         else: 
@@ -707,9 +700,9 @@ class BibleRange:
             if self.end.book != self.start.book:
                 at_verse_level = False
             
-            if self.spans_end_book():
+            if self.spans_end_book(flags):
                 end_parts = BibleVersePart.BOOK
-            elif not at_verse_level and self.spans_end_chap():
+            elif not at_verse_level and self.spans_end_chap(flags):
                 end_parts = BibleVersePart.BOOK_CHAP
             else:
                 end_parts = BibleVersePart.FULL_REF
@@ -730,16 +723,12 @@ class BibleRangeList(util.LinkedList):
     Currently implemented as a doubly-linked list, though this should be treated
     as an implementation detail, and not relied upon.
     '''
-    def __init__(self, *args, allow_multibook: bool = None, allow_verse_0: bool = None):
-        if allow_multibook is None:
-            allow_multibook = globals()['allow_multibook']
-        if allow_verse_0 is None:
-            allow_verse_0 = globals()['allow_verse_0']
+    def __init__(self, *args, flags: BibleFlag = None):
+        flags = flags or globals()['flags']
 
         if len(args) == 1:
             if isinstance(args[0], str):
-                range_groups_list = parser._parse(args[0], allow_multibook=allow_multibook,
-                                                           allow_verse_0=allow_verse_0)
+                range_groups_list = parser._parse(args[0], flags)
                 super().__init__()
                 for group in range_groups_list:
                     self.append_group(group)
@@ -757,7 +746,8 @@ class BibleRangeList(util.LinkedList):
     def __str__(self):
         return self.string()
 
-    def string(self, abbrev=False, alt_sep=False, nospace=False, preserve_groups=True):
+    def string(self, abbrev: bool = False, alt_sep: bool = False, nospace: bool = False,
+               preserve_groups: bool = True, flags: BibleFlag = None):
         '''Returns a string representation of this BibleRangeList.
 
         If abbrev is True, the abbreviated name of the book is used (instead of the full name).
@@ -778,12 +768,12 @@ class BibleRangeList(util.LinkedList):
         for group in self.groups:
             for br in group:
                 bible_range: BibleRange = br # Typecast                
-                if bible_range.spans_start_book(): # Range start includes an entire book
+                if bible_range.spans_start_book(flags): # Range start includes an entire book
                     # Even if already in same book, whole book references repeat the whole book name.
                     start_parts = BibleVersePart.BOOK
                     cur_chap = None
                     at_verse_level = False
-                elif bible_range.spans_start_chap(): # Range start includes an entire chap
+                elif bible_range.spans_start_chap(flags): # Range start includes an entire chap
                     if cur_book == bible_range.start.book: # Continuing same book
                         if at_verse_level: # We're in a list of verses
                             if not preserve_groups: # Use major list sep to return to chapters
@@ -811,7 +801,7 @@ class BibleRangeList(util.LinkedList):
                                     start_parts = BibleVersePart.CHAP
                                     at_verse_level = False
                                 else: # We're after a minor list ref
-                                    if bible_range.spans_end_chap():
+                                    if bible_range.spans_end_chap(flags):
                                         # This range is a whole set of chapters, do just display chapters
                                         start_parts = BibleVersePart.CHAP
                                         at_verse_level = False
@@ -844,7 +834,8 @@ class BibleRangeList(util.LinkedList):
                 cur_book = bible_range.start.book
                 start_str = bible_range.start.string(abbrev, alt_sep, nospace, start_parts) 
 
-                if not force_dual_ref and (bible_range.is_whole_book() or bible_range.is_whole_chap() or \
+                if not force_dual_ref and (bible_range.is_whole_book(flags) or
+                                           bible_range.is_whole_chap(flags) or \
                                            bible_range.is_single_verse()):
                     # Single reference
                     end_str = ""
@@ -854,11 +845,11 @@ class BibleRangeList(util.LinkedList):
                     if bible_range.end.book != bible_range.start.book:
                         at_verse_level = False
 
-                    if bible_range.spans_end_book(): # Range end includes an entire book
+                    if bible_range.spans_end_book(flags): # Range end includes an entire book
                         end_parts = BibleVersePart.BOOK
                         cur_chap = None
                         at_verse_level = False
-                    elif not at_verse_level and bible_range.spans_end_chap(): # Range end includes an entire chap
+                    elif not at_verse_level and bible_range.spans_end_chap(flags): # Range end includes an entire chap
                         if cur_book == bible_range.end.book: # Continuing same book
                             end_parts = BibleVersePart.CHAP
                         else: # Different book
