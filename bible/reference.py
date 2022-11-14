@@ -316,6 +316,16 @@ class BibleVerse:
             object.__setattr__(self, "chap", chap)
             object.__setattr__(self, "verse", verse)
 
+    def min_chap_verse(self, flags: BibleFlag = None) -> int:
+        '''Return the lowest verse number (usually indexed from 1) for the chapter of this BibleVerse.
+        '''
+        return self.book.min_verse(self.chap, flags)
+
+    def max_chap_verse(self) -> int:
+        '''Return the highest verse number (usually indexed from 1) for the chapter of this BibleVerse.
+        '''
+        return self.book.max_verse(self.chap)
+
     def verse_0_to_1(self) -> 'BibleVerse':
         '''If this BibleVerse refers to a verse number 0, returns an identical BibleVerse
         except with a verse number of 1. Otherwise, returns the original BibleVerse.'''
@@ -333,46 +343,6 @@ class BibleVerse:
             return BibleVerse(self.book, self.chap, 0, flags=BibleFlag.ALLOW_VERSE_0)
         else:
             return self
-
-    def __repr__(self):
-        return f"BibleVerse({self.string(abbrev=True)})"
-
-    def __str__(self):
-        return self.string()
-
-    def string(self, abbrev: bool = False, alt_sep: bool = False, nospace: bool = False,
-               verse_parts: BibleVersePart = BibleVersePart.FULL_REF):
-        '''Returns a configurable string representation of this BibleVerse.
-
-        If abbrev is True, the abbreviated name of the book is used (instead of the full name).
-        If alt_sep is True, chapter and verse numbers are separated by the alternate
-          separator ('.' by default) instead of the standard separator (':' by default).
-        If nospace is True, no spaces are included in the string.
-        verse_parts is a combination of BibleVersePart flags, controlling what combination of book,
-          chapter & verse are displayed.
-        '''
-        if self.book.chap_count() == 1:
-            verse_parts &= ~BibleVersePart.CHAP # Don't display chap
-        
-        if BibleVersePart.BOOK in verse_parts:
-            book_name = self.book.abbrev if abbrev else self.book.title
-        else:
-            book_name = ""
-        
-        chap_str = str(self.chap) if BibleVersePart.CHAP in verse_parts else ""
-        verse_str = str(self.verse) if BibleVersePart.VERSE in verse_parts else ""
-        
-        if BibleVersePart.CHAP_VERSE in verse_parts:
-            verse_sep = data.VERSE_SEP_ALT if alt_sep else data.VERSE_SEP_STANDARD
-        else:
-            verse_sep = ""
-
-        result = f"{book_name} {chap_str}{verse_sep}{verse_str}"
-
-        if nospace:
-            return result.replace(" ", "")
-        else:
-            return result.strip()
 
     def copy(self):
         '''Returns a copy of this BibleVerse.
@@ -435,6 +405,46 @@ class BibleVerse:
 
         return BibleVerse(new_book, new_chap, new_verse, flags=flags)
 
+    def __repr__(self):
+        return f"BibleVerse({self.string(abbrev=True)})"
+
+    def __str__(self):
+        return self.string()
+
+    def string(self, abbrev: bool = False, alt_sep: bool = False, nospace: bool = False,
+               verse_parts: BibleVersePart = BibleVersePart.FULL_REF):
+        '''Returns a configurable string representation of this BibleVerse.
+
+        If abbrev is True, the abbreviated name of the book is used (instead of the full name).
+        If alt_sep is True, chapter and verse numbers are separated by the alternate
+          separator ('.' by default) instead of the standard separator (':' by default).
+        If nospace is True, no spaces are included in the string.
+        verse_parts is a combination of BibleVersePart flags, controlling what combination of book,
+          chapter & verse are displayed.
+        '''
+        if self.book.chap_count() == 1:
+            verse_parts &= ~BibleVersePart.CHAP # Don't display chap
+        
+        if BibleVersePart.BOOK in verse_parts:
+            book_name = self.book.abbrev if abbrev else self.book.title
+        else:
+            book_name = ""
+        
+        chap_str = str(self.chap) if BibleVersePart.CHAP in verse_parts else ""
+        verse_str = str(self.verse) if BibleVersePart.VERSE in verse_parts else ""
+        
+        if BibleVersePart.CHAP_VERSE in verse_parts:
+            verse_sep = data.VERSE_SEP_ALT if alt_sep else data.VERSE_SEP_STANDARD
+        else:
+            verse_sep = ""
+
+        result = f"{book_name} {chap_str}{verse_sep}{verse_str}"
+
+        if nospace:
+            return result.replace(" ", "")
+        else:
+            return result.strip()
+
     def __lt__(self, other):
         if not isinstance(self, BibleVerse):
             return NotImplemented
@@ -466,16 +476,6 @@ class BibleVerse:
             return (self.book > other.book) or \
                    (self.book == other.book and self.chap > other.chap) or \
                    (self.book == other.book and self.chap == other.chap and self.verse >= other.verse)
-
-    def min_chap_verse(self, flags: BibleFlag = None) -> int:
-        '''Return the lowest verse number (usually indexed from 1) for the chapter of this BibleVerse.
-        '''
-        return self.book.min_verse(self.chap, flags)
-
-    def max_chap_verse(self) -> int:
-        '''Return the highest verse number (usually indexed from 1) for the chapter of this BibleVerse.
-        '''
-        return self.book.max_verse(self.chap)
 
 
 @dataclass(init=False, repr=False, eq=True, order=False, frozen=True)
@@ -602,6 +602,46 @@ class BibleRange:
         return BibleRange(start=self.start.verse_1_to_0(), end=self.end.verse_1_to_0(),
                           flags=BibleFlag.ALL)
 
+    def is_whole_book(self, flags: BibleFlag = None) -> bool:
+        '''Returns True if this BibleRange exactly spans a whole book, else False.'''
+        return  (self.start.book == self.end.book) and \
+                (self.start == self.start.book.first_verse(None, flags)) and \
+                (self.end == self.end.book.last_verse())
+
+    def spans_start_book(self, flags: BibleFlag = None) -> bool:
+        '''Returns True if this BibleRange includes the whole book containing the
+        starting verse, else False.'''
+        return  (self.start == self.start.book.first_verse(None, flags)) and \
+                (self.end >= self.start.book.last_verse())
+
+    def spans_end_book(self, flags: BibleFlag = None) -> bool:
+        '''Returns True if this BibleRange includes the whole book containing the
+        ending verse, else False.'''
+        return  (self.end == self.end.book.last_verse()) and \
+                (self.start <= self.end.book.first_verse(None, flags))
+
+    def is_whole_chap(self, flags: BibleFlag = None) -> bool:
+        '''Returns True if this BibleRange exactly spans one whole chapter, else False.'''
+        return  (self.start.book == self.end.book) and \
+                (self.start == self.start.book.first_verse(self.start.chap, flags)) and \
+                (self.end == self.end.book.last_verse(self.start.chap))
+
+    def spans_start_chap(self, flags: BibleFlag = None) -> bool:
+        '''Returns True if this BibleRange exactly spans the whole chapter containing the
+        starting verse, else False.'''
+        return  (self.start == self.start.book.first_verse(self.start.chap, flags)) and \
+                (self.end >= self.start.book.last_verse(self.start.chap))
+
+    def spans_end_chap(self, flags: BibleFlag = None) -> bool:
+        '''Returns True if this BibleRange exactly spans the whole chapter containing the
+        ending verse, else False.'''
+        return  (self.end == self.end.book.last_verse(self.end.chap)) and \
+                (self.start <= self.end.book.first_verse(self.end.chap, flags))
+
+    def is_single_verse(self) -> bool:
+        '''Returns True if the BibleRange exactly spans a single verse, else False.'''
+        return  (self.start == self.end)
+
     def contains(self, bible_verse: BibleVerse) -> bool:
         '''Returns True if this BibleRange contains bible_verse, otherwise False.
         '''
@@ -658,57 +698,17 @@ class BibleRange:
         else:
             return BibleRangeList(chap_split)
 
-    def is_whole_book(self, flags: BibleFlag = None) -> bool:
-        '''Returns True if this BibleRange exactly spans a whole book, else False.'''
-        return  (self.start.book == self.end.book) and \
-                (self.start == self.start.book.first_verse(None, flags)) and \
-                (self.end == self.end.book.last_verse())
-
-    def spans_start_book(self, flags: BibleFlag = None) -> bool:
-        '''Returns True if this BibleRange includes the whole book containing the
-        starting verse, else False.'''
-        return  (self.start == self.start.book.first_verse(None, flags)) and \
-                (self.end >= self.start.book.last_verse())
-
-    def spans_end_book(self, flags: BibleFlag = None) -> bool:
-        '''Returns True if this BibleRange includes the whole book containing the
-        ending verse, else False.'''
-        return  (self.end == self.end.book.last_verse()) and \
-                (self.start <= self.end.book.first_verse(None, flags))
-
-    def is_whole_chap(self, flags: BibleFlag = None) -> bool:
-        '''Returns True if this BibleRange exactly spans one whole chapter, else False.'''
-        return  (self.start.book == self.end.book) and \
-                (self.start == self.start.book.first_verse(self.start.chap, flags)) and \
-                (self.end == self.end.book.last_verse(self.start.chap))
-
-    def spans_start_chap(self, flags: BibleFlag = None) -> bool:
-        '''Returns True if this BibleRange exactly spans the whole chapter containing the
-        starting verse, else False.'''
-        return  (self.start == self.start.book.first_verse(self.start.chap, flags)) and \
-                (self.end >= self.start.book.last_verse(self.start.chap))
-
-    def spans_end_chap(self, flags: BibleFlag = None) -> bool:
-        '''Returns True if this BibleRange exactly spans the whole chapter containing the
-        ending verse, else False.'''
-        return  (self.end == self.end.book.last_verse(self.end.chap)) and \
-                (self.start <= self.end.book.first_verse(self.end.chap, flags))
-
-    def is_single_verse(self) -> bool:
-        '''Returns True if the BibleRange exactly spans a single verse, else False.'''
-        return  (self.start == self.end)
+    def __iter__(self):
+        verse = self.start
+        while verse <= self.end:
+            yield verse
+            verse = verse.add(1, BibleFlag.ALLOW_MULTIBOOK)
 
     def __repr__(self):
         return f"BibleRange({self.string()})"
     
     def __str__(self):
         return self.string()
-
-    def __iter__(self):
-        verse = self.start
-        while verse <= self.end:
-            yield verse
-            verse = verse.add(1, BibleFlag.ALLOW_MULTIBOOK)
 
     def string(self, abbrev=False, alt_sep=False, nospace=False, flags: BibleFlag = None):
         '''Returns a configurable string representation of this BibleRange.
