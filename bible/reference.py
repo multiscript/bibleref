@@ -8,17 +8,16 @@ This module defines the following primary classes:
 
     (There is no BibleChapter class, as chapters are usually best handled as a BibleRange.)
 
-Two module attributes affect the behaviour of these classes:
-    allow_multibook: Defaults to False. If True, BibleRanges can be constructed that span
+The module attribute 'flags' is a BibleFlag enum whose elements control the following
+module behaviours:
+    ALLOW_MULTIBOOK: Defaults to not set. When set, BibleRanges can be constructed that span
                         multiple books. Existing multibook ranges behave correctly even when
-                        allow_multibook is False. Some methods take an allow_multibook argument
-                        that takes precedence over the module-level attribute.
-    allow_verse_0:   Defaults to False. If True, the first verse number of some chapters is 0, not 1.
-                        (This is currently just the Psalms that have superscriptions.) Many methods
-                        take an allow_verse_0 argument that takes precedence over the module-level
-                        attribute.
+                        allow_multibook is False. 
+    ALLOW_VERSE_0:   Defaults to not set. When set, the first verse number of some chapters is 0, not 1.
+                        (This is currently just the Psalms that have superscriptions.)
+Many methods take an 'flags' argument that takes precedence over the module-level attribute.
 
-The Bible book, chapter and verse data is specified in the sibling data module.
+The Bible book, chapter and verse data is specified in the sibling 'data' module.
 '''
 import copy
 from dataclasses import dataclass
@@ -27,6 +26,7 @@ import re
 
 
 class BibleFlag(Flag):
+    '''A Flag enum used for controlling various behaviours of the module.'''
     NONE = 0
     ALLOW_MULTIBOOK = auto()
     ALLOW_VERSE_0 = auto()

@@ -1,6 +1,7 @@
 import unittest
 from bible.reference import BibleBook, BibleVerse, BibleRange, BibleRangeList, \
-                            BibleFlag, BibleVersePart as BVP, InvalidReferenceError
+                            BibleFlag, BibleVersePart as BVP, InvalidReferenceError, \
+                            MultibookRangeNotAllowedError
 
 
 class TestBibleReference(unittest.TestCase):
@@ -21,6 +22,11 @@ class TestBibleReference(unittest.TestCase):
         self.assertRaises(InvalidReferenceError, lambda: BibleVerse("Matthew 2:3-4"))
         self.assertEqual(BibleVerse("Matthew", 2, 3), BibleVerse(BibleBook.Matt, 2, 3))
         self.assertEqual(BibleVerse("Matthew 2:3"), BibleVerse(BibleBook.Matt, 2, 3))
+
+        self.assertEqual(BibleVerse("Ps 3:0", flags=BibleFlag.ALLOW_VERSE_0),
+                         BibleVerse(BibleBook.Psa, 3, 0, flags=BibleFlag.ALLOW_VERSE_0))
+        self.assertRaises(InvalidReferenceError,
+                          lambda: BibleVerse(BibleBook.Psa, 3, 0, flags=BibleFlag.NONE))
 
         bible_verse = BibleVerse(BibleBook.Mark, 2, 3)
         verse_copy = BibleVerse(bible_verse)
@@ -68,6 +74,16 @@ class TestBibleReference(unittest.TestCase):
 
         self.assertEqual(BibleRange("Matthew 2:3-4:5"), BibleRange(BibleBook.Matt, 2, 3, None, 4, 5))
         self.assertRaises(InvalidReferenceError, lambda: BibleRange("Matthew 2:3-4:5; Mark 5:6"))
+
+        self.assertEqual(BibleRange("Matt-Mark", flags=BibleFlag.ALLOW_MULTIBOOK),
+                         BibleRange(BibleBook.Matt, None, None, BibleBook.Mark, flags=BibleFlag.ALLOW_MULTIBOOK))
+        self.assertRaises(MultibookRangeNotAllowedError,
+                          lambda: BibleRange(BibleBook.Matt, None, None, BibleBook.Mark, flags=BibleFlag.NONE))
+
+        self.assertEqual(BibleRange("Psa 3:0-3", flags=BibleFlag.ALLOW_VERSE_0),
+                         BibleRange(BibleBook.Psa, 3, 0, None, None, 3, flags=BibleFlag.ALLOW_VERSE_0))
+        self.assertRaises(InvalidReferenceError,
+                          lambda: BibleRange(BibleBook.Psa, 3, 0, None, None, 3, flags=BibleFlag.NONE))
 
     def test_range_iteration(self):
         bible_range = BibleRange(BibleBook.Matt, 28, 18, BibleBook.Mark, 1, 3, flags=BibleFlag.ALLOW_MULTIBOOK)

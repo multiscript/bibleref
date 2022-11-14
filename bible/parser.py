@@ -7,8 +7,6 @@ from lark.visitors import VisitError
 from . import reference
 
 
-GRAMMAR_FILE_NAME = "bible-reference.lark"
-
 MAJOR_LIST_SEP_SENTINEL = object()
 MINOR_LIST_SEP_SENTINEL = object()
 
@@ -167,6 +165,7 @@ _parser = None
 def _parse(string, flags: reference.BibleFlag = None):
     global _parser
     if _parser is None:
+        # GRAMMAR_FILE_NAME = "bible-reference.lark"
         # grammar_path = Path(__file__, "..", GRAMMAR_FILE_NAME).resolve()
         # with open(grammar_path) as file:
         #     grammar_text = file.read()
