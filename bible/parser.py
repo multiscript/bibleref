@@ -1,5 +1,3 @@
-from pathlib import Path
-
 from lark import Lark, UnexpectedInput
 from lark import Transformer, v_args
 from lark.visitors import VisitError
@@ -9,6 +7,40 @@ from . import reference
 
 MAJOR_LIST_SEP_SENTINEL = object()
 MINOR_LIST_SEP_SENTINEL = object()
+
+
+_parser = None
+_transformer = None
+
+def _parse(string, flags: reference.BibleFlag = None):
+    global _parser, _transformer
+    if _parser is None:
+        # from pathlib import Path
+        # GRAMMAR_FILE_NAME = "bible-reference.lark"
+        # grammar_path = Path(__file__, "..", GRAMMAR_FILE_NAME).resolve()
+        # with open(grammar_path) as file:
+        #     grammar_text = file.read()
+        _parser = create_parser()
+
+    if _transformer is None:
+        _transformer = BibleRefTransformer()
+
+    try:
+        tree = _parser.parse(string)
+    except UnexpectedInput as orig:
+        start_pos=orig.pos_in_stream
+        end_pos=orig.pos_in_stream + 1
+        new_error = BibleRefParsingError(f"Unexpected text: {string[start_pos:end_pos]}",
+                                         None, start_pos, end_pos)
+        new_error.orig = orig
+        raise new_error
+    
+    try:
+        _transformer.flags = flags
+        range_groups_list = _transformer.transform(tree)
+    except VisitError as e:
+        raise e.orig_exc
+    return range_groups_list
 
 
 class BibleRefParsingError(Exception):
@@ -159,31 +191,6 @@ class BibleRefTransformer(Transformer):
     def NUM(self, token):
         return int(token)
 
-
-_parser = None
-
-def _parse(string, flags: reference.BibleFlag = None):
-    global _parser
-    if _parser is None:
-        # GRAMMAR_FILE_NAME = "bible-reference.lark"
-        # grammar_path = Path(__file__, "..", GRAMMAR_FILE_NAME).resolve()
-        # with open(grammar_path) as file:
-        #     grammar_text = file.read()
-        _parser = create_parser()
-
-    try:
-        tree = _parser.parse(string)
-    except UnexpectedInput as orig:
-        start_pos=orig.pos_in_stream
-        end_pos=orig.pos_in_stream + 1
-        new_error = BibleRefParsingError(f"Unexpected text: {string[start_pos:end_pos]}", None, start_pos, end_pos)
-        new_error.orig = orig
-        raise new_error
-    try:
-        range_groups_list = BibleRefTransformer(flags=flags).transform(tree)
-    except VisitError as e:
-        raise e.orig_exc
-    return range_groups_list
 
 def create_parser():
     from . import data
