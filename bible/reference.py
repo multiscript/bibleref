@@ -1,7 +1,7 @@
 '''A module for storing and manipulating references to Bible books, verses and ranges.
 
 This module defines the following primary classes:
-    BibleBook:      An enum for specifying books in the Bible.
+    BibleBook:      An Enum of books in the Bible, with extra methods.
     BibleVerse:     A reference to a single Bible verse (e.g. Matt 2:3)
     BibleRange:     A reference to a continuous range of Bible verses (e.g. Matt 2:3-4:5)
     BibleRangeList: A list of BibleRanges, allowing for grouping and set-style operations.
@@ -14,7 +14,12 @@ module behaviours:
                         multiple books. Existing multibook ranges behave correctly even when
                         ALLOW_MULTIBOOK is unset. 
     ALLOW_VERSE_0:   Defaults to unset. When set, the first verse number of some chapters
-                        is 0, not 1. (This is currently just the Psalms that have superscriptions.)
+                        is 0, not 1. (This is currently just the Psalms that have
+                        superscriptions.) When you need to mix references that do or don't
+                        allow for verse 0, it may be easier to choose one value for all
+                        your code, and then use the verse_0_to_1() and verse_1_to_0()
+                        methods on BibleVerses, BibleRanges and BibleRangeLists as
+                        necessary.
 
 Many methods take a 'flags' argument that takes overrides the module-level attribute during
 the execution of that method.
@@ -28,7 +33,7 @@ import re
 
 
 class BibleFlag(Flag):
-    '''A Flag enum used for controlling various behaviours of the module.'''
+    '''A Flag used for controlling various behaviours throughout the module.'''
     NONE = 0
     ALLOW_MULTIBOOK = auto()
     ALLOW_VERSE_0 = auto()
@@ -38,7 +43,7 @@ flags = BibleFlag.NONE
 
 
 class BibleBook(Enum):
-    '''An enum for specifying books in the Bible.
+    '''An enum of books in the Bible.
 
     Note that Python identifiers can't start with a number, so books like
     1 Samuel are specified here as _1Sam.
@@ -232,15 +237,16 @@ class BibleBook(Enum):
 
 
 # We delay these imports until this point so that BibleBook and its related classes
-# are already defined and can be used by the data submodule
+# are already defined and can be used by other sibling modules
 from . import parser
 from . import util
 from . import data
 
 
 class BibleVersePart(Flag):
-    '''Used to refer to the 3 parts of a BibleVerse. Mainly used for converting
-    BibleVerses, BibleRanges and BibleRangeLists to strings.
+    '''Flag for referring to the 3 primary attributes of a BibleVerse.
+    
+    Mainly used for converting BibleVerses, BibleRanges and BibleRangeLists to strings.
     '''
     NONE    = 0
     BOOK    = auto()
@@ -256,7 +262,7 @@ class BibleVersePart(Flag):
 class BibleVerse:
     '''A reference to a single Bible verse (e.g. Matt 2:3).
 
-    Contains 3 attributes:
+    Contains 3 primary attributes:
         book:   The BibleBook of the book of the reference.
         chap:   The chapter number (indexed from 1) of the reference.
         verse:  The verse number (usually indexed from 1) of the reference.
@@ -335,26 +341,27 @@ class BibleVerse:
             return self
     
     def verse_1_to_0(self) -> 'BibleVerse':
-        '''If this BibleVerse refers to a verse number 1, and a verse 0 is possible for its
-        chapter, returns an identical BibleVerse except with a verse number of 0. Otherwise,
-        returns the original BibleVerse.
-        The value of the module 'flags' attribute is ignored.'''
+        '''If this BibleVerse refers to a verse number 1, and a verse 0 is possible for the
+        same chapter, returns an identical BibleVerse except with a verse number of 0.
+        Otherwise, returns the original BibleVerse. The value of the module 'flags'
+        attribute is ignored.'''
         if self.verse == 1 and self.min_chap_verse(flags=BibleFlag.ALLOW_VERSE_0) == 0:
             return BibleVerse(self.book, self.chap, 0, flags=BibleFlag.ALLOW_VERSE_0)
         else:
             return self
 
-    def copy(self):
+    def copy(self) -> 'BibleVerse':
         '''Returns a copy of this BibleVerse.
         '''
         return copy.copy(self)
 
-    def add(self, num_verses: int, flags: BibleFlag = None):
+    def add(self, num_verses: int, flags: BibleFlag = None) -> 'BibleVerse':
         '''Returns a new BibleVerse that is num_verses after this BibleVerse.
         
-        If allow_multibook is True (either set by the argument or, if None, the module attribute),
-        and the result would be beyond the current book, a verse in the subsequent book is returned.
-        Otherwise, if the verse does not exist, None is returned.
+        If BibleFlag.ALLOW_MULTIBOOK is set (either set by the 'flags' argument or,
+        if None, by the module attribute), and the result would be beyond the current
+        book, a verse in the subsequent book is returned. Otherwise, if the verse
+        does not exist, None is returned.
         '''
         flags = flags or globals()['flags']
         new_book = self.book
@@ -377,12 +384,13 @@ class BibleVerse:
 
         return BibleVerse(new_book, new_chap, new_verse, flags=flags)
 
-    def subtract(self, num_verses: int, flags: BibleFlag = None):
+    def subtract(self, num_verses: int, flags: BibleFlag = None) -> 'BibleVerse':
         '''Return a new BibleVerse that is num_verses before this BibleVerse.
         
-        If allow_multibook is True (either set by the argument or, if None, the module attribute),
-        and the result would be before the current book, a verse in the prior book is returned.
-        Otherwise, if the verse does not exist, None is returned.
+        If BibleFlag.ALLOW_MULTIBOOK is set (either set by the 'flags' argument or,
+        if None, the module attribute), and the result would be before the current
+        book, a verse in the prior book is returned. Otherwise, if the verse does
+        not exist, None is returned.
         '''
         flags = flags or globals()['flags']        
         new_book = self.book
@@ -412,7 +420,7 @@ class BibleVerse:
         return self.string()
 
     def string(self, abbrev: bool = False, alt_sep: bool = False, nospace: bool = False,
-               verse_parts: BibleVersePart = BibleVersePart.FULL_REF):
+               verse_parts: BibleVersePart = BibleVersePart.FULL_REF) -> str:
         '''Returns a configurable string representation of this BibleVerse.
 
         If abbrev is True, the abbreviated name of the book is used (instead of the full name).
@@ -482,9 +490,9 @@ class BibleVerse:
 class BibleRange:
     '''A reference to a continuous range of Bible verses (e.g. Matt 2:3-4:5).
 
-    Contains 2 attributes:
-        start:  The BibleVerse of the first verse in the range.
-        end:    The BibleVerse of the last verse in the range.
+    Contains 2 primary attributes:
+        start:  The first BibleVerse in the range (inclusive).
+        end:    The last BibleVerse in the range (inclusive).
     
     A BibleRange is immutable.
     '''
@@ -647,6 +655,7 @@ class BibleRange:
         '''
         return (bible_verse >= self.start and bible_verse <= self.end)
 
+    # TODO: Check this is correct. Allow splitting by book as well. Add unit tests.
     def split(self, by_chap: bool = True, num_verses: bool = None, flags: BibleFlag = None):
         '''Split this range into a BibleRangeList of smaller consecutive ranges.
         
@@ -697,6 +706,9 @@ class BibleRange:
             return BibleRangeList(verse_split)
         else:
             return BibleRangeList(chap_split)
+
+    # TODO: Allow BibleRanges to be compared as less-than or greather-than etc.
+    # TODO: Add set-style methods.
 
     def __iter__(self):
         verse = self.start

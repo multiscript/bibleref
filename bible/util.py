@@ -534,3 +534,5 @@ class LinkedList(MutableSequence):
     
     def __str__(self):
         return str(self.to_nested_lists())
+    
+    # TODO: Add in-place sorting, using merge-sort.
