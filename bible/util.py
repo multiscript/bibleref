@@ -476,6 +476,34 @@ class LinkedList(MutableSequence):
             yield node.value
             node = node.next
 
+    def __eq__(self, other) -> bool:
+        return self.equals(other)
+
+    def equals(self, other, compare_groups=True) -> bool:
+        '''If compare_groups is True, the groups of the two lists must match. Otherwise,
+        only the list items must match.'''
+        if not isinstance(other, LinkedList):
+            return False
+        if len(self) != len(other):
+            return False
+        if compare_groups:
+            if self._group_count != other._group_count:
+                return False
+            self_groups = list(self.groups)
+            other_groups = list(other.groups)
+            for i in range(len(self_groups)):
+                try:
+                    for self_item, other_item in zip(list(self_groups[i]), list(other_groups[i]), strict=True):
+                        if self_item != other_item:
+                            return False
+                except ValueError:
+                    return False
+        else:
+            for self_item, other_item in zip(self, other):
+                if self_item != other_item:
+                    return False
+        return True
+
     def __contains__(self, value):
         self._check_type(value)
         for node_value in self:

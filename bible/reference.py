@@ -10,12 +10,14 @@ This module defines the following primary classes:
 
 The module attribute 'flags' is a BibleFlag enum whose elements control the following
 module behaviours:
-    ALLOW_MULTIBOOK: Defaults to not set. When set, BibleRanges can be constructed that span
+    ALLOW_MULTIBOOK: Defaults to unset. When set, BibleRanges can be constructed that span
                         multiple books. Existing multibook ranges behave correctly even when
-                        allow_multibook is False. 
-    ALLOW_VERSE_0:   Defaults to not set. When set, the first verse number of some chapters is 0, not 1.
-                        (This is currently just the Psalms that have superscriptions.)
-Many methods take an 'flags' argument that takes precedence over the module-level attribute.
+                        ALLOW_MULTIBOOK is unset. 
+    ALLOW_VERSE_0:   Defaults to unset. When set, the first verse number of some chapters
+                        is 0, not 1. (This is currently just the Psalms that have superscriptions.)
+
+Many methods take a 'flags' argument that takes overrides the module-level attribute during
+the execution of that method.
 
 The Bible book, chapter and verse data is specified in the sibling 'data' module.
 '''
@@ -30,6 +32,7 @@ class BibleFlag(Flag):
     NONE = 0
     ALLOW_MULTIBOOK = auto()
     ALLOW_VERSE_0 = auto()
+    ALL = ALLOW_MULTIBOOK | ALLOW_VERSE_0
 
 flags = BibleFlag.NONE
 
@@ -312,7 +315,25 @@ class BibleVerse:
             object.__setattr__(self, "book", book) # We have to use object.__setattr__ because the class is frozen
             object.__setattr__(self, "chap", chap)
             object.__setattr__(self, "verse", verse)
-       
+
+    def verse_0_to_1(self) -> 'BibleVerse':
+        '''If this BibleVerse refers to a verse number 0, returns an identical BibleVerse
+        except with a verse number of 1. Otherwise, returns the original BibleVerse.'''
+        if self.verse == 0:
+            return BibleVerse(self.book, self.chap, 1)
+        else:
+            return self
+    
+    def verse_1_to_0(self) -> 'BibleVerse':
+        '''If this BibleVerse refers to a verse number 1, and a verse 0 is possible for its
+        chapter, returns an identical BibleVerse except with a verse number of 0. Otherwise,
+        returns the original BibleVerse.
+        The value of the module 'flags' attribute is ignored.'''
+        if self.verse == 1 and self.min_chap_verse(flags=BibleFlag.ALLOW_VERSE_0) == 0:
+            return BibleVerse(self.book, self.chap, 0, flags=BibleFlag.ALLOW_VERSE_0)
+        else:
+            return self
+
     def __repr__(self):
         return f"BibleVerse({self.string(abbrev=True)})"
 
@@ -495,8 +516,12 @@ class BibleRange:
         '''
         flags = flags or globals()['flags']
         if len(args) == 0:
+            if BibleFlag.ALLOW_MULTIBOOK not in flags and start.book != end.book:
+                raise MultibookRangeNotAllowedError(f"Multi-book ranges not allowed " + 
+                                                    f"({start.book.abbrev} and {end.book.abbrev} are different)")
             object.__setattr__(self, "start", start)
             object.__setattr__(self, "end", end)
+            return
         elif len(args) > 6:
             raise ValueError("Too many arguments supplied to BibleRange")
         if len(args) == 1:
@@ -564,6 +589,18 @@ class BibleRange:
 
         object.__setattr__(self, "start", start)
         object.__setattr__(self, "end", end)
+
+    def verse_0_to_1(self) -> 'BibleRange':
+        '''Returns a new BibleRange created by calling verse_0_to_1() on both its start and end
+        BibleVerses. The value of the module 'flags' attribute is ignored.'''
+        return BibleRange(start=self.start.verse_0_to_1(), end=self.end.verse_0_to_1(),
+                          flags=BibleFlag.ALL)
+
+    def verse_1_to_0(self) -> 'BibleRange':
+        '''Returns a new BibleRange created by calling verse_1_to_0() on both its start and end
+        BibleVerses. The value of the module 'flags' attribute is ignored.'''
+        return BibleRange(start=self.start.verse_1_to_0(), end=self.end.verse_1_to_0(),
+                          flags=BibleFlag.ALL)
 
     def contains(self, bible_verse: BibleVerse) -> bool:
         '''Returns True if this BibleRange contains bible_verse, otherwise False.
@@ -742,6 +779,22 @@ class BibleRangeList(util.LinkedList):
     def _check_type(self, value):
         if not isinstance(value, BibleRange):
             raise TypeError(f"Item is not a BibleRange: {value}")
+
+    def verse_0_to_1(self):
+        '''Modifies the BibleRangeList in-place by calling verse_0_to_1() on every
+        BibleRange in the list and using the result to replace the original range.
+        The value of the module 'flags' attribute is ignored. Returns None.'''
+        for node in self._node_iter():
+            node.value = node.value.verse_0_to_1()
+        return None
+
+    def verse_1_to_0(self):
+        '''Modifies the BibleRangeList in-place by calling verse_1_to_0() on every
+        BibleRange in the list and using the result to replace the original range.
+        The value of the module 'flags' attribute is ignored. Returns None.'''
+        for node in self._node_iter():
+            node.value = node.value.verse_1_to_0()
+        return None
 
     def __str__(self):
         return self.string()
@@ -957,7 +1010,7 @@ def _add_verse_0s():
         if book in data.verse_0s:
             book._verse_0s = data.verse_0s[book]
         else:
-            book._verse_0s = None
+            book._verse_0s = set()
 
 
 _add_abbrevs_and_titles()
