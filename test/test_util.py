@@ -337,3 +337,8 @@ class TestLinkedList(unittest.TestCase):
         list_3 = LinkedList([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
         list_4 = LinkedList([1, 2, 3, 4, 5, 6, 7, 8, 9, 11])
         self.assertFalse(list_3 == list_4)
+    
+    def test_sort(self):
+        test_list = LinkedList([10, 1, 9, 2, 8, 3, 7, 4, 6, 5])
+        test_list.sort()
+        print(test_list)

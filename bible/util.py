@@ -45,19 +45,19 @@ class LinkedList(MutableSequence):
             self.next_head = None
 
         def __eq__(self, other):
-            return self.value.__eq__(other.data)
+            return self.value.__eq__(other.value)
 
         def __lt__(self, other):
-            return self.value.__lt__(other.data)
+            return self.value.__lt__(other.value)
 
         def __gt__(self, other):
-            return self.value.__gt__(other.data)
+            return self.value.__gt__(other.value)
 
         def __ge__(self, other):
-            return self.value.__ge__(other.data)
+            return self.value.__ge__(other.value)
 
         def __le__(self, other):
-            return self.value.__le__(other.data)
+            return self.value.__le__(other.value)
 
         def __str__(self):
             group = f" G {self._id(self.prev_head)} {id(self)} {self._id(self.next_head)}" if self.is_group_head else ""
@@ -535,4 +535,69 @@ class LinkedList(MutableSequence):
     def __str__(self):
         return str(self.to_nested_lists())
     
-    # TODO: Add in-place sorting, using merge-sort.
+    def sort(self):
+        '''Sorts the list in place. All groups are removed and replaced with a single
+        new group.'''
+        (self._first, self._last) = self._merge_sort(self._first, clear_group_heads=True)
+        self._setup_single_group()
+
+    def _merge_sort(self, first_node: 'LinkedList.Node', clear_group_heads=False):
+        '''Sorts a list beginning with first_node, and returns a tuple of
+        (new_first_node, new_last_node).'''
+        if first_node is None or first_node.next is None:
+            return (first_node, first_node)
+        
+        first_node_A = first_node
+        first_node_B = self._split(first_node, clear_group_heads)
+        (first_node_A, last_node_A) = self._merge_sort(first_node_A, clear_group_heads=False)
+        (first_node_B, last_node_B) = self._merge_sort(first_node_B, clear_group_heads=False)
+
+        (new_first_node, new_last_node) = self._merge_sublists(first_node_A, first_node_B)
+        return (new_first_node, new_last_node)
+
+    def _split(self, first_node: 'LinkedList.Node', clear_group_heads=False):
+        '''Given the first node of a sublist, splits the list in half
+        and returns the first node of the second half.'''
+        slow_node = first_node
+        if clear_group_heads:
+            slow_node.clear_group_head()
+        fast_node = first_node.next
+
+        while fast_node is not None:
+            if clear_group_heads:
+                fast_node.clear_group_head()            
+            fast_node = fast_node.next
+            if fast_node is not None:
+                if clear_group_heads:
+                    fast_node.clear_group_head()            
+                slow_node = slow_node.next
+                fast_node = fast_node.next
+        
+        first_node_B = slow_node.next
+        slow_node.next = None
+        first_node_B.prev = None
+        return first_node_B
+
+    def _merge_sublists(self, first_node_A: 'LinkedList.Node', first_node_B: 'LinkedList.Node'):
+        '''Combines two sublists (A and B) into a single sorted list. Returns
+        a tuple of (new_first_node, new_last_node)'''
+        if first_node_A is None:
+            return (first_node_B, first_node_B)
+        if first_node_B is None:
+            return (first_node_A, first_node_A)
+        
+        if first_node_A <=  first_node_B: # Nodes compare using their values
+            (next_first_node, last_node) = self._merge_sublists(first_node_A.next, first_node_B)
+            first_node_A.next = next_first_node
+            next_first_node.prev = first_node_A
+            first_node_A.prev = None
+            return (first_node_A, last_node)
+        else: # first_node_B is less than first_node_A
+            (next_first_node, last_node) = self._merge_sublists(first_node_A, first_node_B.next)
+            first_node_B.next = next_first_node
+            next_first_node.prev = first_node_B
+            first_node_B.prev = None
+            return (first_node_B, last_node)
+
+
+
