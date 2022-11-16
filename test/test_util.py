@@ -339,6 +339,26 @@ class TestLinkedList(unittest.TestCase):
         self.assertFalse(list_3 == list_4)
     
     def test_sort(self):
+        values = [10, 1, 9, 2, 8, 3, 7, 4, 6, 5]
         test_list = LinkedList([10, 1, 9, 2, 8, 3, 7, 4, 6, 5])
         test_list.sort()
-        print(test_list)
+        self.assertEqual(test_list, LinkedList(sorted(values)))
+        self.assertTrue(self.verify_is_single_group(test_list))
+    
+    def verify_is_single_group(self, linked_list: LinkedList):
+        first = True
+        for node in linked_list._node_iter():
+            if first:
+                if linked_list._first_head is not node:
+                    return False
+                if linked_list._last_head is not node:
+                    return False
+            if node.is_group_head != first:
+                return False
+            if node.prev_head is not None or node.next_head is not None:
+                return False
+            first = False
+        return True
+
+    
+
