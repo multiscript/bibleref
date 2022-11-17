@@ -344,7 +344,17 @@ class TestLinkedList(unittest.TestCase):
         test_list.sort()
         self.assertEqual(test_list, LinkedList(sorted(values)))
         self.assertTrue(self.verify_is_single_group(test_list))
-    
+
+        test_list = LinkedList()
+        test_list.append_group([12, 3, 20])
+        test_list.append_group([18, 5, 11])
+        test_list.append_group([1, 8])
+        test_list.append_group([15])
+        test_list.append_group([2, 6, 14])
+        test_list.sort()
+        self.assertEqual(test_list, LinkedList([1, 2, 3, 5, 6, 8, 11, 12, 14, 15, 18, 20]))
+        self.assertTrue(self.verify_is_single_group(test_list))
+
     def verify_is_single_group(self, linked_list: LinkedList):
         first = True
         for node in linked_list._node_iter():
