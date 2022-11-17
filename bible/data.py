@@ -64,14 +64,14 @@ name_data = {
     ref.BibleBook._2Cor:    ("2Cor",    "2 Corinthians",    2,   []),
     ref.BibleBook.Gal:      ("Gal",     "Galatians",        2,   []),
     ref.BibleBook.Eph:      ("Eph",     "Ephesians",        2,   []),
-    ref.BibleBook.Phil:     ("Phil",    "Philippians",      5,   ["Pp", "Php"]),
+    ref.BibleBook.Phil:     ("Phil",    "Philippians",      4,   ["Pp", "Php"]), # Phil acceptable abbrev
     ref.BibleBook.Col:      ("Col",     "Colossians",       2,   []),
     ref.BibleBook._1Thess:  ("1Thess",  "1 Thessalonians",  2,   ["1 Ths"]),
     ref.BibleBook._2Thess:  ("2Thess",  "2 Thessalonians",  2,   ["2 Ths"]),
     ref.BibleBook._1Tim:    ("1Tim",    "1 Timothy",        2,   []),
     ref.BibleBook._2Tim:    ("2Tim",    "2 Timothy",        2,   []),
     ref.BibleBook.Titus:    ("Titus",   "Titus",            2,   []),
-    ref.BibleBook.Phlm:     ("Phlm",    "Philemon",         5,   ["Pm", "Phm"]),
+    ref.BibleBook.Phlm:     ("Phlm",    "Philemon",         5,   ["Pm", "Phm", "Phlm"]), # Phil not acceptable abbrev
     ref.BibleBook.Heb:      ("Heb",     "Hebrews",          2,   []),
     ref.BibleBook.James:    ("James",   "James",            2,   ["Jm", "Jas"]),
     ref.BibleBook._1Pet:    ("1Pet",    "1 Peter",          1,   ["1 Pt"]),

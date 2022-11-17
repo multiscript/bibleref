@@ -66,6 +66,10 @@ class TestBibleReference(unittest.TestCase):
         self.assertEqual(no_verse_0.verse_0_to_1(), no_verse_0)
         self.assertEqual(no_verse_0.verse_1_to_0(), no_verse_0)
 
+    def test_verse_arithmetic(self):
+        self.assertTrue(BibleVerse(BibleBook.John, 1, 50).add(11) == BibleVerse(BibleBook.John, 2, 10))
+        self.assertTrue(BibleVerse(BibleBook.John, 2, 10).subtract(12) == BibleVerse(BibleBook.John, 1, 49))
+
     def test_bible_verse_to_string(self):
         verse = BibleVerse(BibleBook.Matt, 5, 3)
         self.assertEqual(str(verse), "Matthew 5:3")
@@ -158,6 +162,14 @@ class TestBibleReference(unittest.TestCase):
         self.assertFalse(BibleRange("Matt 2:3-4:5") >= BibleRange("Mark 1:2-3:4"))
         self.assertFalse(BibleRange("Matt 2:3-4:5") > BibleRange("Mark 1:2-3:4"))
 
+    def test_bible_range_verse_0(self):
+        range_with_0 = BibleRange("Ps 3:0-4:0", flags=BibleFlag.ALLOW_VERSE_0)
+        range_with_1 = BibleRange("Ps 3:1-4:1", flags=BibleFlag.ALLOW_VERSE_0)
+        no_verse_0 = BibleRange("Matt 2:3-4:5")
+        self.assertEqual(range_with_0.verse_0_to_1(), range_with_1)
+        self.assertEqual(range_with_1.verse_1_to_0(), range_with_0)
+        self.assertEqual(no_verse_0.verse_0_to_1(), no_verse_0)
+        self.assertEqual(no_verse_0.verse_1_to_0(), no_verse_0)
 
     def test_range_iteration(self):
         bible_range = BibleRange(BibleBook.Matt, 28, 18, BibleBook.Mark, 1, 3, flags=BibleFlag.ALLOW_MULTIBOOK)
@@ -171,14 +183,23 @@ class TestBibleReference(unittest.TestCase):
         ]
         self.assertEqual(list(bible_range), expected_list)       
 
-    def test_bible_range_verse_0(self):
-        range_with_0 = BibleRange("Ps 3:0-4:0", flags=BibleFlag.ALLOW_VERSE_0)
-        range_with_1 = BibleRange("Ps 3:1-4:1", flags=BibleFlag.ALLOW_VERSE_0)
-        no_verse_0 = BibleRange("Matt 2:3-4:5")
-        self.assertEqual(range_with_0.verse_0_to_1(), range_with_1)
-        self.assertEqual(range_with_1.verse_1_to_0(), range_with_0)
-        self.assertEqual(no_verse_0.verse_0_to_1(), no_verse_0)
-        self.assertEqual(no_verse_0.verse_1_to_0(), no_verse_0)
+    def test_range_contains(self):
+        self.assertFalse(BibleRange("Matt 2:20-3:7").contains(BibleVerse("Matt 2:19")))
+        self.assertTrue(BibleRange("Matt 2:20-3:7").contains(BibleVerse("Matt 2:20")))
+        self.assertTrue(BibleRange("Matt 2:20-3:7").contains(BibleVerse("Matt 3:1")))
+        self.assertTrue(BibleRange("Matt 2:20-3:7").contains(BibleVerse("Matt 3:7")))
+        self.assertFalse(BibleRange("Matt 2:20-3:7").contains(BibleVerse("Matt 3:8")))
+
+    def test_range_split(self):
+        ref = BibleRange("John 1:11-10:5")
+        split = ref.split(by_chap=False, num_verses=100)
+        print([r for r in split])
+        expected =  BibleRangeList(BibleRange("John 1:11-3:34"),
+                    BibleRange("John 3:35-5:44"),
+                    BibleRange("John 5:45-7:26"),
+                    BibleRange("John 7:27-9:14"),
+                    BibleRange("John 9:15-10:5"))
+        self.assertTrue(split == expected)
 
     def test_bible_range_to_string(self):
         rng = BibleRange(BibleBook.Rom, 1, 1, None, 16, 27)
@@ -231,6 +252,21 @@ class TestBibleReference(unittest.TestCase):
 
         rng = BibleRange(BibleBook._2Jn, 1, 1, BibleBook._3Jn, 1, 8, flags=BibleFlag.ALLOW_MULTIBOOK)
         self.assertEqual(str(rng), "2 John-3 John 8")
+
+    def test_string_roundtrip(self):
+        # For each Bible book, test that we can convert a range to a string and back again
+        for book in BibleBook:
+            orig_range = BibleRange(book, 1, 1, None, 1, 2)
+
+            # Test abbreviated strings
+            string = orig_range.string(abbrev=True)
+            final_range = BibleRange(string)
+            self.assertEqual(orig_range, final_range)
+
+            # Test full strings
+            string = orig_range.string(abbrev=False)
+            final_range = BibleRange(string)
+            self.assertEqual(orig_range, final_range)
 
     def test_bible_range_list(self):
         range_list = BibleRange("Matt 2:3-4:5", flags=BibleFlag.ALLOW_VERSE_0)

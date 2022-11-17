@@ -675,7 +675,6 @@ class BibleRange:
         else:
             return BibleRangeList(chap_split)
 
-    # TODO: Allow BibleRanges to be compared as less-than or greather-than etc.
     # TODO: Add set-style methods.
 
     def __iter__(self):
@@ -753,6 +752,8 @@ class BibleRangeList(util.LinkedList):
                 super().__init__()
                 for group in args[0].groups:
                     self.append_group(group)
+            else:
+                super().__init__(*args)
         else:
             super().__init__(args)
 
@@ -951,9 +952,9 @@ def _add_regexes():
         #      full_title = "John"
         if full_title[0:2] == "1 " or full_title[0:2] == "2 " or full_title[0:2] == "3 ":
             full_title_pattern = full_title[0:2]
-            full_title_pattern = full_title_pattern.replace("1 ", r"(1|I)\s*") 
-            full_title_pattern = full_title_pattern.replace("2 ", r"(2|II)\s*")
-            full_title_pattern = full_title_pattern.replace("3 ", r"(3|III)\s*")
+            full_title_pattern = full_title_pattern.replace("1 ", r"(1\s*|I\s+)") 
+            full_title_pattern = full_title_pattern.replace("2 ", r"(2\s*|II\s+)")
+            full_title_pattern = full_title_pattern.replace("3 ", r"(3\s*|III\s+)")
             full_title = full_title[2:]
         
         # Add the minimum number of unique characters
@@ -973,7 +974,7 @@ def _add_regexes():
         # single regex for the book
         total_pattern = full_title_pattern
         for abbrev in extra_abbrevs:
-            abbrev = abbrev.replace(" ",r"\s+") # Allow for extra whitespace
+            abbrev = abbrev.replace(" ",r"\s*") # Allow for variable whitespace
             total_pattern += "|" + abbrev
         book.regex = re.compile(total_pattern, re.IGNORECASE)
 
