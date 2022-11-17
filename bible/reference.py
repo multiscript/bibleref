@@ -26,6 +26,7 @@ the execution of that method.
 
 The Bible book, chapter and verse data is specified in the sibling 'data' module.
 '''
+# TODO Rename chap to chap_num and verse to verse_num
 import copy
 from dataclasses import dataclass
 from enum import Enum, Flag, auto
