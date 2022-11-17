@@ -127,6 +127,38 @@ class TestBibleReference(unittest.TestCase):
         self.assertRaises(InvalidReferenceError,
                           lambda: BibleRange(BibleBook.Psa, 3, 0, None, None, 3, flags=BibleFlag.NONE))
 
+    def test_bible_range_comparison(self):
+        self.assertTrue(BibleRange("Matt 2:3-4:5") < BibleRange("Matt 2:3-4:6"))
+        self.assertTrue(BibleRange("Matt 2:3-4:5") <= BibleRange("Matt 2:3-4:6"))
+        self.assertFalse(BibleRange("Matt 2:3-4:5") == BibleRange("Matt 2:3-4:6"))
+        self.assertFalse(BibleRange("Matt 2:3-4:5") >= BibleRange("Matt 2:3-4:6"))
+        self.assertFalse(BibleRange("Matt 2:3-4:5") > BibleRange("Matt 2:3-4:6"))
+
+        self.assertTrue(BibleRange("Matt 2:3-4:5") < BibleRange("Matt 2:3-5:1"))
+        self.assertTrue(BibleRange("Matt 2:3-4:5") <= BibleRange("Matt 2:3-5:1"))
+        self.assertFalse(BibleRange("Matt 2:3-4:5") == BibleRange("Matt 2:3-5:1"))
+        self.assertFalse(BibleRange("Matt 2:3-4:5") >= BibleRange("Matt 2:3-5:1"))
+        self.assertFalse(BibleRange("Matt 2:3-4:5") > BibleRange("Matt 2:3-5:1"))
+
+        self.assertTrue(BibleRange("Matt 2:3-4:5") < BibleRange("Matt 2:4-3:1"))
+        self.assertTrue(BibleRange("Matt 2:3-4:5") <= BibleRange("Matt 2:4-3:1"))
+        self.assertFalse(BibleRange("Matt 2:3-4:5") == BibleRange("Matt 2:4-3:1"))
+        self.assertFalse(BibleRange("Matt 2:3-4:5") >= BibleRange("Matt 2:4-3:1"))
+        self.assertFalse(BibleRange("Matt 2:3-4:5") > BibleRange("Matt 2:4-3:1"))
+
+        self.assertTrue(BibleRange("Matt 2:3-4:5") < BibleRange("Matt 3:1-3:2"))
+        self.assertTrue(BibleRange("Matt 2:3-4:5") <= BibleRange("Matt 3:1-3:2"))
+        self.assertFalse(BibleRange("Matt 2:3-4:5") == BibleRange("Matt 3:1-3:3"))
+        self.assertFalse(BibleRange("Matt 2:3-4:5") >= BibleRange("Matt 3:1-3:3"))
+        self.assertFalse(BibleRange("Matt 2:3-4:5") > BibleRange("Matt 3:1-3:3"))
+
+        self.assertTrue(BibleRange("Matt 2:3-4:5") < BibleRange("Mark 1:2-3:4"))
+        self.assertTrue(BibleRange("Matt 2:3-4:5") <= BibleRange("Mark 1:2-3:4"))
+        self.assertFalse(BibleRange("Matt 2:3-4:5") == BibleRange("Mark 1:2-3:4"))
+        self.assertFalse(BibleRange("Matt 2:3-4:5") >= BibleRange("Mark 1:2-3:4"))
+        self.assertFalse(BibleRange("Matt 2:3-4:5") > BibleRange("Mark 1:2-3:4"))
+
+
     def test_range_iteration(self):
         bible_range = BibleRange(BibleBook.Matt, 28, 18, BibleBook.Mark, 1, 3, flags=BibleFlag.ALLOW_MULTIBOOK)
         expected_list = [

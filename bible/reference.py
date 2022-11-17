@@ -454,7 +454,7 @@ class BibleVerse:
             return result.strip()
 
 
-@dataclass(init=False, repr=False, eq=True, order=False, frozen=True)
+@dataclass(init=False, repr=False, eq=True, order=True, frozen=True)
 class BibleRange:
     '''A reference to a continuous range of Bible verses (e.g. Matt 2:3-4:5).
 
