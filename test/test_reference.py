@@ -253,7 +253,7 @@ class TestBibleReference(unittest.TestCase):
         rng = BibleRange(BibleBook._2Jn, 1, 1, BibleBook._3Jn, 1, 8, flags=BibleFlag.ALLOW_MULTIBOOK)
         self.assertEqual(str(rng), "2 John-3 John 8")
 
-    def test_string_roundtrip(self):
+    def test_bible_range_string_roundtrip(self):
         # For each Bible book, test that we can convert a range to a string and back again
         for book in BibleBook:
             orig_range = BibleRange(book, 1, 1, None, 1, 2)
@@ -270,6 +270,20 @@ class TestBibleReference(unittest.TestCase):
 
     def test_bible_range_list(self):
         range_list = BibleRange("Matt 2:3-4:5", flags=BibleFlag.ALLOW_VERSE_0)
+
+    def test_bible_range_list_verse_0(self):
+        list_with_0 = BibleRangeList("Ps 3:0-4:0; Matt 2:3-4:5", flags=BibleFlag.ALLOW_VERSE_0)
+        list_with_1 = BibleRangeList("Ps 3:1-4:1; Matt 2:3-4:5", flags=BibleFlag.ALLOW_VERSE_0)
+        no_verse_0 = BibleRangeList("Matt 2:3-4:5; Mark 6:7-8:9")
+        list_with_0.verse_0_to_1()
+        self.assertEqual(list_with_0, list_with_1)
+        list_with_0 = BibleRangeList("Ps 3:0-4:0; Matt 2:3-4:5", flags=BibleFlag.ALLOW_VERSE_0)
+        list_with_1.verse_1_to_0()
+        self.assertEqual(list_with_0, list_with_1)
+        no_verse_0.verse_0_to_1()
+        self.assertEqual(no_verse_0, BibleRangeList("Matt 2:3-4:5; Mark 6:7-8:9"))
+        no_verse_0.verse_1_to_0()
+        self.assertEqual(no_verse_0, BibleRangeList("Matt 2:3-4:5; Mark 6:7-8:9"))
 
     def test_bible_range_list_to_string(self):
         # Start range spans a book, after a ref from same book
@@ -413,16 +427,4 @@ class TestBibleReference(unittest.TestCase):
             "Matt;Mark2;Jude5;8;Obad2-3;John3.16-18;10-14.2;" +
             "Rom1.10-22;2;3.20-22,24,4.2-5.2,10")
 
-    def test_bible_range_list_verse_0(self):
-        list_with_0 = BibleRangeList("Ps 3:0-4:0; Matt 2:3-4:5", flags=BibleFlag.ALLOW_VERSE_0)
-        list_with_1 = BibleRangeList("Ps 3:1-4:1; Matt 2:3-4:5", flags=BibleFlag.ALLOW_VERSE_0)
-        no_verse_0 = BibleRangeList("Matt 2:3-4:5; Mark 6:7-8:9")
-        list_with_0.verse_0_to_1()
-        self.assertEqual(list_with_0, list_with_1)
-        list_with_0 = BibleRangeList("Ps 3:0-4:0; Matt 2:3-4:5", flags=BibleFlag.ALLOW_VERSE_0)
-        list_with_1.verse_1_to_0()
-        self.assertEqual(list_with_0, list_with_1)
-        no_verse_0.verse_0_to_1()
-        self.assertEqual(no_verse_0, BibleRangeList("Matt 2:3-4:5; Mark 6:7-8:9"))
-        no_verse_0.verse_1_to_0()
-        self.assertEqual(no_verse_0, BibleRangeList("Matt 2:3-4:5; Mark 6:7-8:9"))
+    # TODO: Test sorting BibleRangeList
