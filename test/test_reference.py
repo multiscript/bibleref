@@ -32,6 +32,31 @@ class TestBibleReference(unittest.TestCase):
         verse_copy = BibleVerse(bible_verse)
         self.assertEquals(bible_verse, verse_copy)
 
+    def test_bible_verse_comparison(self):
+        self.assertTrue(BibleVerse("Matt 2:3") < BibleVerse("Matt 2:4"))
+        self.assertTrue(BibleVerse("Matt 2:3") <= BibleVerse("Matt 2:4"))
+        self.assertFalse(BibleVerse("Matt 2:3") == BibleVerse("Matt 2:4"))
+        self.assertFalse(BibleVerse("Matt 2:3") >= BibleVerse("Matt 2:4"))
+        self.assertFalse(BibleVerse("Matt 2:3") > BibleVerse("Matt 2:4"))
+
+        self.assertTrue(BibleVerse("Matt 2:3") < BibleVerse("Matt 3:1"))
+        self.assertTrue(BibleVerse("Matt 2:3") <= BibleVerse("Matt 3:1"))
+        self.assertFalse(BibleVerse("Matt 2:3") == BibleVerse("Matt 3:1"))
+        self.assertFalse(BibleVerse("Matt 2:3") >= BibleVerse("Matt 3:1"))
+        self.assertFalse(BibleVerse("Matt 2:3") > BibleVerse("Matt 3:1"))
+
+        self.assertTrue(BibleVerse("Matt 2:3") < BibleVerse("Mark 1:2"))
+        self.assertTrue(BibleVerse("Matt 2:3") <= BibleVerse("Mark 1:2"))
+        self.assertFalse(BibleVerse("Matt 2:3") == BibleVerse("Mark 1:2"))
+        self.assertFalse(BibleVerse("Matt 2:3") >= BibleVerse("Mark 1:2"))
+        self.assertFalse(BibleVerse("Matt 2:3") > BibleVerse("Mark 1:2"))
+
+        self.assertFalse(BibleVerse("Matt 2:3") < BibleVerse("Matt 2:3"))
+        self.assertTrue(BibleVerse("Matt 2:3") <= BibleVerse("Matt 2:3"))
+        self.assertTrue(BibleVerse("Matt 2:3") == BibleVerse("Matt 2:3"))
+        self.assertTrue(BibleVerse("Matt 2:3") >= BibleVerse("Matt 2:3"))
+        self.assertFalse(BibleVerse("Matt 2:3") > BibleVerse("Matt 2:3"))
+
     def test_bible_verse_0(self):
         verse_with_0 = BibleVerse(BibleBook.Psa, 3, 0, flags=BibleFlag.ALLOW_VERSE_0)
         verse_with_1 = BibleVerse(BibleBook.Psa, 3, 1)

@@ -258,7 +258,7 @@ class BibleVersePart(Flag):
     CHAP_VERSE  = CHAP | VERSE
 
 
-@dataclass(init=False, repr=False, eq=True, order=False, frozen=True)
+@dataclass(init=False, repr=False, eq=True, order=True, frozen=True)
 class BibleVerse:
     '''A reference to a single Bible verse (e.g. Matt 2:3).
 
@@ -452,38 +452,6 @@ class BibleVerse:
             return result.replace(" ", "")
         else:
             return result.strip()
-
-    def __lt__(self, other):
-        if not isinstance(self, BibleVerse):
-            return NotImplemented
-        else:
-            return (self.book < other.book) or \
-                   (self.book == other.book and self.chap < other.chap) or \
-                   (self.book == other.book and self.chap == other.chap and self.verse < other.verse)
-
-    def __le__(self, other):
-        if not isinstance(self, BibleVerse):
-            return NotImplemented
-        else:
-            return (self.book < other.book) or \
-                   (self.book == other.book and self.chap < other.chap) or \
-                   (self.book == other.book and self.chap == other.chap and self.verse <= other.verse)
-
-    def __gt__(self, other):
-        if not isinstance(self, BibleVerse):
-            return NotImplemented
-        else:
-            return (self.book > other.book) or \
-                   (self.book == other.book and self.chap > other.chap) or \
-                   (self.book == other.book and self.chap == other.chap and self.verse > other.verse)
-
-    def __ge__(self, other):
-        if not isinstance(self, BibleVerse):
-            return NotImplemented
-        else:
-            return (self.book > other.book) or \
-                   (self.book == other.book and self.chap > other.chap) or \
-                   (self.book == other.book and self.chap == other.chap and self.verse >= other.verse)
 
 
 @dataclass(init=False, repr=False, eq=True, order=False, frozen=True)
