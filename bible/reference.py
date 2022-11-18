@@ -275,12 +275,15 @@ class BibleVerse:
     verse:  int
 
     def __init__(self, *args, flags: BibleFlag = None):
-        '''BibleVerses can be constructed in the following ways:
+        '''BibleVerses can be constructed in any of the following ways:
 
             1. From a single string: BibleVerse("Mark 2:3")
-            2. From a string book name, chapter and verse numbers: BibleVerse("Mark", 2, 3)
-            3. From a BibleBook, chapter and verse numbers: BibleVerse(BibleBook.Mark, 2, 3)
-            4. As a copy of another BibleVerse: BibleVerse(existing_bible_verse)
+
+            2. From a Bible book, chapter and verse numbers. The Bible book can
+                 be a string name (), or a BibleBook enum:
+                 BibleVerse("Mark", 2, 3), or BibleVerse(BibleBook.Mark, 2, 3)
+            
+            3. As a copy of another BibleVerse: BibleVerse(existing_bible_verse)
 
         If the supplied arguments are not a valid verse, raises an InvalidReferenceError.
         '''
@@ -470,12 +473,13 @@ class BibleRange:
 
     def __init__(self, *args, start: BibleVerse = None, end: BibleVerse = None,
                  flags: BibleFlag = None):
-        '''A BibleRange can be constructed in the following ways:
+        '''A BibleRange can be constructed in any of the following ways:
 
             1. From a single string: e.g. BibleRange("Mark 3:1-4:2")
 
             2. From positional arguments in the following order:
                Start book, start chap num, start verse num, end book, end chap num, end verse num
+               Start and end books can be string names or BibleBook enums.
                Later arguments can be omitted or set to None, as in these examples:
 
                 BibleRange(BibleBook.Matt, 2, 3, BibleBook.John, 4, 6, allow_multibook=True) # Matt 2:3-John 4:6
@@ -489,7 +493,9 @@ class BibleRange:
 
             3. From a start and end BibleVerse, which must be specified using the keywords
                start and end.
-               e.g. BibleRange(start=BibleVerse("Mark 3:1"), end=BibleVerse("Mark 4:2"))            
+               e.g. BibleRange(start=BibleVerse("Mark 3:1"), end=BibleVerse("Mark 4:2"))
+
+            4. As a copy of an existing BibleRange: BibleRange(existing_bible_range)            
         '''
         flags = flags or globals()['flags']
         if len(args) == 0:
@@ -523,8 +529,13 @@ class BibleRange:
         end_chap = args[4] if len(args) > 4 else None
         end_verse = args[5] if len(args) > 5 else None
 
-        if start_book is None or not isinstance(start_book, BibleBook):
+        if start_book is None:
+            raise InvalidReferenceError(f"A start book is needed for a BibleRange")
+        elif isinstance(start_book, str):
+            start_book = BibleBook.from_str(start_book, raise_error=True)
+        elif not isinstance(start_book, BibleBook):
             raise InvalidReferenceError(f"{start_book} is not a valid BibleBook")
+
         if start_chap is None and start_verse is not None:
             raise InvalidReferenceError("Start verse is missing a start chapter")
 
@@ -546,8 +557,11 @@ class BibleRange:
         if not no_end: # We have end-point info
             if end_book is None:
                 end_book = start_book
+            elif isinstance(end_book, str):
+                end_book = BibleBook.from_str(end_book, raise_error=True)
             elif not isinstance(end_book, BibleBook):
                 raise InvalidReferenceError(f"{end_book} is not a valid BibleBook")
+            
             if end_chap is None and end_verse is None: # End is book only
                 end = end_book.last_verse()
             elif end_verse is None: # End is book and chap only
@@ -741,6 +755,18 @@ class BibleRangeList(util.LinkedList):
     as an implementation detail, and not relied upon.
     '''
     def __init__(self, *args, flags: BibleFlag = None):
+        '''A BibleRange can be constructed in any of the following ways:
+
+            1. From a single string:
+                 BibleRangeList("Mark 3:1-4:2; 5:6-8, 10; Matt 4")
+
+            2. From any iterable containing BibleRanges:
+                 BibleRangeList([BibleRange("Mark 3:1-4:2"), BibleRange("Mark 5:6-8"),
+                                 BibleRange("Mark 5:10"), BibleRange("Matt 4")])
+            
+            3. As a copy of an existing BibleRangeList:
+                 BibleRangeList(existing_bible_range_list)
+        '''
         flags = flags or globals()['flags']
 
         if len(args) == 1:
@@ -789,8 +815,12 @@ class BibleRangeList(util.LinkedList):
         If alt_sep is True, chapter and verse numbers are separated by the alternate
           separator (defaults to '.') instead of the standard separator (defaults to ':').
         If nospace is True, no spaces are included in the string.
-         If preserve_groups is True, the major group separator is only used between groups, and
-           not within groups. Parsing the resulting string should yield an equivalent BibleRangeList.
+        If preserve_groups is True, the major group separator is always used between groups,
+           and only between groups, with the minor group separator used exclusively within
+           groups. Parsing the resulting string should yield an equivalent BibleRangeList.
+        If preserve_groups is False, major and minor group separators are used as necessary
+           to create the most conventional resulting string, which may result in different
+           passage groupings.
         '''
         cur_book = None
         cur_chap = None
@@ -837,7 +867,7 @@ class BibleRangeList(util.LinkedList):
                                     at_verse_level = False
                                 else: # We're after a minor list ref
                                     if bible_range.spans_end_chap(flags):
-                                        # This range is a whole set of chapters, do just display chapters
+                                        # This range is a whole set of chapters, so just display chapters
                                         start_parts = BibleVersePart.CHAP
                                         at_verse_level = False
                                     else:
@@ -914,9 +944,14 @@ class BibleRangeList(util.LinkedList):
                 else:
                     result_str += range_str.strip()
 
-                list_sep = data.MINOR_LIST_SEP # Minor list separator between groups
-            list_sep = data.MAJOR_LIST_SEP # Major list separator between groups
-            at_verse_level=False
+                list_sep = data.MINOR_LIST_SEP # Minor list separator by default within groups
+            
+            # We've have completed the group
+            if preserve_groups:
+                list_sep = data.MAJOR_LIST_SEP # Major list separator between groups
+                at_verse_level=False
+        
+        # We've completed all groups
         return result_str
 
 
