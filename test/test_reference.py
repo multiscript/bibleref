@@ -427,4 +427,12 @@ class TestBibleReference(unittest.TestCase):
             "Matt;Mark2;Jude5;8;Obad2-3;John3.16-18;10-14.2;" +
             "Rom1.10-22;2;3.20-22,24,4.2-5.2,10")
 
-    # TODO: Test sorting BibleRangeList
+    def test_bible_range_list_sort(self):
+        range_list_str = "Matt 2:3-4:5; Mark 3:4-5:6; Mark 3:4-5:5; Gen 1:2-3:4; " + \
+                         "Matt 2:3-4:4; 1 Sam 2:2-3:3; Matt 1:2-11:1"
+        range_list = BibleRangeList(range_list_str)
+        range_list.sort()
+        sorted_list_str = range_list.string(abbrev=True, preserve_groups=False)
+        expected_list_str = "Gen 1:2-3:4; 1Sam 2:2-3:3; Matt 1:2-11:1; 2:3-4:4; " + \
+                            "2:3-4:5; Mark 3:4-5:5; 3:4-5:6"
+        self.assertEqual(sorted_list_str, expected_list_str)
