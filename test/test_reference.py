@@ -197,8 +197,21 @@ class TestBibleReference(unittest.TestCase):
 
     def test_range_split(self):
         ref = BibleRange("John 1:11-10:5")
+        split = ref.split(by_chap=True)
+        expected =  BibleRangeList(BibleRange("John 1:11-51"),
+                    BibleRange("John 2"),
+                    BibleRange("John 3"),
+                    BibleRange("John 4"),
+                    BibleRange("John 5"),
+                    BibleRange("John 6"),
+                    BibleRange("John 7"),
+                    BibleRange("John 8"),
+                    BibleRange("John 9"),
+                    BibleRange("John 10:1-5"))
+        self.assertTrue(split == expected)
+
+        ref = BibleRange("John 1:11-10:5")
         split = ref.split(by_chap=False, num_verses=100)
-        print([r for r in split])
         expected =  BibleRangeList(BibleRange("John 1:11-3:34"),
                     BibleRange("John 3:35-5:44"),
                     BibleRange("John 5:45-7:26"),

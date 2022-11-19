@@ -359,6 +359,7 @@ class BibleVerse:
         '''
         return copy.copy(self)
 
+    # TODO: Check this code is correct.
     def add(self, num_verses: int, flags: BibleFlag = None) -> 'BibleVerse':
         '''Returns a new BibleVerse that is num_verses after this BibleVerse.
         
@@ -388,6 +389,7 @@ class BibleVerse:
 
         return BibleVerse(new_book, new_chap, new_verse, flags=flags)
 
+    # TODO: Check this code is correct.
     def subtract(self, num_verses: int, flags: BibleFlag = None) -> 'BibleVerse':
         '''Return a new BibleVerse that is num_verses before this BibleVerse.
         
@@ -639,21 +641,25 @@ class BibleRange:
         return (bible_verse >= self.start and bible_verse <= self.end)
 
     # TODO: Check this is correct. Allow splitting by book as well. Add unit tests.
-    def split(self, by_chap: bool = True, num_verses: bool = None, flags: BibleFlag = None):
+    def split(self, by_book: bool = True, by_chap: bool = True, num_verses: bool = None,
+              flags: BibleFlag = None):
         '''Split this range into a BibleRangeList of smaller consecutive ranges.
         
+        If by_book is true, splits are made at the end of each book.
         If by_chap is true, splits are made end of each chapter.
-        If num_verses is specified, splits are made after no more than the specified number of verses.
-        If both by_chap and num_verses are specified, splits occur both at chapter boundaries, and after
-        the specified number of verses.
-        '''        
+        If num_verses is specified, splits are made after (no more than) the specified number of verses.
+        by_book, by_chap and num_verses can be set in any combination.
+        '''
+
+        # TODO: Implement by_book split, and clean up code.
+
         # Start by dividing our initial range into chapters, if requested.
         if by_chap:
             chap_split = []
             book = self.start.book
             chap = self.start.chap
             done = False
-            while book <= self.end.book and chap <= self.end.chap:
+            while not done: #book <= self.end.book and chap <= self.end.chap:
                 if book == self.start.book and chap == self.start.chap:
                     start_verse = self.start.verse
                 else:
@@ -663,7 +669,7 @@ class BibleRange:
                     done = True
                 else:
                     end_verse = book.max_verse(chap)
-                chap_split.append(BibleRange(book, chap, start_verse, book, chap, end_verse))
+                chap_split.append(BibleRange(book, chap, start_verse, book, chap, end_verse, flags=flags))
                 
                 if not done:
                     chap += 1
@@ -671,24 +677,22 @@ class BibleRange:
                         book = book.next()
                         chap = book.min_chap()
         else:
-            chap_split = [BibleRange(self.start.book, self.start.chap, self.start.verse,
-                                    self.end.book, self.end.chap, self.end.verse)]
+            chap_split = [self]
 
         # Next, split our list of ranges into smaller ranges with a max numbers of verses, if requested.
         if num_verses is not None:
             verse_split = []
             for bible_range in chap_split:
-                start = BibleVerse(bible_range.start.book, bible_range.start.chap, bible_range.start.verse)
+                start = BibleVerse(bible_range.start, flags=flags)
                 end = start.add(num_verses - 1, flags)
                 while end is not None and end < bible_range.end:
-                    verse_split.append(BibleRange(start.book, start.chap, start.verse, end.book, end.chap, end.verse))
+                    verse_split.append(BibleRange(start=start, end=end, flags=flags))
                     start = end.add(1, flags)
                     end = start.add(num_verses-1, flags)
-                verse_split.append(BibleRange(start.book, start.chap, start.verse,
-                                   bible_range.end.book, bible_range.end.chap, bible_range.end.verse))
-            return BibleRangeList(verse_split)
+                verse_split.append(BibleRange(start=start, end=bible_range.end, flags=flags))
+            return BibleRangeList(verse_split, flags=flags)
         else:
-            return BibleRangeList(chap_split)
+            return BibleRangeList(chap_split, flags=flags)
 
     # TODO: Add set-style methods.
 
