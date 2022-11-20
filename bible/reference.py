@@ -27,7 +27,6 @@ the execution of that method.
 The Bible book, chapter and verse data is specified in the sibling 'data' module.
 '''
 # TODO Rename chap to chap_num and verse to verse_num
-import copy
 from dataclasses import dataclass
 from enum import Enum, Flag, auto
 import re
@@ -395,70 +394,67 @@ class BibleVerse:
         else:
             return self
 
-    def copy(self) -> 'BibleVerse':
-        '''Returns a copy of this BibleVerse.
-        '''
-        return copy.copy(self)
-
-    # TODO: Check this code is correct.
     def add(self, num_verses: int, flags: BibleFlag = None) -> 'BibleVerse':
         '''Returns a new BibleVerse that is num_verses after this BibleVerse.
         
         If BibleFlag.ALLOW_MULTIBOOK is set (either set by the 'flags' argument or,
         if None, by the module attribute), and the result would be beyond the current
-        book, a verse in the subsequent book is returned. Otherwise, if the verse
+        book, a verse in the next book is returned. Otherwise, if the verse
         does not exist, None is returned.
         '''
         flags = flags or globals()['flags'] or BibleFlag.NONE
-        new_book = self.book
-        new_chap = self.chap
-        new_verse = self.verse + num_verses
-        max_verse = new_book.max_verse(new_chap)
-        while new_verse > max_verse:
-            new_chap += 1
-            if new_chap > new_book.max_chap():
+        book = self.book
+        chap_num = self.chap
+        if self.verse == 0:
+            flags = flags | BibleFlag.ALLOW_VERSE_0
+        verse_num = self.verse + num_verses
+        max_verse_num = book.max_verse(chap_num)
+        while verse_num > max_verse_num:
+            chap_num += 1
+            if chap_num > book.max_chap():
                 if BibleFlag.ALLOW_MULTIBOOK not in flags:
                     return None
                 else:
-                    new_book = new_book.next()
-                    if new_book is None:
+                    book = book.next()
+                    if book is None:
                         return None
-                    new_chap = new_book.min_chap()
+                    chap_num = book.min_chap()
             
-            new_verse = new_verse - max_verse - 1 + new_book.min_verse(new_chap, flags)
-            max_verse = new_book.max_verse(new_chap)
+            verse_num = verse_num - max_verse_num + book.min_verse(chap_num, flags) - 1 
+            max_verse_num = book.max_verse(chap_num)
 
-        return BibleVerse(new_book, new_chap, new_verse, flags=flags)
+        return BibleVerse(book, chap_num, verse_num, flags=flags)
 
-    # TODO: Check this code is correct.
     def subtract(self, num_verses: int, flags: BibleFlag = None) -> 'BibleVerse':
         '''Return a new BibleVerse that is num_verses before this BibleVerse.
         
         If BibleFlag.ALLOW_MULTIBOOK is set (either set by the 'flags' argument or,
         if None, the module attribute), and the result would be before the current
-        book, a verse in the prior book is returned. Otherwise, if the verse does
-        not exist, None is returned.
+        book, a verse in the previous book is returned. Otherwise, if the verse
+        does not exist, None is returned.
         '''
         flags = flags or globals()['flags'] or BibleFlag.NONE
-        new_book = self.book
-        new_chap = self.chap
-        new_verse = self.verse - num_verses
-        min_verse = new_book.min_verse(new_chap, flags)
-        while new_verse < min_verse:
-            new_chap -= 1
-            if new_chap < new_book.min_chap():
+        book = self.book
+        chap_num = self.chap
+        if self.verse == 0:
+            flags = flags | BibleFlag.ALLOW_VERSE_0
+        verse_num = self.verse - num_verses
+        min_verse_num = book.min_verse(chap_num, flags)
+        while verse_num < min_verse_num:
+            chap_num -= 1
+            if chap_num < book.min_chap():
                 if BibleFlag.ALLOW_MULTIBOOK not in flags:
                     return None
                 else:
-                    new_book = new_book.prev()
-                    if new_book is None:
+                    book = book.prev()
+                    if book is None:
                         return None
-                    new_chap = new_book.max_chap()
+                    chap_num = book.max_chap()
              
-            new_verse = new_verse + new_book.max_verse(new_chap)
-            min_verse = new_book.min_verse(new_chap)
+            verse_num = verse_num + book.max_verse(chap_num) - min_verse_num + 1 
+            min_verse_num = book.min_verse(chap_num)
 
-        return BibleVerse(new_book, new_chap, new_verse, flags=flags)
+        return BibleVerse(book, chap_num, verse_num, flags=flags)
 
     def __repr__(self):
         return f"BibleVerse({self.string(abbrev=True)})"
