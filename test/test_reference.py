@@ -196,28 +196,54 @@ class TestBibleReference(unittest.TestCase):
         self.assertFalse(BibleRange("Matt 2:20-3:7").contains(BibleVerse("Matt 3:8")))
 
     def test_range_split(self):
+        ref = BibleRange("Matt 1:5-John 10:11", flags=BibleFlag.ALLOW_MULTIBOOK)
+        self.assertRaises(ValueError, lambda: ref.split())
+
+        ref = BibleRange("Matt 1:5-John 10:11", flags=BibleFlag.ALLOW_MULTIBOOK)
+        split = ref.split(by_book=True)
+        print(split)
+        expected =  BibleRangeList(
+                        BibleRange("Matt 1:5-28:20"),
+                        BibleRange("Mark"),
+                        BibleRange("Luke"),
+                        BibleRange("John 1-10:11"),
+                    )
+        self.assertEqual(split, expected)
+
         ref = BibleRange("John 1:11-10:5")
         split = ref.split(by_chap=True)
-        expected =  BibleRangeList(BibleRange("John 1:11-51"),
-                    BibleRange("John 2"),
-                    BibleRange("John 3"),
-                    BibleRange("John 4"),
-                    BibleRange("John 5"),
-                    BibleRange("John 6"),
-                    BibleRange("John 7"),
-                    BibleRange("John 8"),
-                    BibleRange("John 9"),
-                    BibleRange("John 10:1-5"))
-        self.assertTrue(split == expected)
+        expected =  BibleRangeList(
+                        BibleRange("John 1:11-51"),
+                        BibleRange("John 2"),
+                        BibleRange("John 3"),
+                        BibleRange("John 4"),
+                        BibleRange("John 5"),
+                        BibleRange("John 6"),
+                        BibleRange("John 7"),
+                        BibleRange("John 8"),
+                        BibleRange("John 9"),
+                        BibleRange("John 10:1-5")
+                    )
+        self.assertEqual(split, expected)
+
+        ref = BibleRange("John 1:1-11")
+        split = ref.split(by_chap=False, num_verses=10)
+        expected =  BibleRangeList(
+                        BibleRange("John 1:1-10"),
+                        BibleRange("John 1:11"),
+                    )
+        self.assertEqual(split, expected)
 
         ref = BibleRange("John 1:11-10:5")
         split = ref.split(by_chap=False, num_verses=100)
-        expected =  BibleRangeList(BibleRange("John 1:11-3:34"),
-                    BibleRange("John 3:35-5:44"),
-                    BibleRange("John 5:45-7:26"),
-                    BibleRange("John 7:27-9:14"),
-                    BibleRange("John 9:15-10:5"))
-        self.assertTrue(split == expected)
+        expected =  BibleRangeList(
+                        BibleRange("John 1:11-3:34"),
+                        BibleRange("John 3:35-5:44"),
+                        BibleRange("John 5:45-7:26"),
+                        BibleRange("John 7:27-9:14"),
+                        BibleRange("John 9:15-10:5")
+                    )
+        self.assertEqual(split, expected)
 
     def test_bible_range_to_string(self):
         rng = BibleRange(BibleBook.Rom, 1, 1, None, 16, 27)
