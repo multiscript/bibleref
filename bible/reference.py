@@ -182,7 +182,7 @@ class BibleBook(Enum):
 
     def first_verse(self, chap: int = None, flags: BibleFlag = None) -> 'BibleVerse':
         '''Returns a BibleVerse for the first verse of the specified chapter of the BibleBook.
-        If chap is None, it uses the first chapter of the book.
+        If chap is None, it returns the first verse of the enitre book.
         '''
         if chap is None:
             chap = self.min_chap()
@@ -190,7 +190,7 @@ class BibleBook(Enum):
 
     def last_verse(self, chap: int = None) -> 'BibleVerse':
         '''Returns a BibleVerse for the last verse of the specified chapter of the BibleBook.
-        If chap is None, it uses the last chapter of the book.
+        If chap is None, it returns the last verse of the entire book.
         '''
         if chap is None:
             chap = self.max_chap()
@@ -326,15 +326,56 @@ class BibleVerse:
             object.__setattr__(self, "chap", chap)
             object.__setattr__(self, "verse", verse)
 
-    def min_chap_verse(self, flags: BibleFlag = None) -> int:
-        '''Return the lowest verse number (usually indexed from 1) for the chapter of this BibleVerse.
+    def min_chap(self) -> int:
+        '''Return lowest chapter number (indexed from 1) of the BibleBook containing this verse.
         '''
-        return self.book.min_verse(self.chap, flags)
+        return self.book.min_chap()
 
-    def max_chap_verse(self) -> int:
-        '''Return the highest verse number (usually indexed from 1) for the chapter of this BibleVerse.
+    def max_chap(self) -> int:
+        '''Return highest chapter number (indexed from 1) of the BibleBook containing this verse.
         '''
-        return self.book.max_verse(self.chap)
+        return self.book.max_chap()
+    
+    def chap_count(self):
+        '''Returns the number of chapters in the BibleBook containing this verse.
+        '''
+        return self.book.chap_count()
+
+    def min_verse(self, chap: int = None, flags: BibleFlag = None) -> int:
+        '''Return the lowest verse number (usually indexed from 1) for the specified chapter
+        of the BibleBook containing this verse. If no chapter is specified, it returns the
+        lowest verse number of the chapter containing this verse.
+        '''
+        if chap is None:
+            chap = self.chap
+        return self.book.min_verse(chap, flags=flags)
+
+    def max_verse(self, chap: int) -> int:
+        '''Return the highest verse number (usually indexed from 1) for the specified chapter
+        of the BibleBook containing this verse. If no chapter is specified, it returns the
+        highest verse number of the chapter containing this verse.
+        '''
+        if chap is None:
+            chap = self.chap
+        return self.book.max_verse(chap)
+
+    def first_verse(self, chap: int = None, flags: BibleFlag = None) -> 'BibleVerse':
+        '''Returns the first BibleVerse of the specified chapter of the BibleBook containing
+        this verse. If chap is None, it returns the first BibleVerse of the chapter
+        containing this verse.
+        '''
+        if chap is None:
+            chap = self.chap
+        return self.book.first_verse(chap, flags=flags)
+
+    def last_verse(self, chap: int = None) -> 'BibleVerse':
+        '''Returns the last BibleVerse of the specified chapter of the BibleBook containing
+        this verse. If chap is None, it returns the last BibleVerse of the chapter
+        containing this verse.
+        '''
+        if chap is None:
+            chap = self.chap
+        return self.book.last_verse(chap)
 
     def verse_0_to_1(self) -> 'BibleVerse':
         '''If this BibleVerse refers to a verse number 0, returns an identical BibleVerse
@@ -349,7 +390,7 @@ class BibleVerse:
         same chapter, returns an identical BibleVerse except with a verse number of 0.
         Otherwise, returns the original BibleVerse. The value of the module 'flags'
         attribute is ignored.'''
-        if self.verse == 1 and self.min_chap_verse(flags=BibleFlag.ALLOW_VERSE_0) == 0:
+        if self.verse == 1 and self.min_verse(self.chap, flags=BibleFlag.ALLOW_VERSE_0) == 0:
             return BibleVerse(self.book, self.chap, 0, flags=BibleFlag.ALLOW_VERSE_0)
         else:
             return self
@@ -653,7 +694,7 @@ class BibleRange:
         '''
         if not (by_book or by_chap or num_verses):
             raise ValueError("Must split by at least one of book, chapter, or number of verses")
-            
+
         # Allow multibook references for this method.
         flags = (flags or globals()['flags'] or BibleFlag.NONE) | BibleFlag.ALLOW_MULTIBOOK
         split_result = [self]
@@ -674,11 +715,11 @@ class BibleRange:
             new_split = []
             for range_to_split in split_result:
                 range_start = range_to_split.start
-                range_end = range_start.book.last_verse(range_start.chap)
+                range_end = range_start.last_verse()
                 while range_end < range_to_split.end:
                     new_split.append(BibleRange(start=range_start, end=range_end, flags=flags))
                     range_start = range_end.add(1, flags=flags)
-                    range_end = range_start.book.last_verse(range_start.chap)
+                    range_end = range_start.last_verse()
                 new_split.append(BibleRange(start=range_start, end=range_to_split.end, flags=flags))
             split_result = new_split
 
