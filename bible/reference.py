@@ -726,7 +726,12 @@ class BibleRange:
         
         return BibleRangeList(split_result, flags=flags)
 
-    # TODO: Add set-style methods.
+    def is_disjoint(self, bible_range: 'BibleRange') -> bool:
+        '''Returns True if this BibleRange doesn't overlap with the given BibleRange,
+        otherwise False.
+        '''
+        range_A, range_B = (self, bible_range) if self < bible_range else (bible_range, self)
+        return range_A.end < range_B.start
 
     def __iter__(self):
         verse = self.start

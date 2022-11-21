@@ -256,6 +256,19 @@ class TestBibleReference(unittest.TestCase):
                     )
         self.assertEqual(split, expected)
 
+    def test_range_is_disjoint(self):
+        test_range = BibleRange("Matt 1:10-15")
+        self.assertTrue(test_range.is_disjoint(BibleRange("Matt 1:1-9")))
+        self.assertFalse(test_range.is_disjoint(BibleRange("Matt 1:1-10")))
+        self.assertFalse(test_range.is_disjoint(BibleRange("Matt 1:1-11")))
+        self.assertFalse(test_range.is_disjoint(BibleRange("Matt 1:10-12")))
+        self.assertFalse(test_range.is_disjoint(BibleRange("Matt 1:11-14")))
+        self.assertFalse(test_range.is_disjoint(BibleRange("Matt 1:13-15")))
+        self.assertFalse(test_range.is_disjoint(BibleRange("Matt 1:10-15")))
+        self.assertFalse(test_range.is_disjoint(BibleRange("Matt 1:14-20")))
+        self.assertFalse(test_range.is_disjoint(BibleRange("Matt 1:15-20")))
+        self.assertTrue(test_range.is_disjoint(BibleRange("Matt 1:16-20")))
+
     def test_bible_range_to_string(self):
         rng = BibleRange(BibleBook.Rom, 1, 1, None, 16, 27)
         self.assertEqual(str(rng), "Romans")
