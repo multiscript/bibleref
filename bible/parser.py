@@ -88,8 +88,8 @@ class BibleRefTransformer(Transformer):
         # We don't need to update self.cur_book or self.cur_chap_num as they will
         # have already been updated by the parsing of the second BibleRange child.
         try:
-            bible_range = reference.BibleRange(first.start.book, first.start.chap, first.start.verse,
-                                               second.end.book, second.end.chap, second.end.verse,
+            bible_range = reference.BibleRange(first.start.book, first.start.chap_num, first.start.verse_num,
+                                               second.end.book, second.end.chap_num, second.end.verse_num,
                                                flags=self.flags)
         except Exception as e:
             raise BibleRefParsingError(str(e), meta)
@@ -114,7 +114,7 @@ class BibleRefTransformer(Transformer):
         self.at_verse_level = is_single_chap
         try:
             if is_single_chap:
-                self.cur_chap_num = book.min_chap()
+                self.cur_chap_num = book.min_chap_num()
                 bible_range = reference.BibleRange(book, self.cur_chap_num, num,
                                                    flags=self.flags)
             else:
@@ -160,7 +160,7 @@ class BibleRefTransformer(Transformer):
         try:
             if self.at_verse_level or is_single_chap: # Book, chapter, verse ref
                 if is_single_chap:
-                    self.cur_chap_num = book.min_chap()
+                    self.cur_chap_num = book.min_chap_num()
                 elif self.cur_chap_num is None:
                     raise BibleRefParsingError("No chapter specified", meta)
                 bible_range = reference.BibleRange(book, self.cur_chap_num, num, flags=self.flags)
