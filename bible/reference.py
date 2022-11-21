@@ -29,6 +29,7 @@ The Bible book, chapter and verse data is specified in the sibling 'data' module
 from dataclasses import dataclass
 from enum import Enum, Flag, auto
 import re
+from typing import Union
 
 
 class BibleFlag(Flag):
@@ -746,15 +747,15 @@ class BibleRange:
         return lower.end < higher.start
 
     def is_adjacent(self, other_range: 'BibleRange', flags: BibleFlag = None) -> bool:
-        '''Returns True if this BibleRange is adjacent to other_range, otherwise False.
+        '''Returns True if this range is adjacent to other_range, otherwise False.
         '''
         lower, higher = (self, other_range) if self < other_range else (other_range, self)
         return (lower.end.add(1, flags) == higher.start)
 
-    def union(self, other_range: 'BibleRange', flags: BibleFlag = None) -> bool:
-        '''If this BibleRange and other_range overlap or are immediately adjacent,
-        returns a new BibleRange encompassing both of them. If this BibleRange and
-        other_range don't overlap and aren't adjacent, returns None
+    def union(self, other_range: 'BibleRange', flags: BibleFlag = None) -> 'BibleRange':
+        '''If this range and other_range overlap or are adjacent, returns a new BibleRange
+        encompassing both of them. If this range and other_range don't overlap
+        and aren't adjacent, returns None.
         '''
         if self.is_disjoint(other_range) and not self.is_adjacent(other_range):
             return None
@@ -762,16 +763,66 @@ class BibleRange:
         end = max(self.end, other_range.end)
         return BibleRange(start=start, end=end, flags=flags)         
 
-    def intersect(self, other_range: 'BibleRange', flags: BibleFlag = None) -> bool:
-        '''If this BibleRange and other_range overlap, returns a new BibleRange of
-        their intersection (common-range). If this BibleRange and other_range don't
-        overlap, returns None.
+    def intersect(self, other_range: 'BibleRange', flags: BibleFlag = None) -> 'BibleRange':
+        '''Returns a new BibleRange of verses that are common to both this BibleRange
+        and other_range. If there are no verses in common, returns None.
         '''
         if self.is_disjoint(other_range):
             return None
         start = max(self.start, other_range.start)
         end = min(self.end, other_range.end)
         return BibleRange(start=start, end=end, flags=flags)         
+
+    def contains(self, ref: Union[BibleVerse, 'BibleRange']) -> bool:
+        '''Returns True if ref is a BibleVerse that falls within this range, or another
+        BibleRange whose verses are all contained within this range. Otherwise returns False.
+
+        The same result is returned using the 'in' operator: ref in bible_range
+        '''
+        if isinstance(ref, BibleVerse):
+            return (ref >= self.start and ref <= self.end)
+        elif isinstance(ref, BibleRange):
+            return (ref.start >= self.start and ref.start <= self.end) and \
+                   (ref.end >= self.start and ref.end <= self.end)
+        else:
+            raise ValueError(f"{ref} is neither a BibleVerse nor BibleRange")
+
+    def surrounds(self, ref: Union[BibleVerse, 'BibleRange']) -> bool:
+        '''Returns True if ref is a BibleVerse or BibleRange that falls within this range, without
+        touching this range's first or last verse. Otherwise, returns False.
+        '''
+        if isinstance(ref, BibleVerse):
+            return (ref > self.start and ref < self.end)
+        elif isinstance(ref, BibleRange):
+            return (ref.start > self.start and ref.start < self.end) and \
+                   (ref.end > self.start and ref.end < self.end)
+        else:
+            raise ValueError(f"{ref} is neither a BibleVerse nor BibleRange")
+
+    def diff(self, other_range: 'BibleRange', flags: BibleFlag = None) -> 'BibleRangeList':
+        '''Returns a new BibleRangeList of verses that are in this range, but not in
+        other_range.
+        
+        If this BibleRange and other_range are disjoint, the list contains one item: this BibleRange
+            itself.
+        If this BibleRange surrounds other_range, the list contains two items:
+            a lower-section BibleRange, and an upper-section BibleRange.
+        If other_range surrounds or equals this range, the list is empty.
+        '''
+        if self.is_disjoint(other_range):
+            return BibleRangeList(self, flags=flags)
+        if self == other_range or other_range.contains(self):
+            return BibleRangeList()
+        if self.surrounds(other_range):
+            lower_range = BibleRange(start=self.start, end=other_range.start.subtract(1, flags=flags))
+            upper_range = BibleRange(start=other_range.end.add(1, flags=flags), end=self.end)
+            return BibleRangeList([lower_range, upper_range])
+        if self < other_range:
+            # TODO Finish this section
+            pass
+        else:
+            # TODO Finish this section 
+            pass
 
     def __iter__(self):
         verse = self.start
@@ -782,14 +833,7 @@ class BibleRange:
     def __contains__(self, item) -> bool:
         '''Returns True if items is a BibleVerse that falls within this range, otherwise False.
         '''
-        if not isinstance(item, BibleVerse):
-            return False
         return self.contains(item)
-
-    def contains(self, bible_verse: BibleVerse) -> bool:
-        '''Returns True if items is a BibleVerse that falls within this range, otherwise False.
-        '''
-        return (bible_verse >= self.start and bible_verse <= self.end)
 
     def __repr__(self):
         return f"BibleRange({self.string()})"
