@@ -726,12 +726,40 @@ class BibleRange:
         
         return BibleRangeList(split_result, flags=flags)
 
-    def is_disjoint(self, bible_range: 'BibleRange') -> bool:
+    def is_disjoint(self, other_range: 'BibleRange') -> bool:
         '''Returns True if this BibleRange doesn't overlap with the given BibleRange,
         otherwise False.
         '''
-        range_A, range_B = (self, bible_range) if self < bible_range else (bible_range, self)
-        return range_A.end < range_B.start
+        lower, higher = (self, other_range) if self < other_range else (other_range, self)
+        return lower.end < higher.start
+
+    def is_adjacent(self, other_range: 'BibleRange', flags: BibleFlag = None) -> bool:
+        '''Returns True if this BibleRange is adjacent to other_range, otherwise False.
+        '''
+        lower, higher = (self, other_range) if self < other_range else (other_range, self)
+        return (lower.end.add(1, flags) == higher.start)
+
+    def union(self, other_range: 'BibleRange', flags: BibleFlag = None) -> bool:
+        '''If this BibleRange and other_range overlap or are immediately adjacent,
+        returns a new BibleRange encompassing both of them. If this BibleRange and
+        other_range don't overlap and aren't adjacent, returns None
+        '''
+        if self.is_disjoint(other_range) and not self.is_adjacent(other_range):
+            return None
+        start = min(self.start, other_range.start)
+        end = max(self.end, other_range.end)
+        return BibleRange(start=start, end=end, flags=flags)         
+
+    def intersect(self, other_range: 'BibleRange', flags: BibleFlag = None) -> bool:
+        '''If this BibleRange and other_range overlap, returns a new BibleRange of
+        their intersection (common-range). If this BibleRange and other_range don't
+        overlap, returns None.
+        '''
+        if self.is_disjoint(other_range):
+            return None
+        start = max(self.start, other_range.start)
+        end = min(self.end, other_range.end)
+        return BibleRange(start=start, end=end, flags=flags)         
 
     def __iter__(self):
         verse = self.start
