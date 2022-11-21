@@ -671,11 +671,6 @@ class BibleRange:
         '''Returns True if the BibleRange exactly spans a single verse, else False.'''
         return  (self.start == self.end)
 
-    def contains(self, bible_verse: BibleVerse) -> bool:
-        '''Returns True if this BibleRange contains bible_verse, otherwise False.
-        '''
-        return (bible_verse >= self.start and bible_verse <= self.end)
-
     def split(self, *, by_book: bool = False, by_chap: bool = False, num_verses: bool = None,
               flags: BibleFlag = None):
         '''Split this range into a BibleRangeList of smaller consecutive ranges.
@@ -738,6 +733,13 @@ class BibleRange:
         while verse <= self.end:
             yield verse
             verse = verse.add(1, BibleFlag.ALLOW_MULTIBOOK)
+
+    def __contains__(self, item) -> bool:
+        '''Returns True if items is a BibleVerse that falls within this range, otherwise False.
+        '''
+        if not isinstance(item, BibleVerse):
+            return False
+        return (item >= self.start and item <= self.end)
 
     def __repr__(self):
         return f"BibleRange({self.string()})"
