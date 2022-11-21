@@ -141,6 +141,9 @@ class TestBibleReference(unittest.TestCase):
         self.assertRaises(InvalidReferenceError,
                           lambda: BibleRange(BibleBook.Psa, 3, 0, None, None, 3, flags=BibleFlag.NONE))
 
+    def test_whole_bible(self):
+        self.assertEqual(BibleRange.whole_bible(), BibleRange("Gen-Rev", flags=BibleFlag.ALLOW_MULTIBOOK))
+
     def test_bible_range_comparison(self):
         self.assertTrue(BibleRange("Matt 2:3-4:5") < BibleRange("Matt 2:3-4:6"))
         self.assertTrue(BibleRange("Matt 2:3-4:5") <= BibleRange("Matt 2:3-4:6"))

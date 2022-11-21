@@ -509,6 +509,18 @@ class BibleRange:
     start: BibleVerse
     end: BibleVerse
 
+    @classmethod
+    def whole_bible(cls, flags: BibleFlag = None) -> 'BibleRange':
+        '''Returns a BibleRange representing the whole Bible.
+        '''
+        flags = flags or globals()['flags'] or BibleFlag.NONE
+        # By definition, we need to allow multibook to encompass whole Bible
+        flags |= BibleFlag.ALLOW_MULTIBOOK
+        start_book = data.order[0]
+        end_book = data.order[len(data.order)-1]
+        return BibleRange(start=start_book.first_verse(flags=flags),
+                          end=end_book.last_verse(), flags=flags)
+
     def __init__(self, *args, start: BibleVerse = None, end: BibleVerse = None,
                  flags: BibleFlag = None):
         '''A BibleRange can be constructed in any of the following ways:
