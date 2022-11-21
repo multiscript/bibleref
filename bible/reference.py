@@ -739,7 +739,12 @@ class BibleRange:
         '''
         if not isinstance(item, BibleVerse):
             return False
-        return (item >= self.start and item <= self.end)
+        return self.contains(item)
+
+    def contains(self, bible_verse: BibleVerse) -> bool:
+        '''Returns True if items is a BibleVerse that falls within this range, otherwise False.
+        '''
+        return (bible_verse >= self.start and bible_verse <= self.end)
 
     def __repr__(self):
         return f"BibleRange({self.string()})"

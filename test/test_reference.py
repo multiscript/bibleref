@@ -200,6 +200,12 @@ class TestBibleReference(unittest.TestCase):
         self.assertTrue(BibleRange("Matt 2:20-3:7").contains(BibleVerse("Matt 3:7")))
         self.assertFalse(BibleRange("Matt 2:20-3:7").contains(BibleVerse("Matt 3:8")))
 
+        self.assertFalse(BibleVerse("Matt 2:19") in BibleRange("Matt 2:20-3:7"))
+        self.assertTrue(BibleVerse("Matt 2:20") in BibleRange("Matt 2:20-3:7"))
+        self.assertTrue(BibleVerse("Matt 3:1") in BibleRange("Matt 2:20-3:7"))
+        self.assertTrue(BibleVerse("Matt 3:7") in BibleRange("Matt 2:20-3:7"))
+        self.assertFalse(BibleVerse("Matt 3:8") in BibleRange("Matt 2:20-3:7"))
+
     def test_range_split(self):
         ref = BibleRange("Matt 1:5-John 10:11", flags=BibleFlag.ALLOW_MULTIBOOK)
         self.assertRaises(ValueError, lambda: ref.split())
