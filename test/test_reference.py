@@ -23,8 +23,8 @@ class TestBibleReference(unittest.TestCase):
         self.assertEqual(BibleVerse("Matthew", 2, 3), BibleVerse(BibleBook.Matt, 2, 3))
         self.assertEqual(BibleVerse("Matthew 2:3"), BibleVerse(BibleBook.Matt, 2, 3))
 
-        self.assertEqual(BibleVerse("Ps 3:0", flags=BibleFlag.ALLOW_VERSE_0),
-                         BibleVerse(BibleBook.Psa, 3, 0, flags=BibleFlag.ALLOW_VERSE_0))
+        self.assertEqual(BibleVerse("Ps 3:0", flags=BibleFlag.VERSE_0),
+                         BibleVerse(BibleBook.Psa, 3, 0, flags=BibleFlag.VERSE_0))
         self.assertRaises(InvalidReferenceError,
                           lambda: BibleVerse(BibleBook.Psa, 3, 0, flags=BibleFlag.NONE))
 
@@ -57,7 +57,7 @@ class TestBibleReference(unittest.TestCase):
         self.assertFalse(BibleVerse("Matt 2:3") > BibleVerse("Matt 2:3"))
 
     def test_bible_verse_0(self):
-        verse_with_0 = BibleVerse(BibleBook.Psa, 3, 0, flags=BibleFlag.ALLOW_VERSE_0)
+        verse_with_0 = BibleVerse(BibleBook.Psa, 3, 0, flags=BibleFlag.VERSE_0)
         verse_with_1 = BibleVerse(BibleBook.Psa, 3, 1)
         no_verse_0 = BibleVerse(BibleBook.Matt, 2, 3)
         self.assertEqual(verse_with_0.verse_0_to_1(), verse_with_1)
@@ -68,9 +68,9 @@ class TestBibleReference(unittest.TestCase):
     def test_verse_arithmetic(self):
         self.assertEqual(BibleVerse("Ps 3:8").add(1, flags=BibleFlag.NONE), BibleVerse("Ps 4:1"))
         self.assertEqual(BibleVerse("Ps 4:1").subtract(1, flags=BibleFlag.NONE), BibleVerse("Ps 3:8"))
-        self.assertEqual(BibleVerse("Ps 3:8").add(1, flags=BibleFlag.ALLOW_VERSE_0),
-                        BibleVerse("Ps 4:0", flags=BibleFlag.ALLOW_VERSE_0))
-        self.assertEqual(BibleVerse("Ps 4:0", flags=BibleFlag.ALLOW_VERSE_0).subtract(1), BibleVerse("Ps 3:8"))
+        self.assertEqual(BibleVerse("Ps 3:8").add(1, flags=BibleFlag.VERSE_0),
+                        BibleVerse("Ps 4:0", flags=BibleFlag.VERSE_0))
+        self.assertEqual(BibleVerse("Ps 4:0", flags=BibleFlag.VERSE_0).subtract(1), BibleVerse("Ps 3:8"))
         self.assertEqual(BibleVerse("John 1:50").add(11), BibleVerse("John 2:10"))
         self.assertEqual(BibleVerse("John 2:10").subtract(12), BibleVerse("John 1:49"))
 
@@ -94,24 +94,24 @@ class TestBibleReference(unittest.TestCase):
         self.assertEqual(BibleRange(BibleBook.Matt, None, None,           None, None, None), BibleRange(BibleBook.Matt, 1, 1, BibleBook.Matt, 28, 20))
         self.assertEqual(BibleRange(BibleBook.Matt,    2, None,           None, None, None), BibleRange(BibleBook.Matt, 2, 1, BibleBook.Matt, 2, 23))
         self.assertEqual(BibleRange(BibleBook.Matt,    2,    3,           None, None, None), BibleRange(BibleBook.Matt, 2, 3, BibleBook.Matt, 2, 3))
-        self.assertEqual(BibleRange(BibleBook.Matt, None, None, BibleBook.John, None, None, flags=BibleFlag.ALLOW_MULTIBOOK), BibleRange(BibleBook.Matt, 1, 1, BibleBook.John, 21, 25, flags=BibleFlag.ALLOW_MULTIBOOK))
-        self.assertEqual(BibleRange(BibleBook.Matt,    2, None, BibleBook.John, None, None, flags=BibleFlag.ALLOW_MULTIBOOK), BibleRange(BibleBook.Matt, 2, 1, BibleBook.John, 21, 25, flags=BibleFlag.ALLOW_MULTIBOOK))
-        self.assertEqual(BibleRange(BibleBook.Matt,    2,    3, BibleBook.John, None, None, flags=BibleFlag.ALLOW_MULTIBOOK), BibleRange(BibleBook.Matt, 2, 3, BibleBook.John, 21, 25, flags=BibleFlag.ALLOW_MULTIBOOK))
+        self.assertEqual(BibleRange(BibleBook.Matt, None, None, BibleBook.John, None, None, flags=BibleFlag.MULTIBOOK), BibleRange(BibleBook.Matt, 1, 1, BibleBook.John, 21, 25, flags=BibleFlag.MULTIBOOK))
+        self.assertEqual(BibleRange(BibleBook.Matt,    2, None, BibleBook.John, None, None, flags=BibleFlag.MULTIBOOK), BibleRange(BibleBook.Matt, 2, 1, BibleBook.John, 21, 25, flags=BibleFlag.MULTIBOOK))
+        self.assertEqual(BibleRange(BibleBook.Matt,    2,    3, BibleBook.John, None, None, flags=BibleFlag.MULTIBOOK), BibleRange(BibleBook.Matt, 2, 3, BibleBook.John, 21, 25, flags=BibleFlag.MULTIBOOK))
         self.assertEqual(BibleRange(BibleBook.Matt, None, None,           None,    4, None), BibleRange(BibleBook.Matt, 1, 1, BibleBook.Matt, 4, 25))
         self.assertEqual(BibleRange(BibleBook.Matt,    2, None,           None,    4, None), BibleRange(BibleBook.Matt, 2, 1, BibleBook.Matt, 4, 25))
         self.assertEqual(BibleRange(BibleBook.Matt,    2,    3,           None,    4, None), BibleRange(BibleBook.Matt, 2, 3, BibleBook.Matt, 4, 25))
         self.assertEqual(BibleRange(BibleBook.Matt, None, None,           None, None,    6), BibleRange(BibleBook.Matt, 1, 1, BibleBook.Matt, 1, 6))
         self.assertEqual(BibleRange(BibleBook.Matt,    2, None,           None, None,    6), BibleRange(BibleBook.Matt, 2, 1, BibleBook.Matt, 2, 6))
         self.assertEqual(BibleRange(BibleBook.Matt,    2,    3,           None, None,    6), BibleRange(BibleBook.Matt, 2, 3, BibleBook.Matt, 2, 6))
-        self.assertEqual(BibleRange(BibleBook.Matt, None, None, BibleBook.John,    5, None, flags=BibleFlag.ALLOW_MULTIBOOK), BibleRange(BibleBook.Matt, 1, 1, BibleBook.John, 5, 47, flags=BibleFlag.ALLOW_MULTIBOOK))
-        self.assertEqual(BibleRange(BibleBook.Matt,    2, None, BibleBook.John,    5, None, flags=BibleFlag.ALLOW_MULTIBOOK), BibleRange(BibleBook.Matt, 2, 1, BibleBook.John, 5, 47, flags=BibleFlag.ALLOW_MULTIBOOK))
-        self.assertEqual(BibleRange(BibleBook.Matt,    2,    3, BibleBook.John,    5, None, flags=BibleFlag.ALLOW_MULTIBOOK), BibleRange(BibleBook.Matt, 2, 3, BibleBook.John, 5, 47, flags=BibleFlag.ALLOW_MULTIBOOK))
+        self.assertEqual(BibleRange(BibleBook.Matt, None, None, BibleBook.John,    5, None, flags=BibleFlag.MULTIBOOK), BibleRange(BibleBook.Matt, 1, 1, BibleBook.John, 5, 47, flags=BibleFlag.MULTIBOOK))
+        self.assertEqual(BibleRange(BibleBook.Matt,    2, None, BibleBook.John,    5, None, flags=BibleFlag.MULTIBOOK), BibleRange(BibleBook.Matt, 2, 1, BibleBook.John, 5, 47, flags=BibleFlag.MULTIBOOK))
+        self.assertEqual(BibleRange(BibleBook.Matt,    2,    3, BibleBook.John,    5, None, flags=BibleFlag.MULTIBOOK), BibleRange(BibleBook.Matt, 2, 3, BibleBook.John, 5, 47, flags=BibleFlag.MULTIBOOK))
         self.assertEqual(BibleRange(BibleBook.Matt, None, None,           None,    6,    7), BibleRange(BibleBook.Matt, 1, 1, BibleBook.Matt, 6, 7))
         self.assertEqual(BibleRange(BibleBook.Matt,    2, None,           None,    6,    7), BibleRange(BibleBook.Matt, 2, 1, BibleBook.Matt, 6, 7))
         self.assertEqual(BibleRange(BibleBook.Matt,    2,    3,           None,    6,    7), BibleRange(BibleBook.Matt, 2, 3, BibleBook.Matt, 6, 7))
-        self.assertEqual(BibleRange(BibleBook.Matt, None, None, BibleBook.John,    8,   10, flags=BibleFlag.ALLOW_MULTIBOOK), BibleRange(BibleBook.Matt, 1, 1, BibleBook.John, 8, 10, flags=BibleFlag.ALLOW_MULTIBOOK))
-        self.assertEqual(BibleRange(BibleBook.Matt,    2, None, BibleBook.John,    8,   10, flags=BibleFlag.ALLOW_MULTIBOOK), BibleRange(BibleBook.Matt, 2, 1, BibleBook.John, 8, 10, flags=BibleFlag.ALLOW_MULTIBOOK))
-        self.assertEqual(BibleRange(BibleBook.Matt,    2,    3, BibleBook.John,    8,   10, flags=BibleFlag.ALLOW_MULTIBOOK), BibleRange(BibleBook.Matt, 2, 3, BibleBook.John, 8, 10, flags=BibleFlag.ALLOW_MULTIBOOK))
+        self.assertEqual(BibleRange(BibleBook.Matt, None, None, BibleBook.John,    8,   10, flags=BibleFlag.MULTIBOOK), BibleRange(BibleBook.Matt, 1, 1, BibleBook.John, 8, 10, flags=BibleFlag.MULTIBOOK))
+        self.assertEqual(BibleRange(BibleBook.Matt,    2, None, BibleBook.John,    8,   10, flags=BibleFlag.MULTIBOOK), BibleRange(BibleBook.Matt, 2, 1, BibleBook.John, 8, 10, flags=BibleFlag.MULTIBOOK))
+        self.assertEqual(BibleRange(BibleBook.Matt,    2,    3, BibleBook.John,    8,   10, flags=BibleFlag.MULTIBOOK), BibleRange(BibleBook.Matt, 2, 3, BibleBook.John, 8, 10, flags=BibleFlag.MULTIBOOK))
         self.assertRaises(InvalidReferenceError, lambda: BibleRange(BibleBook.Matt, None, 3, None, None, None))
         self.assertRaises(InvalidReferenceError, lambda: BibleRange(BibleBook.Matt, None, None, BibleBook.John, None, 6))
 
@@ -123,26 +123,26 @@ class TestBibleReference(unittest.TestCase):
                          end=BibleVerse("Matt 4:5")))
 
         # Test string arg
-        self.assertEqual(BibleRange("Matt", 2, 3, "Mark", 4, 5, flags=BibleFlag.ALLOW_MULTIBOOK),
-                         BibleRange(BibleBook.Matt, 2, 3, BibleBook.Mark, 4, 5, flags=BibleFlag.ALLOW_MULTIBOOK))
-        self.assertEqual(BibleRange("Matthew 2:3-Mark 4:5", flags=BibleFlag.ALLOW_MULTIBOOK),
-                         BibleRange(BibleBook.Matt, 2, 3, BibleBook.Mark, 4, 5, flags=BibleFlag.ALLOW_MULTIBOOK))
+        self.assertEqual(BibleRange("Matt", 2, 3, "Mark", 4, 5, flags=BibleFlag.MULTIBOOK),
+                         BibleRange(BibleBook.Matt, 2, 3, BibleBook.Mark, 4, 5, flags=BibleFlag.MULTIBOOK))
+        self.assertEqual(BibleRange("Matthew 2:3-Mark 4:5", flags=BibleFlag.MULTIBOOK),
+                         BibleRange(BibleBook.Matt, 2, 3, BibleBook.Mark, 4, 5, flags=BibleFlag.MULTIBOOK))
         self.assertRaises(InvalidReferenceError, lambda: BibleRange("Matthew 2:3-4:5; Mark 5:6"))
 
         # Test multibook flag effect
-        self.assertEqual(BibleRange("Matt-Mark", flags=BibleFlag.ALLOW_MULTIBOOK),
-                         BibleRange(BibleBook.Matt, None, None, BibleBook.Mark, flags=BibleFlag.ALLOW_MULTIBOOK))
+        self.assertEqual(BibleRange("Matt-Mark", flags=BibleFlag.MULTIBOOK),
+                         BibleRange(BibleBook.Matt, None, None, BibleBook.Mark, flags=BibleFlag.MULTIBOOK))
         self.assertRaises(MultibookRangeNotAllowedError,
                           lambda: BibleRange(BibleBook.Matt, None, None, BibleBook.Mark, flags=BibleFlag.NONE))
 
         # Test allow verse 0 flag effect
-        self.assertEqual(BibleRange("Psa 3:0-3", flags=BibleFlag.ALLOW_VERSE_0),
-                         BibleRange(BibleBook.Psa, 3, 0, None, None, 3, flags=BibleFlag.ALLOW_VERSE_0))
+        self.assertEqual(BibleRange("Psa 3:0-3", flags=BibleFlag.VERSE_0),
+                         BibleRange(BibleBook.Psa, 3, 0, None, None, 3, flags=BibleFlag.VERSE_0))
         self.assertRaises(InvalidReferenceError,
                           lambda: BibleRange(BibleBook.Psa, 3, 0, None, None, 3, flags=BibleFlag.NONE))
 
     def test_whole_bible(self):
-        self.assertEqual(BibleRange.whole_bible(), BibleRange("Gen-Rev", flags=BibleFlag.ALLOW_MULTIBOOK))
+        self.assertEqual(BibleRange.whole_bible(), BibleRange("Gen-Rev", flags=BibleFlag.MULTIBOOK))
 
     def test_bible_range_comparison(self):
         self.assertTrue(BibleRange("Matt 2:3-4:5") < BibleRange("Matt 2:3-4:6"))
@@ -176,8 +176,8 @@ class TestBibleReference(unittest.TestCase):
         self.assertFalse(BibleRange("Matt 2:3-4:5") > BibleRange("Mark 1:2-3:4"))
 
     def test_bible_range_verse_0(self):
-        range_with_0 = BibleRange("Ps 3:0-4:0", flags=BibleFlag.ALLOW_VERSE_0)
-        range_with_1 = BibleRange("Ps 3:1-4:1", flags=BibleFlag.ALLOW_VERSE_0)
+        range_with_0 = BibleRange("Ps 3:0-4:0", flags=BibleFlag.VERSE_0)
+        range_with_1 = BibleRange("Ps 3:1-4:1", flags=BibleFlag.VERSE_0)
         no_verse_0 = BibleRange("Matt 2:3-4:5")
         self.assertEqual(range_with_0.verse_0_to_1(), range_with_1)
         self.assertEqual(range_with_1.verse_1_to_0(), range_with_0)
@@ -185,7 +185,7 @@ class TestBibleReference(unittest.TestCase):
         self.assertEqual(no_verse_0.verse_1_to_0(), no_verse_0)
 
     def test_range_iteration(self):
-        bible_range = BibleRange(BibleBook.Matt, 28, 18, BibleBook.Mark, 1, 3, flags=BibleFlag.ALLOW_MULTIBOOK)
+        bible_range = BibleRange(BibleBook.Matt, 28, 18, BibleBook.Mark, 1, 3, flags=BibleFlag.MULTIBOOK)
         expected_list = [
             BibleVerse(BibleBook.Matt, 28, 18),
             BibleVerse(BibleBook.Matt, 28, 19),
@@ -210,10 +210,10 @@ class TestBibleReference(unittest.TestCase):
         self.assertFalse(BibleVerse("Matt 3:8") in BibleRange("Matt 2:20-3:7"))
 
     def test_range_split(self):
-        ref = BibleRange("Matt 1:5-John 10:11", flags=BibleFlag.ALLOW_MULTIBOOK)
+        ref = BibleRange("Matt 1:5-John 10:11", flags=BibleFlag.MULTIBOOK)
         self.assertRaises(ValueError, lambda: ref.split())
 
-        ref = BibleRange("Matt 1:5-John 10:11", flags=BibleFlag.ALLOW_MULTIBOOK)
+        ref = BibleRange("Matt 1:5-John 10:11", flags=BibleFlag.MULTIBOOK)
         split = ref.split(by_book=True)
         print(split)
         expected =  BibleRangeList(
@@ -321,16 +321,16 @@ class TestBibleReference(unittest.TestCase):
         rng = BibleRange(BibleBook.Rom, 1, 1, None, 16, 27)
         self.assertEqual(str(rng), "Romans")
 
-        rng = BibleRange(BibleBook.Matt, 1, 1, BibleBook.John, 21, 25, flags=BibleFlag.ALLOW_MULTIBOOK)
+        rng = BibleRange(BibleBook.Matt, 1, 1, BibleBook.John, 21, 25, flags=BibleFlag.MULTIBOOK)
         self.assertEqual(str(rng), "Matthew-John")
 
-        rng = BibleRange(BibleBook.Matt, 5, 6, BibleBook.John, 21, 25, flags=BibleFlag.ALLOW_MULTIBOOK)
+        rng = BibleRange(BibleBook.Matt, 5, 6, BibleBook.John, 21, 25, flags=BibleFlag.MULTIBOOK)
         self.assertEqual(str(rng), "Matthew 5:6-John")
 
-        rng = BibleRange(BibleBook.Matt, 1, 1, BibleBook.John, 10, 11, flags=BibleFlag.ALLOW_MULTIBOOK)
+        rng = BibleRange(BibleBook.Matt, 1, 1, BibleBook.John, 10, 11, flags=BibleFlag.MULTIBOOK)
         self.assertEqual(str(rng), "Matthew-John 10:11")
 
-        rng = BibleRange(BibleBook.Matt, 5, 6, BibleBook.John, 10, 11, flags=BibleFlag.ALLOW_MULTIBOOK)
+        rng = BibleRange(BibleBook.Matt, 5, 6, BibleBook.John, 10, 11, flags=BibleFlag.MULTIBOOK)
         self.assertEqual(str(rng), "Matthew 5:6-John 10:11")
 
         rng = BibleRange(BibleBook.Exod, 7, 1, None, 7, 25)
@@ -345,28 +345,28 @@ class TestBibleReference(unittest.TestCase):
         rng = BibleRange(BibleBook.Exod, 7, 1, None, 10, 12)
         self.assertEqual(str(rng), "Exodus 7-10:12")
 
-        rng = BibleRange(BibleBook._1Cor, 15, 1, BibleBook._2Cor, 1, 24, flags=BibleFlag.ALLOW_MULTIBOOK)
+        rng = BibleRange(BibleBook._1Cor, 15, 1, BibleBook._2Cor, 1, 24, flags=BibleFlag.MULTIBOOK)
         self.assertEqual(str(rng), "1 Corinthians 15-2 Corinthians 1")
 
         rng = BibleRange(BibleBook.Obad, 1, 10, None, 1, 12)
         self.assertEqual(str(rng), "Obadiah 10-12")
 
-        rng = BibleRange(BibleBook.Obad, 1, 10, BibleBook.Jonah, 1, 4, flags=BibleFlag.ALLOW_MULTIBOOK)
+        rng = BibleRange(BibleBook.Obad, 1, 10, BibleBook.Jonah, 1, 4, flags=BibleFlag.MULTIBOOK)
         self.assertEqual(str(rng), "Obadiah 10-Jonah 1:4")
 
-        rng = BibleRange(BibleBook.Obad, 1, 10, BibleBook.Jonah, 2, 10, flags=BibleFlag.ALLOW_MULTIBOOK)
+        rng = BibleRange(BibleBook.Obad, 1, 10, BibleBook.Jonah, 2, 10, flags=BibleFlag.MULTIBOOK)
         self.assertEqual(str(rng), "Obadiah 10-Jonah 2")
 
-        rng = BibleRange(BibleBook._1Jn, 5, 18, BibleBook._3Jn, 1, 14, flags=BibleFlag.ALLOW_MULTIBOOK)
+        rng = BibleRange(BibleBook._1Jn, 5, 18, BibleBook._3Jn, 1, 14, flags=BibleFlag.MULTIBOOK)
         self.assertEqual(str(rng), "1 John 5:18-3 John")
 
-        rng = BibleRange(BibleBook._2Jn, 1, 1, BibleBook._3Jn, 1, 14, flags=BibleFlag.ALLOW_MULTIBOOK)
+        rng = BibleRange(BibleBook._2Jn, 1, 1, BibleBook._3Jn, 1, 14, flags=BibleFlag.MULTIBOOK)
         self.assertEqual(str(rng), "2 John-3 John")
 
-        rng = BibleRange(BibleBook._2Jn, 1, 6, BibleBook._3Jn, 1, 14, flags=BibleFlag.ALLOW_MULTIBOOK)
+        rng = BibleRange(BibleBook._2Jn, 1, 6, BibleBook._3Jn, 1, 14, flags=BibleFlag.MULTIBOOK)
         self.assertEqual(str(rng), "2 John 6-3 John")
 
-        rng = BibleRange(BibleBook._2Jn, 1, 1, BibleBook._3Jn, 1, 8, flags=BibleFlag.ALLOW_MULTIBOOK)
+        rng = BibleRange(BibleBook._2Jn, 1, 1, BibleBook._3Jn, 1, 8, flags=BibleFlag.MULTIBOOK)
         self.assertEqual(str(rng), "2 John-3 John 8")
 
     def test_bible_range_string_roundtrip(self):
@@ -397,12 +397,12 @@ class TestBibleReference(unittest.TestCase):
         self.assertEqual(range_list, BibleRangeList(range_list))
 
     def test_bible_range_list_verse_0(self):
-        list_with_0 = BibleRangeList("Ps 3:0-4:0; Matt 2:3-4:5", flags=BibleFlag.ALLOW_VERSE_0)
-        list_with_1 = BibleRangeList("Ps 3:1-4:1; Matt 2:3-4:5", flags=BibleFlag.ALLOW_VERSE_0)
+        list_with_0 = BibleRangeList("Ps 3:0-4:0; Matt 2:3-4:5", flags=BibleFlag.VERSE_0)
+        list_with_1 = BibleRangeList("Ps 3:1-4:1; Matt 2:3-4:5", flags=BibleFlag.VERSE_0)
         no_verse_0 = BibleRangeList("Matt 2:3-4:5; Mark 6:7-8:9")
         list_with_0.verse_0_to_1()
         self.assertEqual(list_with_0, list_with_1)
-        list_with_0 = BibleRangeList("Ps 3:0-4:0; Matt 2:3-4:5", flags=BibleFlag.ALLOW_VERSE_0)
+        list_with_0 = BibleRangeList("Ps 3:0-4:0; Matt 2:3-4:5", flags=BibleFlag.VERSE_0)
         list_with_1.verse_1_to_0()
         self.assertEqual(list_with_0, list_with_1)
         no_verse_0.verse_0_to_1()
@@ -413,7 +413,7 @@ class TestBibleReference(unittest.TestCase):
     def test_bible_range_list_to_string(self):
         # Start range spans a book, after a ref from same book
         self.assertEqual(BibleRangeList(
-            "Matthew 2:3-4:5; Matthew-Mark", flags=BibleFlag.ALLOW_MULTIBOOK).string(),  # Start range spans book
+            "Matthew 2:3-4:5; Matthew-Mark", flags=BibleFlag.MULTIBOOK).string(),  # Start range spans book
             "Matthew 2:3-4:5; Matthew-Mark")
 
         # Start range spans a chapter from same book, when at verse level
@@ -498,28 +498,28 @@ class TestBibleReference(unittest.TestCase):
 
         # End range spans a book
         self.assertEqual(BibleRangeList(
-            "Matthew 2:3-4:5; 6:7-Mark", flags=BibleFlag.ALLOW_MULTIBOOK).string(),  # Start range spans book
+            "Matthew 2:3-4:5; 6:7-Mark", flags=BibleFlag.MULTIBOOK).string(),  # Start range spans book
             "Matthew 2:3-4:5; 6:7-Mark")
         # End range spans a chapter while at chapter level
         self.assertEqual(BibleRangeList(
             "Matthew 2:3-4:5; Matthew 6-9").string(),  # From same book
             "Matthew 2:3-4:5; 6-9")
         self.assertEqual(BibleRangeList(
-            "Matthew 2:3-4:5; Matthew 6-Mark 3", flags=BibleFlag.ALLOW_MULTIBOOK).string(),  # From different book
+            "Matthew 2:3-4:5; Matthew 6-Mark 3", flags=BibleFlag.MULTIBOOK).string(),  # From different book
             "Matthew 2:3-4:5; 6-Mark 3")
         # End range spans a chapter while at verse level
         self.assertEqual(BibleRangeList(
             "Matthew 2:3-4:5; Matthew 6:2-9:38").string(),  # From same book
             "Matthew 2:3-4:5; 6:2-9:38")
         self.assertEqual(BibleRangeList(
-            "Matthew 2:3-4:5; Matthew 6:4-Mark 3", flags=BibleFlag.ALLOW_MULTIBOOK).string(),  # From different book
+            "Matthew 2:3-4:5; Matthew 6:4-Mark 3", flags=BibleFlag.MULTIBOOK).string(),  # From different book
             "Matthew 2:3-4:5; 6:4-Mark 3")
         # End range is a particular verse
         self.assertEqual(BibleRangeList(
             "Matthew 2:3-4:5; Matthew 6:2-9:5").string(),  # From same book
             "Matthew 2:3-4:5; 6:2-9:5")
         self.assertEqual(BibleRangeList(
-            "Matthew 2:3-4:5; Matthew 6:4-Mark 3:8", flags=BibleFlag.ALLOW_MULTIBOOK).string(),  # From different book
+            "Matthew 2:3-4:5; Matthew 6:4-Mark 3:8", flags=BibleFlag.MULTIBOOK).string(),  # From different book
             "Matthew 2:3-4:5; 6:4-Mark 3:8")
 
         # Major group separator returns us to chap level

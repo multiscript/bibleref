@@ -10,16 +10,16 @@ This module defines the following primary classes:
 
 The module attribute 'flags' is a BibleFlag enum whose elements control the following
 module behaviours:
-    ALLOW_MULTIBOOK: Defaults to unset. When set, BibleRanges can be constructed that span
-                        multiple books. Existing multibook ranges behave correctly even when
-                        ALLOW_MULTIBOOK is unset. 
-    ALLOW_VERSE_0:   Defaults to unset. When set, the first verse number of some chapters
-                        is 0, not 1. (This is currently just the Psalms that have
-                        superscriptions.) When you need to mix references that do or don't
-                        allow for verse 0, it may be easier to choose one value for all
-                        your code, and then use the verse_0_to_1() and verse_1_to_0()
-                        methods on BibleVerses, BibleRanges and BibleRangeLists as
-                        necessary.
+    MULTIBOOK: Defaults to unset. When set, BibleRanges can be constructed that span
+                 multiple books. Existing multibook ranges behave correctly even when
+                 MULTIBOOK is unset. 
+    VERSE_0:   Defaults to unset. When set, the first verse number of some chapters
+                 is 0, not 1. (This is currently just the Psalms that have
+                 superscriptions.) When you need to mix references that do or don't
+                 allow for verse 0, it may be easier to choose one value for all
+                 your code, and then use the verse_0_to_1() and verse_1_to_0()
+                 methods on BibleVerses, BibleRanges and BibleRangeLists as
+                 necessary.
 
 Many methods take a 'flags' argument that takes overrides the module-level attribute during
 the execution of that method.
@@ -34,9 +34,9 @@ import re
 class BibleFlag(Flag):
     '''A Flag used for controlling various behaviours throughout the module.'''
     NONE = 0
-    ALLOW_MULTIBOOK = auto()
-    ALLOW_VERSE_0 = auto()
-    ALL = ALLOW_MULTIBOOK | ALLOW_VERSE_0
+    MULTIBOOK = auto()
+    VERSE_0 = auto()
+    ALL = MULTIBOOK | VERSE_0
 
 flags = BibleFlag.NONE
 
@@ -168,7 +168,7 @@ class BibleBook(Enum):
         flags = flags or globals()['flags'] or BibleFlag.NONE
         if chap_num < self.min_chap_num() or chap_num > self.max_chap_num():
             raise InvalidReferenceError(f"No chapter {chap_num} in {self.title}")
-        return 0 if (BibleFlag.ALLOW_VERSE_0 in flags and chap_num in self._verse_0s) else 1
+        return 0 if (BibleFlag.VERSE_0 in flags and chap_num in self._verse_0s) else 1
 
     def max_verse_num(self, chap_num: int) -> int:
         '''Return the highest verse number (usually indexed from 1) for the specified chapter
@@ -388,15 +388,15 @@ class BibleVerse:
         same chapter, returns an identical BibleVerse except with a verse number of 0.
         Otherwise, returns the original BibleVerse. The value of the module 'flags'
         attribute is ignored.'''
-        if self.verse_num == 1 and self.min_verse_num(self.chap_num, flags=BibleFlag.ALLOW_VERSE_0) == 0:
-            return BibleVerse(self.book, self.chap_num, 0, flags=BibleFlag.ALLOW_VERSE_0)
+        if self.verse_num == 1 and self.min_verse_num(self.chap_num, flags=BibleFlag.VERSE_0) == 0:
+            return BibleVerse(self.book, self.chap_num, 0, flags=BibleFlag.VERSE_0)
         else:
             return self
 
     def add(self, num_verses: int, flags: BibleFlag = None) -> 'BibleVerse':
         '''Returns a new BibleVerse that is num_verses after this BibleVerse.
         
-        If BibleFlag.ALLOW_MULTIBOOK is set (either set by the 'flags' argument or,
+        If BibleFlag.MULTIBOOK is set (either set by the 'flags' argument or,
         if None, by the module attribute), and the result would be beyond the current
         book, a verse in the next book is returned. Otherwise, if the verse
         does not exist, None is returned.
@@ -405,13 +405,13 @@ class BibleVerse:
         book = self.book
         chap_num = self.chap_num
         if self.verse_num == 0:
-            flags = flags | BibleFlag.ALLOW_VERSE_0
+            flags = flags | BibleFlag.VERSE_0
         verse_num = self.verse_num + num_verses
         max_verse_num = book.max_verse_num(chap_num)
         while verse_num > max_verse_num:
             chap_num += 1
             if chap_num > book.max_chap_num():
-                if BibleFlag.ALLOW_MULTIBOOK not in flags:
+                if BibleFlag.MULTIBOOK not in flags:
                     return None
                 else:
                     book = book.next()
@@ -427,7 +427,7 @@ class BibleVerse:
     def subtract(self, num_verses: int, flags: BibleFlag = None) -> 'BibleVerse':
         '''Return a new BibleVerse that is num_verses before this BibleVerse.
         
-        If BibleFlag.ALLOW_MULTIBOOK is set (either set by the 'flags' argument or,
+        If BibleFlag.MULTIBOOK is set (either set by the 'flags' argument or,
         if None, the module attribute), and the result would be before the current
         book, a verse in the previous book is returned. Otherwise, if the verse
         does not exist, None is returned.
@@ -436,13 +436,13 @@ class BibleVerse:
         book = self.book
         chap_num = self.chap_num
         if self.verse_num == 0:
-            flags = flags | BibleFlag.ALLOW_VERSE_0
+            flags = flags | BibleFlag.VERSE_0
         verse_num = self.verse_num - num_verses
         min_verse_num = book.min_verse_num(chap_num, flags)
         while verse_num < min_verse_num:
             chap_num -= 1
             if chap_num < book.min_chap_num():
-                if BibleFlag.ALLOW_MULTIBOOK not in flags:
+                if BibleFlag.MULTIBOOK not in flags:
                     return None
                 else:
                     book = book.prev()
@@ -515,7 +515,7 @@ class BibleRange:
         '''
         flags = flags or globals()['flags'] or BibleFlag.NONE
         # By definition, we need to allow multibook to encompass whole Bible
-        flags |= BibleFlag.ALLOW_MULTIBOOK
+        flags |= BibleFlag.MULTIBOOK
         start_book = data.order[0]
         end_book = data.order[len(data.order)-1]
         return BibleRange(start=start_book.first_verse(flags=flags),
@@ -532,11 +532,11 @@ class BibleRange:
                Start and end books can be string names or BibleBook enums.
                Later arguments can be omitted or set to None, as in these examples:
 
-                BibleRange(BibleBook.Matt, 2, 3, BibleBook.John, 4, 6, allow_multibook=True) # Matt 2:3-John 4:6
+                BibleRange(BibleBook.Matt, 2, 3, BibleBook.John, 4, 6, flags=BibleFlag.MULTIBOOK) # Matt 2:3-John 4:6
                 BibleRange(BibleBook.Matt) # Entire book: Matt 1:1-28:20
                 BibleRange(BibleBook.Matt, 2) # Entire chapter: Matt 2:1-23
                 BibleRange(BibleBook.Matt, 2, 3) # Single verse: Matt 2:3
-                BibleRange(BibleBook.Matt, None, None, BibleBook.John, allow_multibook=True) # Matt 1:1-John 21:25
+                BibleRange(BibleBook.Matt, None, None, BibleBook.John, flags=BibleFlag.MULTIBOOK) # Matt 1:1-John 21:25
                 BibleRange(BibleBook.Matt, None, None, None, 4) # Matt 1:1-4:25
                 BibleRange(BibleBook.Matt, None, None, None, None, 6) # Matt 1:1-1:6
                 BibleRange(BibleBook.Matt, 2, 3, None, 4, 6) # Matt 2:3-4:6
@@ -549,7 +549,7 @@ class BibleRange:
         '''
         flags = flags or globals()['flags'] or BibleFlag.NONE
         if len(args) == 0:
-            if BibleFlag.ALLOW_MULTIBOOK not in flags and start.book != end.book:
+            if BibleFlag.MULTIBOOK not in flags and start.book != end.book:
                 raise MultibookRangeNotAllowedError(f"Multi-book ranges not allowed " + 
                                                     f"({start.book.abbrev} and {end.book.abbrev} are different)")
             object.__setattr__(self, "start", start)
@@ -624,7 +624,7 @@ class BibleRange:
             else:
                 end = BibleVerse(end_book, int(end_chap), int(end_verse), flags=flags)
 
-        if BibleFlag.ALLOW_MULTIBOOK not in flags and start.book != end.book:
+        if BibleFlag.MULTIBOOK not in flags and start.book != end.book:
             raise MultibookRangeNotAllowedError(f"Multi-book ranges not allowed " + 
                                                 f"({start.book.abbrev} and {end.book.abbrev} are different)")
 
@@ -697,7 +697,7 @@ class BibleRange:
             raise ValueError("Must split by at least one of book, chapter, or number of verses")
 
         # Allow multibook references for this method.
-        flags = (flags or globals()['flags'] or BibleFlag.NONE) | BibleFlag.ALLOW_MULTIBOOK
+        flags = (flags or globals()['flags'] or BibleFlag.NONE) | BibleFlag.MULTIBOOK
         split_result = [self]
         
         if by_book:
@@ -777,7 +777,7 @@ class BibleRange:
         verse = self.start
         while verse <= self.end:
             yield verse
-            verse = verse.add(1, BibleFlag.ALLOW_MULTIBOOK)
+            verse = verse.add(1, BibleFlag.MULTIBOOK)
 
     def __contains__(self, item) -> bool:
         '''Returns True if items is a BibleVerse that falls within this range, otherwise False.
