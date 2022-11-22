@@ -115,6 +115,7 @@ class TestBibleReference(unittest.TestCase):
         self.assertRaises(InvalidReferenceError, lambda: BibleRange(BibleBook.Matt, None, 3, None, None, None))
         self.assertRaises(InvalidReferenceError, lambda: BibleRange(BibleBook.Matt, None, None, BibleBook.John, None, 6))
 
+        # Test constructing a copy of a BibleRange
         bible_range = BibleRange("Matt 2:3-4:5")
         self.assertEqual(bible_range, BibleRange(bible_range))
 
@@ -140,6 +141,26 @@ class TestBibleReference(unittest.TestCase):
                          BibleRange(BibleBook.Psa, 3, 0, None, None, 3, flags=BibleFlag.VERSE_0))
         self.assertRaises(InvalidReferenceError,
                           lambda: BibleRange(BibleBook.Psa, 3, 0, None, None, 3, flags=BibleFlag.NONE))
+
+        # Test start and end reversal
+        self.assertEqual(BibleRange("Matt 2:3-4:5"), BibleRange(end=BibleVerse("Matt 2:3"),
+                         start=BibleVerse("Matt 4:5")))
+        self.assertRaises(InvalidReferenceError, lambda: BibleRange(None, None, None, BibleBook.Matt, None, None))
+        self.assertEqual(BibleRange(BibleBook.John, None, None, BibleBook.Matt, None, None, flags=BibleFlag.MULTIBOOK), BibleRange("Matt-John", flags=BibleFlag.MULTIBOOK))
+        self.assertEqual(BibleRange(BibleBook.John, None, None, BibleBook.Matt,    2, None, flags=BibleFlag.MULTIBOOK), BibleRange("Matt 2-John", flags=BibleFlag.MULTIBOOK))
+        self.assertEqual(BibleRange(BibleBook.John, None, None, BibleBook.Matt,    2,    3, flags=BibleFlag.MULTIBOOK), BibleRange("Matt 2:3-John", flags=BibleFlag.MULTIBOOK))
+        self.assertEqual(BibleRange(BibleBook.Matt,    4, None,           None,    2, None), BibleRange("Matt 2-4"))
+        self.assertEqual(BibleRange(BibleBook.Matt,    4, None,           None,    2,    3), BibleRange("Matt 2:3-Matt 4"))
+        self.assertRaises(InvalidReferenceError, lambda: BibleRange(BibleBook.Matt, None, 6, None, None, None))
+        self.assertEqual(BibleRange(BibleBook.Matt,    2,    6,           None, None,    3), BibleRange("Matt 2:3-6"))
+        self.assertEqual(BibleRange(BibleBook.John,    5, None, BibleBook.Matt, None, None, flags=BibleFlag.MULTIBOOK), BibleRange("Matt-John 5", flags=BibleFlag.MULTIBOOK))
+        self.assertEqual(BibleRange(BibleBook.John,    5, None, BibleBook.Matt,    2, None, flags=BibleFlag.MULTIBOOK), BibleRange("Matt 2-John 5", flags=BibleFlag.MULTIBOOK))
+        self.assertEqual(BibleRange(BibleBook.John,    5, None, BibleBook.Matt,    2,    3, flags=BibleFlag.MULTIBOOK), BibleRange("Matt 2:3-John 5", flags=BibleFlag.MULTIBOOK))
+        self.assertEqual(BibleRange(BibleBook.Matt,    6,    7,           None,    2, None), BibleRange("Matt 2-6:7"))
+        self.assertEqual(BibleRange(BibleBook.Matt,    6,    7,           None,    2,    3), BibleRange("Matt 2:3-6:7"))
+        self.assertEqual(BibleRange(BibleBook.John,    8,   10, BibleBook.Matt, None, None, flags=BibleFlag.MULTIBOOK), BibleRange("Matt-John 8:10", flags=BibleFlag.MULTIBOOK))
+        self.assertEqual(BibleRange(BibleBook.John,    8,   10, BibleBook.Matt,    2, None, flags=BibleFlag.MULTIBOOK), BibleRange("Matt 2-John 8:10", flags=BibleFlag.MULTIBOOK))
+        self.assertEqual(BibleRange(BibleBook.John,    8,   10, BibleBook.Matt,    2,    3, flags=BibleFlag.MULTIBOOK), BibleRange("Matt 2:3-John 8:10", flags=BibleFlag.MULTIBOOK))
 
     def test_whole_bible(self):
         self.assertEqual(BibleRange.whole_bible(), BibleRange("Gen-Rev", flags=BibleFlag.MULTIBOOK))
@@ -274,36 +295,6 @@ class TestBibleReference(unittest.TestCase):
         self.assertTrue(test_range.is_adjacent(BibleRange("Matt 1:16-20")))
         self.assertFalse(test_range.is_adjacent(BibleRange("Matt 1:17-20")))
 
-    def test_range_union(self):
-        test_range = BibleRange("Matt 1:10-15")
-        self.assertIsNone(test_range.union(BibleRange("Matt 1:5-8")))
-        self.assertEqual(test_range.union(BibleRange("Matt 1:5-9")), BibleRange("Matt 1:5-15"))
-        self.assertEqual(test_range.union(BibleRange("Matt 1:5-10")), BibleRange("Matt 1:5-15"))
-        self.assertEqual(test_range.union(BibleRange("Matt 1:5-11")), BibleRange("Matt 1:5-15"))
-        self.assertEqual(test_range.union(BibleRange("Matt 1:10-12")), BibleRange("Matt 1:10-15"))
-        self.assertEqual(test_range.union(BibleRange("Matt 1:11-14")), BibleRange("Matt 1:10-15"))
-        self.assertEqual(test_range.union(BibleRange("Matt 1:13-15")), BibleRange("Matt 1:10-15"))
-        self.assertEqual(test_range.union(BibleRange("Matt 1:10-15")), BibleRange("Matt 1:10-15"))
-        self.assertEqual(test_range.union(BibleRange("Matt 1:14-20")), BibleRange("Matt 1:10-20"))
-        self.assertEqual(test_range.union(BibleRange("Matt 1:15-20")), BibleRange("Matt 1:10-20"))
-        self.assertEqual(test_range.union(BibleRange("Matt 1:16-20")), BibleRange("Matt 1:10-20"))
-        self.assertIsNone(test_range.union(BibleRange("Matt 1:17-20")))
-
-    def test_range_intersect(self):
-        test_range = BibleRange("Matt 1:10-15")
-        self.assertIsNone(test_range.intersect(BibleRange("Matt 1:5-8")))
-        self.assertIsNone(test_range.intersect(BibleRange("Matt 1:5-9")))
-        self.assertEqual(test_range.intersect(BibleRange("Matt 1:5-10")), BibleRange("Matt 1:10"))
-        self.assertEqual(test_range.intersect(BibleRange("Matt 1:5-11")), BibleRange("Matt 1:10-11"))
-        self.assertEqual(test_range.intersect(BibleRange("Matt 1:10-12")), BibleRange("Matt 1:10-12"))
-        self.assertEqual(test_range.intersect(BibleRange("Matt 1:11-14")), BibleRange("Matt 1:11-14"))
-        self.assertEqual(test_range.intersect(BibleRange("Matt 1:13-15")), BibleRange("Matt 1:13-15"))
-        self.assertEqual(test_range.intersect(BibleRange("Matt 1:10-15")), BibleRange("Matt 1:10-15"))
-        self.assertEqual(test_range.intersect(BibleRange("Matt 1:14-20")), BibleRange("Matt 1:14-15"))
-        self.assertEqual(test_range.intersect(BibleRange("Matt 1:15-20")), BibleRange("Matt 1:15"))
-        self.assertIsNone(test_range.intersect(BibleRange("Matt 1:16-20")))
-        self.assertIsNone(test_range.intersect(BibleRange("Matt 1:17-20")))
-
     def test_range_contains(self):
         # Test verses
         self.assertFalse(BibleVerse("Matt 2:19") in BibleRange("Matt 2:20-3:7"))
@@ -341,6 +332,55 @@ class TestBibleReference(unittest.TestCase):
         self.assertFalse(test_range.surrounds(BibleRange("Matt 1:15-20")))
         self.assertFalse(test_range.surrounds(BibleRange("Matt 1:16-20")))
         self.assertFalse(test_range.surrounds(BibleRange("Matt 1:17-20")))
+
+    def test_range_union(self):
+        test_range = BibleRange("Matt 1:10-15")
+        self.assertIsNone(test_range.union(BibleRange("Matt 1:5-8")))
+        self.assertEqual(test_range.union(BibleRange("Matt 1:5-9")), BibleRange("Matt 1:5-15"))
+        self.assertEqual(test_range.union(BibleRange("Matt 1:5-10")), BibleRange("Matt 1:5-15"))
+        self.assertEqual(test_range.union(BibleRange("Matt 1:5-11")), BibleRange("Matt 1:5-15"))
+        self.assertEqual(test_range.union(BibleRange("Matt 1:10-12")), BibleRange("Matt 1:10-15"))
+        self.assertEqual(test_range.union(BibleRange("Matt 1:11-14")), BibleRange("Matt 1:10-15"))
+        self.assertEqual(test_range.union(BibleRange("Matt 1:13-15")), BibleRange("Matt 1:10-15"))
+        self.assertEqual(test_range.union(BibleRange("Matt 1:10-15")), BibleRange("Matt 1:10-15"))
+        self.assertEqual(test_range.union(BibleRange("Matt 1:14-20")), BibleRange("Matt 1:10-20"))
+        self.assertEqual(test_range.union(BibleRange("Matt 1:15-20")), BibleRange("Matt 1:10-20"))
+        self.assertEqual(test_range.union(BibleRange("Matt 1:16-20")), BibleRange("Matt 1:10-20"))
+        self.assertIsNone(test_range.union(BibleRange("Matt 1:17-20")))
+
+    def test_range_intersection(self):
+        test_range = BibleRange("Matt 1:10-15")
+        self.assertIsNone(test_range.intersection(BibleRange("Matt 1:5-8")))
+        self.assertIsNone(test_range.intersection(BibleRange("Matt 1:5-9")))
+        self.assertEqual(test_range.intersection(BibleRange("Matt 1:5-10")), BibleRange("Matt 1:10"))
+        self.assertEqual(test_range.intersection(BibleRange("Matt 1:5-11")), BibleRange("Matt 1:10-11"))
+        self.assertEqual(test_range.intersection(BibleRange("Matt 1:10-12")), BibleRange("Matt 1:10-12"))
+        self.assertEqual(test_range.intersection(BibleRange("Matt 1:11-14")), BibleRange("Matt 1:11-14"))
+        self.assertEqual(test_range.intersection(BibleRange("Matt 1:13-15")), BibleRange("Matt 1:13-15"))
+        self.assertEqual(test_range.intersection(BibleRange("Matt 1:10-15")), BibleRange("Matt 1:10-15"))
+        self.assertEqual(test_range.intersection(BibleRange("Matt 1:14-20")), BibleRange("Matt 1:14-15"))
+        self.assertEqual(test_range.intersection(BibleRange("Matt 1:15-20")), BibleRange("Matt 1:15"))
+        self.assertIsNone(test_range.intersection(BibleRange("Matt 1:16-20")))
+        self.assertIsNone(test_range.intersection(BibleRange("Matt 1:17-20")))
+
+    def test_range_difference(self):
+        test_range = BibleRange("Matt 1:10-15")
+        self.assertEqual(test_range.difference(BibleRange("Matt 1:5-8")), BibleRangeList("Matt 1:10-15"))
+        self.assertEqual(test_range.difference(BibleRange("Matt 1:5-9")), BibleRangeList("Matt 1:10-15"))
+        self.assertEqual(test_range.difference(BibleRange("Matt 1:5-10")), BibleRangeList("Matt 1:11-15"))
+        self.assertEqual(test_range.difference(BibleRange("Matt 1:5-11")), BibleRangeList("Matt 1:12-15"))
+        self.assertEqual(test_range.difference(BibleRange("Matt 1:10-12")), BibleRangeList("Matt 1:13-15"))
+        self.assertEqual(test_range.difference(BibleRange("Matt 1:10-14")), BibleRangeList("Matt 1:15"))
+        self.assertEqual(test_range.difference(BibleRange("Matt 1:11-14")), BibleRangeList("Matt 1:10, 15"))
+        self.assertEqual(test_range.difference(BibleRange("Matt 1:12-13")), BibleRangeList("Matt 1:10-11, 14-15"))
+        self.assertEqual(test_range.difference(BibleRange("Matt 1:11-15")), BibleRangeList("Matt 1:10"))
+        self.assertEqual(test_range.difference(BibleRange("Matt 1:13-15")), BibleRangeList("Matt 1:10-12"))
+        self.assertEqual(test_range.difference(BibleRange("Matt 1:10-15")), BibleRangeList())
+        self.assertEqual(test_range.difference(BibleRange("Matt 1:9-16")), BibleRangeList())
+        self.assertEqual(test_range.difference(BibleRange("Matt 1:14-20")), BibleRangeList("Matt 1:10-13"))
+        self.assertEqual(test_range.difference(BibleRange("Matt 1:15-20")), BibleRangeList("Matt 1:10-14"))
+        self.assertEqual(test_range.difference(BibleRange("Matt 1:16-20")), BibleRangeList("Matt 1:10-15"))
+        self.assertEqual(test_range.difference(BibleRange("Matt 1:17-20")), BibleRangeList("Matt 1:10-15"))
 
     def test_bible_range_to_string(self):
         rng = BibleRange(BibleBook.Rom, 1, 1, None, 16, 27)

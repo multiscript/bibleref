@@ -546,13 +546,19 @@ class BibleRange:
                start and end.
                e.g. BibleRange(start=BibleVerse("Mark 3:1"), end=BibleVerse("Mark 4:2"))
 
-            4. As a copy of an existing BibleRange: BibleRange(existing_bible_range)            
+            4. As a copy of an existing BibleRange: BibleRange(existing_bible_range)
+
+        If the start reference is obviously larger than the end reference, they are swapped around.
+        Note that it is sometimes not possible to distinguish a swapped start and end from
+        misformed arguments.           
         '''
         flags = flags or globals()['flags'] or BibleFlag.NONE
         if len(args) == 0:
             if BibleFlag.MULTIBOOK not in flags and start.book != end.book:
                 raise MultibookRangeNotAllowedError(f"Multi-book ranges not allowed " + 
                                                     f"({start.book.abbrev} and {end.book.abbrev} are different)")
+            if start > end:
+                (start, end) = (end, start)
             object.__setattr__(self, "start", start)
             object.__setattr__(self, "end", end)
             return
@@ -580,38 +586,53 @@ class BibleRange:
         end_chap = args[4] if len(args) > 4 else None
         end_verse = args[5] if len(args) > 5 else None
 
-        if start_book is None:
-            raise InvalidReferenceError(f"A start book is needed for a BibleRange")
-        elif isinstance(start_book, str):
+        if start_book is not None and isinstance(start_book, str):
             start_book = BibleBook.from_str(start_book, raise_error=True)
-        elif not isinstance(start_book, BibleBook):
+        elif start_book is not None and not isinstance(start_book, BibleBook):
             raise InvalidReferenceError(f"{start_book} is not a valid BibleBook")
 
+        if end_book is not None and isinstance(end_book, str):
+            end_book = BibleBook.from_str(end_book, raise_error=True)
+        elif end_book is not None and not isinstance(end_book, BibleBook):
+            raise InvalidReferenceError(f"{end_book} is not a valid BibleBook")
+
+        # If start > end, swap around. The logic is messy due to implied values when args are None.
+        if start_book is not None:
+            if end_book is not None and start_book > end_book:
+                (start_book, end_book) = (end_book, start_book)
+                (start_chap, end_chap) = (end_chap, start_chap)
+                (start_verse, end_verse) = (end_verse, start_verse)
+            elif (end_book is None or end_book == start_book) and start_chap is not None:
+                if end_chap is not None and start_chap > end_chap:
+                    (start_chap, end_chap) = (end_chap, start_chap)
+                    (start_verse, end_verse) = (end_verse, start_verse)
+                elif (end_chap is None or end_chap == start_chap) and start_verse is not None:
+                    if end_verse is not None and start_verse > end_verse:
+                        (start_verse, end_verse) = (end_verse, start_verse)
+
+        have_end = (end_book is not None) or (end_chap is not None) or (end_verse is not None)
+
+        if start_book is None:
+            raise InvalidReferenceError(f"A start book is needed for a BibleRange")
         if start_chap is None and start_verse is not None:
             raise InvalidReferenceError("Start verse is missing a start chapter")
 
-        no_end = (end_book is None and end_chap is None and end_verse is None)
-
         if start_chap is None: # Start is book only
             start = start_book.first_verse(None, flags)
-            if no_end:
+            if not have_end:
                 end = start_book.last_verse()
         elif start_verse is None: # Start is book and chap only
-            start = start_book.first_verse(int(start_chap), flags)
-            if no_end:
-                end = start_book.last_verse(start_chap)
+            start = start_book.first_verse(int(start_chap), flags=flags)
+            if not have_end:
+                end = start_book.last_verse(int(start_chap))
         else: # Start is book, chap and verse
             start = BibleVerse(start_book, int(start_chap), int(start_verse), flags=flags)
-            if no_end: # Single verse reference, so end is same as start
+            if not have_end: # Single verse reference, so end is same as start
                 end = BibleVerse(start_book, int(start_chap), int(start_verse), flags=flags)
         
-        if not no_end: # We have end-point info
+        if have_end: # We have end-point info
             if end_book is None:
                 end_book = start_book
-            elif isinstance(end_book, str):
-                end_book = BibleBook.from_str(end_book, raise_error=True)
-            elif not isinstance(end_book, BibleBook):
-                raise InvalidReferenceError(f"{end_book} is not a valid BibleBook")
             
             if end_chap is None and end_verse is None: # End is book only
                 end = end_book.last_verse()
@@ -740,38 +761,17 @@ class BibleRange:
         return BibleRangeList(split_result, flags=flags)
 
     def is_disjoint(self, other_range: 'BibleRange') -> bool:
-        '''Returns True if this BibleRange doesn't overlap with the given BibleRange,
-        otherwise False.
+        '''Returns True if this range doesn't overlap with other_range, otherwise False.
         '''
         lower, higher = (self, other_range) if self < other_range else (other_range, self)
         return lower.end < higher.start
 
     def is_adjacent(self, other_range: 'BibleRange', flags: BibleFlag = None) -> bool:
         '''Returns True if this range is adjacent to other_range, otherwise False.
+        A range is adjacent to another range if their bounds are just one verse apart.
         '''
         lower, higher = (self, other_range) if self < other_range else (other_range, self)
         return (lower.end.add(1, flags) == higher.start)
-
-    def union(self, other_range: 'BibleRange', flags: BibleFlag = None) -> 'BibleRange':
-        '''If this range and other_range overlap or are adjacent, returns a new BibleRange
-        encompassing both of them. If this range and other_range don't overlap
-        and aren't adjacent, returns None.
-        '''
-        if self.is_disjoint(other_range) and not self.is_adjacent(other_range):
-            return None
-        start = min(self.start, other_range.start)
-        end = max(self.end, other_range.end)
-        return BibleRange(start=start, end=end, flags=flags)         
-
-    def intersect(self, other_range: 'BibleRange', flags: BibleFlag = None) -> 'BibleRange':
-        '''Returns a new BibleRange of verses that are common to both this BibleRange
-        and other_range. If there are no verses in common, returns None.
-        '''
-        if self.is_disjoint(other_range):
-            return None
-        start = max(self.start, other_range.start)
-        end = min(self.end, other_range.end)
-        return BibleRange(start=start, end=end, flags=flags)         
 
     def contains(self, ref: Union[BibleVerse, 'BibleRange']) -> bool:
         '''Returns True if ref is a BibleVerse that falls within this range, or another
@@ -789,7 +789,7 @@ class BibleRange:
 
     def surrounds(self, ref: Union[BibleVerse, 'BibleRange']) -> bool:
         '''Returns True if ref is a BibleVerse or BibleRange that falls within this range, without
-        touching this range's first or last verse. Otherwise, returns False.
+        including this range's first or last verse. Otherwise, returns False.
         '''
         if isinstance(ref, BibleVerse):
             return (ref > self.start and ref < self.end)
@@ -799,30 +799,50 @@ class BibleRange:
         else:
             raise ValueError(f"{ref} is neither a BibleVerse nor BibleRange")
 
-    def diff(self, other_range: 'BibleRange', flags: BibleFlag = None) -> 'BibleRangeList':
+    def union(self, other_range: 'BibleRange', flags: BibleFlag = None) -> 'BibleRange':
+        '''If this range and other_range overlap or are adjacent, returns a new BibleRange
+        encompassing them both. If this range and other_range don't overlap
+        and aren't adjacent, returns None.
+        '''
+        if self.is_disjoint(other_range) and not self.is_adjacent(other_range):
+            return None
+        start = min(self.start, other_range.start)
+        end = max(self.end, other_range.end)
+        return BibleRange(start=start, end=end, flags=flags)         
+
+    def intersection(self, other_range: 'BibleRange', flags: BibleFlag = None) -> 'BibleRange':
+        '''Returns a new BibleRange of verses that are common to both this range
+        and other_range. If there are no verses in common, returns None.
+        '''
+        if self.is_disjoint(other_range):
+            return None
+        start = max(self.start, other_range.start)
+        end = min(self.end, other_range.end)
+        return BibleRange(start=start, end=end, flags=flags)         
+
+    def difference(self, other_range: 'BibleRange', flags: BibleFlag = None) -> 'BibleRangeList':
         '''Returns a new BibleRangeList of verses that are in this range, but not in
         other_range.
         
-        If this BibleRange and other_range are disjoint, the list contains one item: this BibleRange
-            itself.
+        If this BibleRange and other_range are disjoint, the list contains one item:
+            this range itself.
         If this BibleRange surrounds other_range, the list contains two items:
             a lower-section BibleRange, and an upper-section BibleRange.
-        If other_range surrounds or equals this range, the list is empty.
+        If other_range contains this range, the list is empty.
         '''
         if self.is_disjoint(other_range):
-            return BibleRangeList(self, flags=flags)
-        if self == other_range or other_range.contains(self):
+            return BibleRangeList([self], flags=flags)
+        if other_range.contains(self):
             return BibleRangeList()
+
+        lower_range = BibleRange(start=self.start, end=other_range.start.subtract(1, flags=flags))
+        upper_range = BibleRange(start=other_range.end.add(1, flags=flags), end=self.end)
         if self.surrounds(other_range):
-            lower_range = BibleRange(start=self.start, end=other_range.start.subtract(1, flags=flags))
-            upper_range = BibleRange(start=other_range.end.add(1, flags=flags), end=self.end)
             return BibleRangeList([lower_range, upper_range])
         if self < other_range:
-            # TODO Finish this section
-            pass
+            return BibleRangeList([lower_range], flags=flags)
         else:
-            # TODO Finish this section 
-            pass
+            return BibleRangeList([upper_range], flags=flags)
 
     def __iter__(self):
         verse = self.start
@@ -941,6 +961,9 @@ class BibleRangeList(util.LinkedList):
             node.value = node.value.verse_1_to_0()
         return None
 
+    def __repr__(self):
+        return f'BibleRangeList("{self.string()}")'
+    
     def __str__(self):
         return self.string()
 
