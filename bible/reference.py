@@ -13,19 +13,24 @@ module behaviours:
     MULTIBOOK: Defaults to unset. When set, BibleRanges can be constructed that span
                  multiple books. Existing multibook ranges behave correctly even when
                  MULTIBOOK is unset. 
-    VERSE_0:   Defaults to unset. When set, the first verse number of some chapters
-                 is 0, not 1. (This is currently just the Psalms that have
-                 superscriptions.) When you need to mix references that do or don't
-                 allow for verse 0, it may be easier to choose one value for all
-                 your code, and then use the verse_0_to_1() and verse_1_to_0()
-                 methods on BibleVerses, BibleRanges and BibleRangeLists as
-                 necessary.
+    VERSE_0:   Defaults to unset. When set, BibleVerses can be constructed where the
+                 first verse number of some chapters is 0, not 1. (This is currently
+                 just the Psalms that have superscriptions.) When you need to mix
+                 references that do or don't allow for verse 0, it may be easier to
+                 choose one value for all your code, and then use the verse_0_to_1()
+                 and verse_1_to_0() methods on BibleVerses, BibleRanges and
+                 BibleRangeLists as necessary.
 
 Many methods take a 'flags' argument that takes overrides the module-level attribute during
 the execution of that method.
 
 The Bible book, chapter and verse data is specified in the sibling 'data' module.
 '''
+# TODO: Ensure we only enforce BibleFlag behaviour during *construction* of BibleRanges
+#       and BibleVerses. Don't raise exceptions when merely manipulating them.
+# TODO: Rename string() methods to str().
+# TODO: Implement add and subtract operators for BibleVerses
+# TODO: Implement count of chapters and verses in a BibleRange and BibleRangeList
 from dataclasses import dataclass
 from enum import Enum, Flag, auto
 import re
@@ -522,6 +527,7 @@ class BibleRange:
         return BibleRange(start=start_book.first_verse(flags=flags),
                           end=end_book.last_verse(), flags=flags)
 
+    # TODO: Consider allowing a book and verse, without a chapter. Assume first or last chapter as necessary.
     def __init__(self, *args, start: BibleVerse = None, end: BibleVerse = None,
                  flags: BibleFlag = None):
         '''A BibleRange can be constructed in any of the following ways:
@@ -799,6 +805,9 @@ class BibleRange:
         else:
             raise ValueError(f"{ref} is neither a BibleVerse nor BibleRange")
 
+    # TODO: Consider returning a BibleRangeList, so that disjoing unions can be returned
+    #       as well.
+    # TODO: Allow arg to be a BibleVerse or a BibleRange
     def union(self, other_range: 'BibleRange', flags: BibleFlag = None) -> 'BibleRange':
         '''If this range and other_range overlap or are adjacent, returns a new BibleRange
         encompassing them both. If this range and other_range don't overlap
@@ -810,6 +819,8 @@ class BibleRange:
         end = max(self.end, other_range.end)
         return BibleRange(start=start, end=end, flags=flags)         
 
+    # TODO: Consider returning a BibleRangeList
+    # TODO: Allow arg to be a BibleVerse or a BibleRange
     def intersection(self, other_range: 'BibleRange', flags: BibleFlag = None) -> 'BibleRange':
         '''Returns a new BibleRange of verses that are common to both this range
         and other_range. If there are no verses in common, returns None.
@@ -820,6 +831,7 @@ class BibleRange:
         end = min(self.end, other_range.end)
         return BibleRange(start=start, end=end, flags=flags)         
 
+    # TODO: Allow arg to be a BibleVerse or a BibleRange
     def difference(self, other_range: 'BibleRange', flags: BibleFlag = None) -> 'BibleRangeList':
         '''Returns a new BibleRangeList of verses that are in this range, but not in
         other_range.
