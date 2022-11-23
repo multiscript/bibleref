@@ -28,7 +28,6 @@ The Bible book, chapter and verse data is specified in the sibling 'data' module
 '''
 # TODO: Ensure we only enforce BibleFlag behaviour during *construction* of BibleRanges
 #       and BibleVerses. Don't raise exceptions when merely manipulating them.
-# TODO: Rename string() methods to str().
 # TODO: Implement add and subtract operators for BibleVerses
 # TODO: Implement count of chapters and verses in a BibleRange and BibleRangeList
 from dataclasses import dataclass
@@ -462,13 +461,13 @@ class BibleVerse:
         return BibleVerse(book, chap_num, verse_num, flags=flags)
 
     def __repr__(self):
-        return f"BibleVerse({self.string(abbrev=True)})"
+        return f"BibleVerse({self.str(abbrev=True)})"
 
     def __str__(self):
-        return self.string()
+        return self.str()
 
-    def string(self, abbrev: bool = False, alt_sep: bool = False, nospace: bool = False,
-               verse_parts: BibleVersePart = BibleVersePart.FULL_REF) -> str:
+    def str(self, abbrev: bool = False, alt_sep: bool = False, nospace: bool = False,
+            verse_parts: BibleVersePart = BibleVersePart.FULL_REF) -> str:
         '''Returns a configurable string representation of this BibleVerse.
 
         If abbrev is True, the abbreviated name of the book is used (instead of the full name).
@@ -868,12 +867,12 @@ class BibleRange:
         return self.contains(item)
 
     def __repr__(self):
-        return f"BibleRange({self.string()})"
+        return f"BibleRange({self.str()})"
     
     def __str__(self):
-        return self.string()
+        return self.str()
 
-    def string(self, abbrev=False, alt_sep=False, nospace=False, flags: BibleFlag = None):
+    def str(self, abbrev=False, alt_sep=False, nospace=False, flags: BibleFlag = None):
         '''Returns a configurable string representation of this BibleRange.
 
         If abbrev is True, the abbreviated name of the book is used (instead of the full name).
@@ -890,7 +889,7 @@ class BibleRange:
         else:
             start_parts = BibleVersePart.FULL_REF
             at_verse_level = True
-        start_str = self.start.string(abbrev, alt_sep, nospace, start_parts) 
+        start_str = self.start.str(abbrev, alt_sep, nospace, start_parts) 
         
         if self.is_whole_book(flags) or self.is_whole_chap(flags) or self.is_single_verse(): # Single reference
             end_str = ""
@@ -908,7 +907,7 @@ class BibleRange:
                 end_parts = BibleVersePart.FULL_REF
             if self.start.book == self.end.book:
                 end_parts &= ~BibleVersePart.BOOK # Omit book
-            end_str = self.end.string(abbrev, alt_sep, nospace, end_parts) 
+            end_str = self.end.str(abbrev, alt_sep, nospace, end_parts) 
         
         result = f"{start_str}{range_sep}{end_str}"
         if nospace:
@@ -974,12 +973,12 @@ class BibleRangeList(util.LinkedList):
         return None
 
     def __repr__(self):
-        return f'BibleRangeList("{self.string()}")'
+        return f'BibleRangeList("{self.str()}")'
     
     def __str__(self):
-        return self.string()
+        return self.str()
 
-    def string(self, abbrev: bool = False, alt_sep: bool = False, nospace: bool = False,
+    def str(self, abbrev: bool = False, alt_sep: bool = False, nospace: bool = False,
                preserve_groups: bool = True, flags: BibleFlag = None):
         '''Returns a string representation of this BibleRangeList.
 
@@ -1069,7 +1068,7 @@ class BibleRangeList(util.LinkedList):
                     cur_chap = bible_range.start.chap_num
                     at_verse_level = True # All single verses move us to verse level
                 cur_book = bible_range.start.book
-                start_str = bible_range.start.string(abbrev, alt_sep, nospace, start_parts) 
+                start_str = bible_range.start.str(abbrev, alt_sep, nospace, start_parts) 
 
                 if not force_dual_ref and (bible_range.is_whole_book(flags) or
                                            bible_range.is_whole_chap(flags) or \
@@ -1104,7 +1103,7 @@ class BibleRangeList(util.LinkedList):
                         cur_chap = bible_range.end.chap_num
                         at_verse_level = True
                     cur_book = bible_range.end.book
-                    end_str = bible_range.end.string(abbrev, alt_sep, nospace, end_parts) 
+                    end_str = bible_range.end.str(abbrev, alt_sep, nospace, end_parts) 
                 
                 if first_range:
                     list_sep = ""
