@@ -26,8 +26,8 @@ the execution of that method.
 
 The Bible book, chapter and verse data is specified in the sibling 'data' module.
 '''
-# TODO: Ensure we only enforce BibleFlag behaviour during *construction* of BibleRanges
-#       and BibleVerses. Don't raise exceptions when merely manipulating them.
+# TODO: Create module method to make it easier to keep existing flags but set/unset particular flags
+# TODO: Create context manager to temporarily set or unset particular flags
 # TODO: Implement add and subtract operators for BibleVerses
 # TODO: Implement count of chapters and verses in a BibleRange and BibleRangeList
 from dataclasses import dataclass
@@ -404,13 +404,14 @@ class BibleVerse:
         If BibleFlag.MULTIBOOK is set (either set by the 'flags' argument or,
         if None, by the module attribute), and the result would be beyond the current
         book, a verse in the next book is returned. Otherwise, if the verse
-        does not exist, None is returned.
+        does not exist, None is returned. If this BibleVerse already refers to
+        verse number 0, VERSE_0 is set on the flags argument for this call.
         '''
         flags = flags or globals()['flags'] or BibleFlag.NONE
         book = self.book
         chap_num = self.chap_num
         if self.verse_num == 0:
-            flags = flags | BibleFlag.VERSE_0
+            flags = flags | BibleFlag.VERSE_0 # Honour existing verse 0s
         verse_num = self.verse_num + num_verses
         max_verse_num = book.max_verse_num(chap_num)
         while verse_num > max_verse_num:
@@ -435,13 +436,14 @@ class BibleVerse:
         If BibleFlag.MULTIBOOK is set (either set by the 'flags' argument or,
         if None, the module attribute), and the result would be before the current
         book, a verse in the previous book is returned. Otherwise, if the verse
-        does not exist, None is returned.
+        does not exist, None is returned. If this BibleVerse already refers to
+        verse number 0, VERSE_0 is set on the flags argument for this call.
         '''
         flags = flags or globals()['flags'] or BibleFlag.NONE
         book = self.book
         chap_num = self.chap_num
         if self.verse_num == 0:
-            flags = flags | BibleFlag.VERSE_0
+            flags = flags | BibleFlag.VERSE_0 # Honour existing verse 0s
         verse_num = self.verse_num - num_verses
         min_verse_num = book.min_verse_num(chap_num, flags)
         while verse_num < min_verse_num:
@@ -691,20 +693,20 @@ class BibleRange:
     def is_whole_chap(self, flags: BibleFlag = None) -> bool:
         '''Returns True if this BibleRange exactly spans one whole chapter, else False.'''
         return  (self.start.book == self.end.book) and \
-                (self.start == self.start.book.first_verse(self.start.chap_num, flags)) and \
+                (self.start == self.start.book.first_verse(self.start.chap_num, flags=flags)) and \
                 (self.end == self.end.book.last_verse(self.start.chap_num))
 
     def spans_start_chap(self, flags: BibleFlag = None) -> bool:
         '''Returns True if this BibleRange exactly spans the whole chapter containing the
         starting verse, else False.'''
-        return  (self.start == self.start.book.first_verse(self.start.chap_num, flags)) and \
+        return  (self.start == self.start.book.first_verse(self.start.chap_num, flags=flags)) and \
                 (self.end >= self.start.book.last_verse(self.start.chap_num))
 
     def spans_end_chap(self, flags: BibleFlag = None) -> bool:
         '''Returns True if this BibleRange exactly spans the whole chapter containing the
         ending verse, else False.'''
         return  (self.end == self.end.book.last_verse(self.end.chap_num)) and \
-                (self.start <= self.end.book.first_verse(self.end.chap_num, flags))
+                (self.start <= self.end.book.first_verse(self.end.chap_num, flags=flags))
 
     def is_single_verse(self) -> bool:
         '''Returns True if the BibleRange exactly spans a single verse, else False.'''
@@ -723,8 +725,13 @@ class BibleRange:
         if not (by_book or by_chap or num_verses):
             raise ValueError("Must split by at least one of book, chapter, or number of verses")
 
-        # Allow multibook references for this method.
-        flags = (flags or globals()['flags'] or BibleFlag.NONE) | BibleFlag.MULTIBOOK
+        flags = (flags or globals()['flags'] or BibleFlag.NONE)
+        # Set flags if our attributes imply they should be set
+        if self.start.book != self.end.book:
+            flags |= BibleFlag.MULTIBOOK
+        if self.start.verse_num == 0 or self.end.verse_num == 0:
+            flags |= BibleFlag.VERSE_0
+
         split_result = [self]
         
         if by_book:
@@ -776,7 +783,7 @@ class BibleRange:
         A range is adjacent to another range if their bounds are just one verse apart.
         '''
         lower, higher = (self, other_range) if self < other_range else (other_range, self)
-        return (lower.end.add(1, flags) == higher.start)
+        return (lower.end.add(1, flags=flags) == higher.start)
 
     def contains(self, ref: Union[BibleVerse, 'BibleRange']) -> bool:
         '''Returns True if ref is a BibleVerse that falls within this range, or another
@@ -804,7 +811,7 @@ class BibleRange:
         else:
             raise ValueError(f"{ref} is neither a BibleVerse nor BibleRange")
 
-    # TODO: Consider returning a BibleRangeList, so that disjoing unions can be returned
+    # TODO: Consider returning a BibleRangeList, so that disjoint unions can be returned
     #       as well.
     # TODO: Allow arg to be a BibleVerse or a BibleRange
     def union(self, other_range: 'BibleRange', flags: BibleFlag = None) -> 'BibleRange':
