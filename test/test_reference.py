@@ -382,6 +382,25 @@ class TestBibleReference(unittest.TestCase):
         self.assertEqual(test_range.difference(BibleRange("Matt 1:16-20")), BibleRangeList("Matt 1:10-15"))
         self.assertEqual(test_range.difference(BibleRange("Matt 1:17-20")), BibleRangeList("Matt 1:10-15"))
 
+    def test_range_sym_difference(self):
+        test_range = BibleRange("Matt 1:10-15")
+        self.assertEqual(test_range.sym_difference(BibleRange("Matt 1:5-8")), BibleRangeList("Matt 1:10-15, 5-8"))
+        self.assertEqual(test_range.sym_difference(BibleRange("Matt 1:5-9")), BibleRangeList("Matt 1:5-15"))
+        self.assertEqual(test_range.sym_difference(BibleRange("Matt 1:5-10")), BibleRangeList("Matt 1:5-9, 11-15"))
+        self.assertEqual(test_range.sym_difference(BibleRange("Matt 1:5-11")), BibleRangeList("Matt 1:5-9, 12-15"))
+        self.assertEqual(test_range.sym_difference(BibleRange("Matt 1:10-12")), BibleRangeList("Matt 1:13-15"))
+        self.assertEqual(test_range.sym_difference(BibleRange("Matt 1:10-14")), BibleRangeList("Matt 1:15"))
+        self.assertEqual(test_range.sym_difference(BibleRange("Matt 1:11-14")), BibleRangeList("Matt 1:10, 15"))
+        self.assertEqual(test_range.sym_difference(BibleRange("Matt 1:12-13")), BibleRangeList("Matt 1:10-11, 14-15"))
+        self.assertEqual(test_range.sym_difference(BibleRange("Matt 1:11-15")), BibleRangeList("Matt 1:10"))
+        self.assertEqual(test_range.sym_difference(BibleRange("Matt 1:13-15")), BibleRangeList("Matt 1:10-12"))
+        self.assertEqual(test_range.sym_difference(BibleRange("Matt 1:10-15")), BibleRangeList())
+        self.assertEqual(test_range.sym_difference(BibleRange("Matt 1:9-16")), BibleRangeList("Matt 1:9, 16"))
+        self.assertEqual(test_range.sym_difference(BibleRange("Matt 1:14-20")), BibleRangeList("Matt 1:10-13, 16-20"))
+        self.assertEqual(test_range.sym_difference(BibleRange("Matt 1:15-20")), BibleRangeList("Matt 1:10-14, 16-20"))
+        self.assertEqual(test_range.sym_difference(BibleRange("Matt 1:16-20")), BibleRangeList("Matt 1:10-20"))
+        self.assertEqual(test_range.sym_difference(BibleRange("Matt 1:17-20")), BibleRangeList("Matt 1:10-15, 17-20"))
+
     def test_bible_range_to_string(self):
         rng = BibleRange(BibleBook.Rom, 1, 1, None, 16, 27)
         self.assertEqual(str(rng), "Romans")

@@ -30,6 +30,7 @@ The Bible book, chapter and verse data is specified in the sibling 'data' module
 # TODO: Create context manager to temporarily set or unset particular flags
 # TODO: Implement add and subtract operators for BibleVerses
 # TODO: Implement count of chapters and verses in a BibleRange and BibleRangeList
+# TODO: Implement set operators as standard operators
 from dataclasses import dataclass
 from enum import Enum, Flag, auto
 import re
@@ -882,6 +883,28 @@ class BibleRange:
             return BibleRangeList([lower_range], flags=BibleFlag.ALL)
         else:
             return BibleRangeList([upper_range], flags=BibleFlag.ALL)
+
+    def sym_difference(self, other_ref: Union[BibleVerse, 'BibleRange'],
+                   flags: BibleFlag = None) -> 'BibleRangeList':
+        '''Returns a new BibleRangeList of verses that are either in this range, or in other_ref,
+        but not both. other_ref can be a BibleVerse or BibleRange.
+
+        Depending on this range or other_ref, the list contains either one or two BibleRanges.
+        If this range and other_ref are exactly equal, this list is empty.
+        '''
+        if isinstance(other_ref, BibleVerse):
+            # Convert to BibleRange (and we don't enforce existing flags for conversions)
+            other_ref = BibleRange(start=other_ref, end=other_ref, flags=BibleFlag.ALL)
+        if self == other_ref:
+            return BibleRangeList()
+        union = self.union(other_ref, flags=flags)
+        intersection = self.intersection(other_ref, flags=flags)
+        if len(union) > 1 or len(intersection) == 0:
+            # Self and other_ref are disjoint and/or adjacent, so the union is the same
+            # as the symmetric difference
+            return union
+        else: # Self and other_ref overlap
+            return union[0].difference(intersection[0])
 
     def __iter__(self):
         verse = self.start
