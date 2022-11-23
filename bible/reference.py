@@ -1028,6 +1028,25 @@ class BibleRangeList(util.LinkedList):
             node.value = node.value.verse_1_to_0()
         return None
 
+    def compress(self, flags: BibleFlag = None):
+        '''Sort this list and merge ranges wherever possible. The result is the smallest
+        list of disjoint, non-adjacent ranges spanning the same verses.
+
+        All groups are removed and replaced with a single group.
+        '''
+        self.sort()
+        node = self._first
+        while node is not None and node.next is not None:
+            union = node.value.union(node.next.value, flags=flags)
+            if len(union) == 1: # Can merge these two ranges with their union
+                node.value = union[0]
+                self._pop_after(node)
+                # We don't move on yet, so we can compare the newly merged range
+                # with the (new) next node
+            else:
+                # The two ranges can't be merged, so move on
+                node = node.next
+
     def __repr__(self):
         return f'BibleRangeList("{self.str()}")'
     

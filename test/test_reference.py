@@ -494,6 +494,14 @@ class TestBibleReference(unittest.TestCase):
         no_verse_0.verse_1_to_0()
         self.assertEqual(no_verse_0, BibleRangeList("Matt 2:3-4:5; Mark 6:7-8:9"))
 
+    def test_bible_range_list_compress(self):
+        range = BibleRangeList("John; Luke; Matt 1:17-20, 12-15, 9-11, 5-7, 4-6", flags=BibleFlag.MULTIBOOK)
+        range.sort()
+        range.compress(flags=BibleFlag.NONE)
+        self.assertEqual(range, BibleRangeList("Matt 1:4-7, 9-15, 17-20, Luke, John"))
+        range.compress(flags=BibleFlag.MULTIBOOK)
+        self.assertEqual(range, BibleRangeList("Matt 1:4-7, 9-15, 17-20, Luke-John", flags=BibleFlag.MULTIBOOK))
+
     def test_bible_range_list_to_string(self):
         # Start range spans a book, after a ref from same book
         self.assertEqual(BibleRangeList(
@@ -654,3 +662,5 @@ class TestBibleReference(unittest.TestCase):
         expected_list_str = "Gen 1:2-3:4; 1Sam 2:2-3:3; Matt 1:2-11:1; 2:3-4:4; " + \
                             "2:3-4:5; Mark 3:4-5:5; 3:4-5:6"
         self.assertEqual(sorted_list_str, expected_list_str)
+        self.assertEqual(range_list._first.value, BibleRange("Gen 1:2-3:4"))
+        self.assertEqual(range_list._last.value, BibleRange("Mark 3:4-5:6"))

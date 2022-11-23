@@ -338,13 +338,16 @@ class TestLinkedList(unittest.TestCase):
         list_4 = LinkedList([1, 2, 3, 4, 5, 6, 7, 8, 9, 11])
         self.assertFalse(list_3 == list_4)
     
-    def test_sort(self):
+    def test_basic_sort(self):
         values = [10, 1, 9, 2, 8, 3, 7, 4, 6, 5]
-        test_list = LinkedList([10, 1, 9, 2, 8, 3, 7, 4, 6, 5])
+        test_list = LinkedList(values)
         test_list.sort()
         self.assertEqual(test_list, LinkedList(sorted(values)))
+        self.assertEqual(test_list._first.value, 1)
+        self.assertEqual(test_list._last.value, 10)
         self.assertTrue(self.verify_is_single_group(test_list))
 
+    def test_sort_of_groups(self):
         test_list = LinkedList()
         test_list.append_group([12, 3, 20])
         test_list.append_group([18, 5, 11])
@@ -353,6 +356,8 @@ class TestLinkedList(unittest.TestCase):
         test_list.append_group([2, 6, 14])
         test_list.sort()
         self.assertEqual(test_list, LinkedList([1, 2, 3, 5, 6, 8, 11, 12, 14, 15, 18, 20]))
+        self.assertEqual(test_list._first.value, 1)
+        self.assertEqual(test_list._last.value, 20)
         self.assertTrue(self.verify_is_single_group(test_list))
 
     def verify_is_single_group(self, linked_list: LinkedList):
