@@ -335,7 +335,7 @@ class TestBibleReference(unittest.TestCase):
 
     def test_range_union(self):
         test_range = BibleRange("Matt 1:10-15")
-        self.assertEqual(test_range.union(BibleRange("Matt 1:5-8")), BibleRangeList("Matt 1:10-15, 5-8"))
+        self.assertEqual(test_range.union(BibleRange("Matt 1:5-8")), BibleRangeList("Matt 1:5-8, 10-15"))
         self.assertEqual(test_range.union(BibleRange("Matt 1:5-9")), BibleRangeList("Matt 1:5-15"))
         self.assertEqual(test_range.union(BibleRange("Matt 1:5-10")), BibleRangeList("Matt 1:5-15"))
         self.assertEqual(test_range.union(BibleRange("Matt 1:5-11")), BibleRangeList("Matt 1:5-15"))
@@ -384,7 +384,7 @@ class TestBibleReference(unittest.TestCase):
 
     def test_range_sym_difference(self):
         test_range = BibleRange("Matt 1:10-15")
-        self.assertEqual(test_range.sym_difference(BibleRange("Matt 1:5-8")), BibleRangeList("Matt 1:10-15, 5-8"))
+        self.assertEqual(test_range.sym_difference(BibleRange("Matt 1:5-8")), BibleRangeList("Matt 1:5-8, 10-15"))
         self.assertEqual(test_range.sym_difference(BibleRange("Matt 1:5-9")), BibleRangeList("Matt 1:5-15"))
         self.assertEqual(test_range.sym_difference(BibleRange("Matt 1:5-10")), BibleRangeList("Matt 1:5-9, 11-15"))
         self.assertEqual(test_range.sym_difference(BibleRange("Matt 1:5-11")), BibleRangeList("Matt 1:5-9, 12-15"))

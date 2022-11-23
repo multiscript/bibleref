@@ -834,7 +834,8 @@ class BibleRange:
             # Convert to BibleRange (and we don't enforce existing flags for conversions)
             other_ref = BibleRange(start=other_ref, end=other_ref, flags=BibleFlag.ALL)
         if self.is_disjoint(other_ref) and not self.is_adjacent(other_ref, flags=flags):
-            return BibleRangeList([self, other_ref], flags=BibleFlag.ALL)
+            lower, higher = (self, other_ref) if self < other_ref else (other_ref, self) 
+            return BibleRangeList([lower, higher], flags=BibleFlag.ALL)
         else:
             start = min(self.start, other_ref.start)
             end = max(self.end, other_ref.end)
