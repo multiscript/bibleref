@@ -26,6 +26,7 @@ the execution of that method.
 
 The Bible book, chapter and verse data is specified in the sibling 'data' module.
 '''
+# TODO: Consider creating a BibleRef type that's a Union of BibleVerse, BibleRange, BibleRangeList
 # TODO: Create module method to make it easier to keep existing flags but set/unset particular flags
 # TODO: Create context manager to temporarily set or unset particular flags
 # TODO: Implement add and subtract operators for BibleVerses
@@ -1029,8 +1030,9 @@ class BibleRangeList(util.LinkedList):
         return None
 
     def compress(self, flags: BibleFlag = None):
-        '''Sort this list and merge ranges wherever possible. The result is the smallest
-        list of disjoint, non-adjacent ranges spanning the same verses.
+        '''Sorts this list and merges ranges wherever possible. The result is the smallest
+        list of disjoint, non-adjacent ranges spanning the same verses as in the original
+        list.
 
         All groups are removed and replaced with a single group.
         '''
