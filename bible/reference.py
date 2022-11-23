@@ -36,6 +36,10 @@ from enum import Enum, Flag, auto
 import re
 from typing import Union
 
+#
+# Set-style operations in this module are derived from the python-ranges module
+# at https://github.com/Superbird11/ranges, under the MIT Licence
+#
 
 class BibleFlag(Flag):
     '''A Flag used for controlling various behaviours throughout the module.'''

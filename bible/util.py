@@ -5,7 +5,10 @@ class ListError(Exception):
     pass
 
 
-# Derived from https://github.com/Superbird11/ranges/blob/master/ranges/_helper.py (MIT Licence)
+#
+# This linked list is derived from the implementation in the python-ranges module
+# at https://github.com/Superbird11/ranges, under the MIT Licence
+#
 class LinkedList(MutableSequence):
     '''A linked list, with the ability to also group items.
     
