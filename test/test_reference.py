@@ -502,6 +502,12 @@ class TestBibleReference(unittest.TestCase):
         range.compress(flags=BibleFlag.MULTIBOOK)
         self.assertEqual(range, BibleRangeList("Matt 1:4-7, 9-15, 17-20, Luke-John", flags=BibleFlag.MULTIBOOK))
 
+    def test_bible_range_list_is_disjoint(self):
+        test_list = BibleRangeList("Matt 2-4; Mark 6-8; Luke 10-12; John 14-16")
+
+        self.assertTrue(test_list.is_disjoint(BibleRangeList("Matt 5-7; Mark 9-11; Luke 13-15; John 17-19")))
+        self.assertFalse(test_list.is_disjoint(BibleRangeList("Matt 5-7; Mark 9-11; Luke 12-15; John 17-19")))
+
     def test_bible_range_list_to_string(self):
         # Start range spans a book, after a ref from same book
         self.assertEqual(BibleRangeList(

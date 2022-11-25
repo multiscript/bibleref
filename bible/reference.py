@@ -777,13 +777,14 @@ class BibleRange:
         
         return BibleRangeList(split_result, flags=flags)
 
-    def is_disjoint(self, other_ref: Union[BibleVerse, 'BibleRange']) -> bool:
+    def is_disjoint(self, other_ref: 'BibleRef') -> bool:
         '''Returns True if this range doesn't overlap with other_ref, otherwise False.
-        other_ref can be a BibleVerse or BibleRange.
         '''
         if isinstance(other_ref, BibleVerse):
             # Convert to BibleRange (and we don't enforce existing flags for conversions)
             other_ref = BibleRange(start=other_ref, end=other_ref, flags=BibleFlag.ALL)
+        elif isinstance(other_ref, BibleRangeList):
+            return other_ref.is_disjoint(self)
         lower, higher = (self, other_ref) if self < other_ref else (other_ref, self)
         return lower.end < higher.start
 
@@ -1047,6 +1048,16 @@ class BibleRangeList(util.LinkedList):
             else:
                 # The two ranges can't be merged, so move on
                 node = node.next
+
+    def is_disjoint(self, other_ref: 'BibleRef') -> bool:
+        '''Returns True if this range list doesn't overlap with other_ref, otherwise False.
+        '''
+        if isinstance(other_ref, BibleVerse):
+            # Convert to BibleRangeList (and we don't enforce existing flags for conversions)
+            other_ref = BibleRangeList([BibleRange(start=other_ref, end=other_ref, flags=BibleFlag.ALL)])
+        elif isinstance(other_ref, BibleRange):
+            other_ref = BibleRangeList([other_ref])
+        return all(self_range.is_disjoint(other_range) for self_range in self for other_range in other_ref)
 
     def __repr__(self):
         return f'BibleRangeList("{self.str()}")'
