@@ -785,15 +785,19 @@ class BibleRange:
             other_ref = BibleRange(start=other_ref, end=other_ref, flags=BibleFlag.ALL)
         elif isinstance(other_ref, BibleRangeList):
             return other_ref.is_disjoint(self)
+        # Now other_ref should be BibleRange
         lower, higher = (self, other_ref) if self < other_ref else (other_ref, self)
         return lower.end < higher.start
 
-    def is_adjacent(self, other_ref: Union[BibleVerse, 'BibleRange'],
-                    flags: BibleFlag = None) -> bool:
+    def is_adjacent(self, other_ref: 'BibleRef', flags: BibleFlag = None) -> bool:
         '''Returns True if this range is adjacent to other_ref, otherwise False.
-        other_ref can be a BibleVerse or BibleRange.
-        A range is adjacent to another reference if their bounds are just one verse apart.
+        A range is adjacent to another verse or range if their bounds are just one verse apart.
+        A range is adjacent to a range list if it is disjoint to the entire list and adjacent
+        to at least one range in the list
         '''
+        if isinstance(other_ref, BibleRangeList):
+            return other_ref.is_disjoint(self) and \
+                   any(self.is_adjacent(other_range) for other_range in other_ref) 
         if isinstance(other_ref, BibleVerse):
             # Convert to BibleRange (and we don't enforce existing flags for conversions)
             other_ref = BibleRange(start=other_ref, end=other_ref, flags=BibleFlag.ALL)

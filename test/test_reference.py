@@ -269,6 +269,10 @@ class TestBibleReference(unittest.TestCase):
 
     def test_range_is_disjoint(self):
         test_range = BibleRange("Matt 1:10-15")
+        
+        self.assertTrue(test_range.is_disjoint(BibleVerse("Matt 1:9")))
+        self.assertFalse(test_range.is_disjoint(BibleVerse("Matt 1:10")))        
+        
         self.assertTrue(test_range.is_disjoint(BibleRange("Matt 1:5-9")))
         self.assertFalse(test_range.is_disjoint(BibleRange("Matt 1:5-10")))
         self.assertFalse(test_range.is_disjoint(BibleRange("Matt 1:5-11")))
@@ -280,8 +284,15 @@ class TestBibleReference(unittest.TestCase):
         self.assertFalse(test_range.is_disjoint(BibleRange("Matt 1:15-20")))
         self.assertTrue(test_range.is_disjoint(BibleRange("Matt 1:16-20")))
 
+        self.assertTrue(test_range.is_disjoint(BibleRangeList("Matt 1:16-20; Mark 9-11; Luke 13-15; John 17-19")))
+        self.assertFalse(test_range.is_disjoint(BibleRangeList("Matt 1:15-20; Mark 9-11; Luke 12-15; John 17-19")))
+
     def test_range_is_adjacent(self):
         test_range = BibleRange("Matt 1:10-15")
+        
+        self.assertFalse(test_range.is_adjacent(BibleVerse("Matt 1:8")))
+        self.assertTrue(test_range.is_adjacent(BibleVerse("Matt 1:9")))
+
         self.assertFalse(test_range.is_adjacent(BibleRange("Matt 1:5-8")))
         self.assertTrue(test_range.is_adjacent(BibleRange("Matt 1:5-9")))
         self.assertFalse(test_range.is_adjacent(BibleRange("Matt 1:5-10")))
@@ -294,6 +305,10 @@ class TestBibleReference(unittest.TestCase):
         self.assertFalse(test_range.is_adjacent(BibleRange("Matt 1:15-20")))
         self.assertTrue(test_range.is_adjacent(BibleRange("Matt 1:16-20")))
         self.assertFalse(test_range.is_adjacent(BibleRange("Matt 1:17-20")))
+
+        self.assertTrue(test_range.is_adjacent(BibleRangeList("Matt 1:16-20; Mark 2-4; Luke 6-8")))
+        self.assertTrue(test_range.is_adjacent(BibleRangeList("Matt 1:16-20; Mark 2-4; Matt 1:5-9")))
+        self.assertFalse(test_range.is_adjacent(BibleRangeList("Matt 1:16-20; Mark 2-4; Matt 1:5-10")))
 
     def test_range_contains(self):
         # Test verses
