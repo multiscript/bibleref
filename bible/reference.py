@@ -778,10 +778,11 @@ class BibleRange:
         return BibleRangeList(split_result, flags=flags)
 
     def is_disjoint(self, other_ref: 'BibleRef') -> bool:
-        '''Returns True if this range doesn't overlap with other_ref, otherwise False.
+        '''Returns True if this range doesn't overlap with any verses in other_ref.
+        Otherwise returns False.
         '''
         if isinstance(other_ref, BibleRangeList):
-            return other_ref.is_disjoint(self)
+            return other_ref.is_disjoint(self) # is_disjoint() is commutative, so use the list implementation
         if isinstance(other_ref, BibleVerse):
             # Convert to BibleRange (and we don't enforce existing flags for conversions)
             other_ref = BibleRange(start=other_ref, end=other_ref, flags=BibleFlag.ALL)
@@ -795,9 +796,10 @@ class BibleRange:
         '''Returns True if this range is adjacent to other_ref, otherwise False.
         A range is adjacent to another verse or range if their bounds are just one verse apart.
         A range is adjacent to a range list if it is disjoint to the entire list and adjacent
-        to at least one range in the list
+        to at least one range in the list.
         '''
         if isinstance(other_ref, BibleRangeList):
+            # BibleRangeList doesn't define is_adjacent(), so we have to implement here
             return other_ref.is_disjoint(self) and \
                    any(self.is_adjacent(other_range) for other_range in other_ref) 
         if isinstance(other_ref, BibleVerse):
@@ -813,13 +815,15 @@ class BibleRange:
         '''Returns True if the verses in other_ref all fall within this range. Otherwise
         returns False.
 
-        The same result is returned using the 'in' operator.
+        The same result is returned using the 'in' operator (i.e. other_ref in bible_range).
         '''
         if isinstance(other_ref, BibleRangeList):
+            # contains() is not commutative, but we still use the BibleRangeList implementation.
             return BibleRangeList([self]).contains(other_ref)
         if isinstance(other_ref, BibleVerse):
-            return (other_ref >= self.start and other_ref <= self.end)
-        elif isinstance(other_ref, BibleRange):
+            # Convert to BibleRange (and we don't enforce existing flags for conversions)
+            other_ref = BibleRange(start=other_ref, end=other_ref, flags=BibleFlag.ALL)
+        if isinstance(other_ref, BibleRange):
             return (other_ref.start >= self.start and other_ref.start <= self.end) and \
                    (other_ref.end >= self.start and other_ref.end <= self.end)
         else:
@@ -1074,7 +1078,7 @@ class BibleRangeList(util.LinkedList):
         '''Returns True if the verses in other_ref all fall within this range list. Otherwise
         returns False.
 
-        The same result is returned using the 'in' operator.
+        The same result is returned using the 'in' operator (i.e. other_ref in bible_range_list).
         '''
         if isinstance(other_ref, BibleVerse):
             # Convert to BibleRangeList (and we don't enforce existing flags for conversions)
