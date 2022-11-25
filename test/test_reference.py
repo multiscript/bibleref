@@ -312,11 +312,12 @@ class TestBibleReference(unittest.TestCase):
 
     def test_range_contains(self):
         # Test verses
-        self.assertFalse(BibleVerse("Matt 2:19") in BibleRange("Matt 2:20-3:7"))
-        self.assertTrue(BibleVerse("Matt 2:20") in BibleRange("Matt 2:20-3:7"))
-        self.assertTrue(BibleVerse("Matt 3:1") in BibleRange("Matt 2:20-3:7"))
-        self.assertTrue(BibleVerse("Matt 3:7") in BibleRange("Matt 2:20-3:7"))
-        self.assertFalse(BibleVerse("Matt 3:8") in BibleRange("Matt 2:20-3:7"))
+        test_range = BibleRange("Matt 2:20-3:7")
+        self.assertFalse(BibleVerse("Matt 2:19") in test_range)
+        self.assertTrue(BibleVerse("Matt 2:20") in test_range)
+        self.assertTrue(BibleVerse("Matt 3:1") in test_range)
+        self.assertTrue(BibleVerse("Matt 3:7") in test_range)
+        self.assertFalse(BibleVerse("Matt 3:8") in test_range)
 
         # Test ranges
         test_range = BibleRange("Matt 1:10-15")
@@ -332,6 +333,9 @@ class TestBibleReference(unittest.TestCase):
         self.assertFalse(BibleRange("Matt 1:15-20") in test_range)
         self.assertFalse(BibleRange("Matt 1:16-20") in test_range)
         self.assertFalse(BibleRange("Matt 1:17-20") in test_range)
+
+        test_range = BibleRange("Matt 4-8")
+        self.assertTrue(BibleRangeList("Matt 4:1-5; 6:4-6; 8:10-12") in test_range)
 
     def test_range_surrounds(self):
         test_range = BibleRange("Matt 1:10-15")
@@ -522,6 +526,15 @@ class TestBibleReference(unittest.TestCase):
 
         self.assertTrue(test_list.is_disjoint(BibleRangeList("Matt 5-7; Mark 9-11; Luke 13-15; John 17-19")))
         self.assertFalse(test_list.is_disjoint(BibleRangeList("Matt 5-7; Mark 9-11; Luke 12-15; John 17-19")))
+
+    def test_bible_range_list_contains(self):
+        test_list = BibleRangeList("Matt 2-4; Mark 6-8; Luke 10-12; John 14-16")
+
+        self.assertTrue(test_list in BibleRangeList("Matt 2-3, 4-5; Mark 5-9; Luke 9-11, 12-13; John"))
+        self.assertFalse(test_list in BibleRangeList("Matt 2-3, 5-7; Mark 5-9; Luke 9-11, 12-13; John"))
+        self.assertFalse(test_list in BibleRangeList("Matt 2-3, 4-5; Mark 7-9; Luke 9-11, 12-13; John"))
+        self.assertFalse(test_list in BibleRangeList("Matt 2-3, 4-5; Mark 6-9; Luke 10:2-Luke 12; John"))
+        self.assertFalse(test_list in BibleRangeList("Matt 2-3, 4-5; Mark 6-9; Luke 10:2-Luke 12; John 14:2-John 16"))
 
     def test_bible_range_list_to_string(self):
         # Start range spans a book, after a ref from same book
