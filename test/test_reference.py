@@ -532,9 +532,9 @@ class TestBibleReference(unittest.TestCase):
     def test_bible_range_list_compress(self):
         range = BibleRangeList("John; Luke; Matt 1:17-20, 12-15, 9-11, 5-7, 4-6", flags=BibleFlag.MULTIBOOK)
         range.sort()
-        range.compress(flags=BibleFlag.NONE)
+        range.consolidate(flags=BibleFlag.NONE)
         self.assertEqual(range, BibleRangeList("Matt 1:4-7, 9-15, 17-20, Luke, John"))
-        range.compress(flags=BibleFlag.MULTIBOOK)
+        range.consolidate(flags=BibleFlag.MULTIBOOK)
         self.assertEqual(range, BibleRangeList("Matt 1:4-7, 9-15, 17-20, Luke-John", flags=BibleFlag.MULTIBOOK))
 
     def test_bible_range_list_is_disjoint(self):

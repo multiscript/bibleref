@@ -778,8 +778,7 @@ class BibleRange:
         return BibleRangeList(split_result, flags=flags)
 
     def is_disjoint(self, other_ref: 'BibleRef') -> bool:
-        '''Returns True if this range doesn't overlap with any verses in other_ref.
-        Otherwise returns False.
+        '''Returns True if this range doesn't overlap with any verses in other_ref, otherwise False.
         '''
         if isinstance(other_ref, BibleRangeList):
             return other_ref.is_disjoint(self) # is_disjoint() is commutative, so use the list implementation
@@ -1048,7 +1047,7 @@ class BibleRangeList(util.LinkedList):
             node.value = node.value.verse_1_to_0()
         return None
 
-    def compress(self, flags: BibleFlag = None):
+    def consolidate(self, flags: BibleFlag = None):
         '''Sorts this list and merges ranges wherever possible. The result is the smallest
         list of disjoint, non-adjacent ranges spanning the same verses as in the original
         list.
@@ -1091,7 +1090,7 @@ class BibleRangeList(util.LinkedList):
             other_ref = BibleRangeList([other_ref])
         # Create a consolidated copy of ourselves
         self_copy = BibleRangeList(self)
-        self_copy.compress()
+        self_copy.consolidate()
         # Every one of the other list's ranges must be contained by at least one of the our ranges
         return all(any(self_range.contains(other_range) for self_range in self_copy) for other_range in other_ref)
 
