@@ -311,7 +311,6 @@ class TestBibleReference(unittest.TestCase):
         self.assertFalse(test_range.is_adjacent(BibleRangeList("Matt 1:16-20; Mark 2-4; Matt 1:5-10")))
 
     def test_range_contains(self):
-        # Test verses
         test_range = BibleRange("Matt 2:20-3:7")
         self.assertFalse(BibleVerse("Matt 2:19") in test_range)
         self.assertTrue(BibleVerse("Matt 2:20") in test_range)
@@ -319,7 +318,6 @@ class TestBibleReference(unittest.TestCase):
         self.assertTrue(BibleVerse("Matt 3:7") in test_range)
         self.assertFalse(BibleVerse("Matt 3:8") in test_range)
 
-        # Test ranges
         test_range = BibleRange("Matt 1:10-15")
         self.assertFalse(BibleRange("Matt 1:5-8") in test_range)
         self.assertFalse(BibleRange("Matt 1:5-9") in test_range)
@@ -342,6 +340,13 @@ class TestBibleReference(unittest.TestCase):
 
     def test_range_surrounds(self):
         test_range = BibleRange("Matt 1:10-15")
+        self.assertFalse(test_range.surrounds(BibleVerse("Matt 1:9")))
+        self.assertFalse(test_range.surrounds(BibleVerse("Matt 1:10")))
+        self.assertTrue(test_range.surrounds(BibleVerse("Matt 1:11")))
+        self.assertTrue(test_range.surrounds(BibleVerse("Matt 1:14")))
+        self.assertFalse(test_range.surrounds(BibleVerse("Matt 1:15")))
+        self.assertFalse(test_range.surrounds(BibleVerse("Matt 1:16")))
+
         self.assertFalse(test_range.surrounds(BibleRange("Matt 1:5-8")))
         self.assertFalse(test_range.surrounds(BibleRange("Matt 1:5-9")))
         self.assertFalse(test_range.surrounds(BibleRange("Matt 1:5-10")))
@@ -354,6 +359,14 @@ class TestBibleReference(unittest.TestCase):
         self.assertFalse(test_range.surrounds(BibleRange("Matt 1:15-20")))
         self.assertFalse(test_range.surrounds(BibleRange("Matt 1:16-20")))
         self.assertFalse(test_range.surrounds(BibleRange("Matt 1:17-20")))
+
+        test_range = BibleRange("Matt 4-8")
+        self.assertTrue(test_range.surrounds(BibleRangeList("Matt 4:2-5; 6:4-6; 8:10-33")))
+        self.assertFalse(test_range.surrounds(BibleRangeList("Matt 4:1-5; 6:4-6; 8:10-33")))
+        self.assertFalse(test_range.surrounds(BibleRangeList("Matt 4:2-5; 6:4-6; 8:10-34")))
+        self.assertFalse(test_range.surrounds(BibleRangeList("Matt 4:2-5; 6:4-6; 8:10-33; 9:1")))
+        self.assertFalse(test_range.surrounds(BibleRangeList("Matt 3:17; 4:2-5; 6:4-6; 8:10-33")))
+        self.assertFalse(test_range.surrounds(BibleRangeList("Matt 4:2-5; 6:4-9:1; 8:10-33")))
 
     def test_range_union(self):
         test_range = BibleRange("Matt 1:10-15")

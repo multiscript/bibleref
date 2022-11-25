@@ -829,17 +829,21 @@ class BibleRange:
         else:
             raise ValueError(f"{other_ref} is not a valid BibleRef")
 
-    def surrounds(self, ref: Union[BibleVerse, 'BibleRange']) -> bool:
-        '''Returns True if ref is a BibleVerse or BibleRange that falls within this range,
-        without including this range's first or last verse. Otherwise, returns False.
+    def surrounds(self, other_ref: 'BibleRef') -> bool:
+        '''Returns True if the verses in other_ref all fall within this range, without
+        including this range's first or last verse. Otherwise, returns False.
         '''
-        if isinstance(ref, BibleVerse):
-            return (ref > self.start and ref < self.end)
-        elif isinstance(ref, BibleRange):
-            return (ref.start > self.start and ref.start < self.end) and \
-                   (ref.end > self.start and ref.end < self.end)
+        if isinstance(other_ref, BibleRangeList):
+            # BibleRangeList doesn't define surrounds(), so we have to implement here
+            return all(self.surrounds(other_range) for other_range in other_ref) 
+        if isinstance(other_ref, BibleVerse):
+            # Convert to BibleRange (and we don't enforce existing flags for conversions)
+            other_ref = BibleRange(start=other_ref, end=other_ref, flags=BibleFlag.ALL)
+        if isinstance(other_ref, BibleRange):
+            return (other_ref.start > self.start and other_ref.start < self.end) and \
+                   (other_ref.end > self.start and other_ref.end < self.end)
         else:
-            raise ValueError(f"{ref} is neither a BibleVerse nor BibleRange")
+            raise ValueError(f"{other_ref} is not a valid BibleRef")
 
     def union(self, other_ref: Union[BibleVerse, 'BibleRange'],
               flags: BibleFlag = None) -> 'BibleRangeList':
