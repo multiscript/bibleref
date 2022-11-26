@@ -844,8 +844,7 @@ class BibleRange:
         else:
             raise ValueError(f"{other_ref} is not a valid BibleRef")
 
-    def union(self, other_ref: Union[BibleVerse, 'BibleRange'],
-              flags: BibleFlag = None) -> 'BibleRangeList':
+    def union(self, other_ref: 'BibleRef', flags: BibleFlag = None) -> 'BibleRangeList':
         '''Returns a new BibleRangeList of verses that are in this range or other_ref.
         other_ref can be a BibleVerse or BibleRange.
         
@@ -853,16 +852,22 @@ class BibleRange:
         a single BibleRange encompassing them both. Otherwise, the list contains two elements:
         this range and other_ref (converted to a BibleRange if necessary).
         '''
+        if isinstance(other_ref, BibleRangeList):
+            # Use the BibleRangeList implementation
+            return other_ref.union(self, flags=flags)
         if isinstance(other_ref, BibleVerse):
             # Convert to BibleRange (and we don't enforce existing flags for conversions)
             other_ref = BibleRange(start=other_ref, end=other_ref, flags=BibleFlag.ALL)
-        if self.is_disjoint(other_ref) and not self.is_adjacent(other_ref, flags=flags):
-            lower, higher = (self, other_ref) if self < other_ref else (other_ref, self) 
-            return BibleRangeList([lower, higher], flags=BibleFlag.ALL)
+        if isinstance(other_ref, BibleRange):
+            if self.is_disjoint(other_ref) and not self.is_adjacent(other_ref, flags=flags):
+                lower, higher = (self, other_ref) if self < other_ref else (other_ref, self) 
+                return BibleRangeList([lower, higher], flags=BibleFlag.ALL)
+            else:
+                start = min(self.start, other_ref.start)
+                end = max(self.end, other_ref.end)
+                return BibleRangeList([BibleRange(start=start, end=end, flags=flags)], flags=BibleFlag.ALL)
         else:
-            start = min(self.start, other_ref.start)
-            end = max(self.end, other_ref.end)
-            return BibleRangeList([BibleRange(start=start, end=end, flags=flags)], flags=BibleFlag.ALL)
+            raise ValueError(f"{other_ref} is not a valid BibleRef")
 
     def intersection(self, other_ref: Union[BibleVerse, 'BibleRange'],
                      flags: BibleFlag = None) -> 'BibleRangeList':
@@ -1077,7 +1082,7 @@ class BibleRangeList(util.LinkedList):
             other_ref = BibleRangeList([other_ref])
         return all(self_range.is_disjoint(other_range) for self_range in self for other_range in other_ref)
 
-    def contains(self, other_ref: 'BibleRef') -> bool:
+    def contains(self, other_ref: 'BibleRef', flags: BibleFlag = None) -> bool:
         '''Returns True if the verses in other_ref all fall within this range list. Otherwise
         returns False.
 
@@ -1090,9 +1095,31 @@ class BibleRangeList(util.LinkedList):
             other_ref = BibleRangeList([other_ref])
         # Create a consolidated copy of ourselves
         self_copy = BibleRangeList(self)
-        self_copy.consolidate()
+        self_copy.consolidate(flags=flags)
         # Every one of the other list's ranges must be contained by at least one of the our ranges
         return all(any(self_range.contains(other_range) for self_range in self_copy) for other_range in other_ref)
+
+    def union(self, other_ref: 'BibleRef', flags: BibleFlag = None) -> 'BibleRangeList':
+        '''Returns a new BibleRangeList containing all the verses in this range list
+        and all the verses in other_ref to this range list, then consolidates this list.
+        '''
+        new_list = BibleRangeList(self)
+        new_list.union_update(other_ref, flags=flags)
+        return new_list
+
+    def union_update(self, other_ref: 'BibleRef', flags: BibleFlag = None) -> 'BibleRangeList':
+        '''Adds all the verses in other_ref to this range list, then consolidates this list.
+        '''
+        if isinstance(other_ref, BibleVerse):
+            # Convert to BibleRangeList (and we don't enforce existing flags for conversions)
+            other_ref = BibleRangeList([BibleRange(start=other_ref, end=other_ref, flags=BibleFlag.ALL)])
+        elif isinstance(other_ref, BibleRange):
+            other_ref = BibleRangeList([other_ref])
+        if isinstance(other_ref, BibleRangeList):
+            self.extend(other_ref)
+            self.consolidate(flags=flags)
+        else:
+            raise ValueError(f"{other_ref} is not a valid BibleRef")        
 
     def __contains__(self, bible_ref) -> bool:
         '''Returns True if item is a BibleRef that falls within this range, otherwise False.
