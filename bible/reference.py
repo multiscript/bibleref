@@ -869,22 +869,26 @@ class BibleRange:
         else:
             raise ValueError(f"{other_ref} is not a valid BibleRef")
 
-    def intersection(self, other_ref: Union[BibleVerse, 'BibleRange'],
-                     flags: BibleFlag = None) -> 'BibleRangeList':
+    def intersection(self, other_ref: 'BibleRef', flags: BibleFlag = None) -> 'BibleRangeList':
         '''Returns a new BibleRange of verses that are common to both this range and other_ref.
-        other_ref can be a BibleVerse or BibleRange.
         If there are verses in common, the list contains a single range.
         If there are no verses in common, the list is empty.
         '''
+        if isinstance(other_ref, BibleRangeList):
+            # Use the BibleRangeList implementation
+            return other_ref.intersection(self, flags=flags)
         if isinstance(other_ref, BibleVerse):
             # Convert to BibleRange (and we don't enforce existing flags for conversions)
             other_ref = BibleRange(start=other_ref, end=other_ref, flags=BibleFlag.ALL)
-        if self.is_disjoint(other_ref):
-            return BibleRangeList()
+        if isinstance(other_ref, BibleRange):
+            if self.is_disjoint(other_ref):
+                return BibleRangeList()
+            else:
+                start = max(self.start, other_ref.start)
+                end = min(self.end, other_ref.end)
+                return BibleRangeList([BibleRange(start=start, end=end, flags=flags)], flags=BibleFlag.ALL)
         else:
-            start = max(self.start, other_ref.start)
-            end = min(self.end, other_ref.end)
-            return BibleRangeList([BibleRange(start=start, end=end, flags=flags)], flags=BibleFlag.ALL)
+            raise ValueError(f"{other_ref} is not a valid BibleRef")
 
     def difference(self, other_ref: Union[BibleVerse, 'BibleRange'],
                    flags: BibleFlag = None) -> 'BibleRangeList':
@@ -1117,6 +1121,38 @@ class BibleRangeList(util.LinkedList):
             other_ref = BibleRangeList([other_ref])
         if isinstance(other_ref, BibleRangeList):
             self.extend(other_ref)
+            self.consolidate(flags=flags)
+        else:
+            raise ValueError(f"{other_ref} is not a valid BibleRef")        
+
+    def intersection(self, other_ref: 'BibleRef', flags: BibleFlag = None) -> 'BibleRangeList':
+        '''Returns a new BibleRange of verses that are common to both this range list and other_ref.
+        If there are no verses in common, the list is empty.
+        '''
+        new_list = BibleRangeList(self)
+        new_list.intersection_update(other_ref, flags=flags)
+        return new_list
+
+    def intersection_update(self, other_ref: 'BibleRef', flags: BibleFlag = None) -> 'BibleRangeList':
+        '''Removes from this range list all the verses that are also in other_ref, then consolidates
+        this list.
+        '''
+        if isinstance(other_ref, BibleVerse):
+            # Convert to BibleRangeList (and we don't enforce existing flags for conversions)
+            other_ref = BibleRangeList([BibleRange(start=other_ref, end=other_ref, flags=BibleFlag.ALL)])
+        elif isinstance(other_ref, BibleRange):
+            other_ref = BibleRangeList([other_ref])
+        if isinstance(other_ref, BibleRangeList):
+            for node in self._node_iter():
+                self_range = node.value
+                for other_range in other_ref:
+                    intersection_list = self_range.intersection(other_range, flags=flags)
+                    if len(intersection_list) > 0:
+                        # We're modifying the list in place, which normally is a bad idea.
+                        # But by inserting our new elements before the current element
+                        # the self._node_iter() iterator continues to work correctly.
+                        self._insert_before(node, intersection_list[0])
+                self._pop_node(node)
             self.consolidate(flags=flags)
         else:
             raise ValueError(f"{other_ref} is not a valid BibleRef")        

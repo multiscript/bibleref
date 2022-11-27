@@ -204,13 +204,14 @@ class LinkedList(MutableSequence):
         self._setup_single_group()
 
     def _setup_single_group(self):
-        # Assumes no other groups are set up
-        self._first.is_group_head = True
-        self._first.prev_head = None
-        self._first.next_head = None
-        self._first_head = self._first
-        self._last_head = self._first
-        self._group_count = 1
+        if len(self) > 0:
+            # Assumes no other groups are set up
+            self._first.is_group_head = True
+            self._first.prev_head = None
+            self._first.next_head = None
+            self._first_head = self._first
+            self._last_head = self._first
+            self._group_count = 1
 
     def _insert_before(self, node: 'LinkedList.Node', value, new_group: bool = False):
         self._check_is_child(node)
@@ -298,7 +299,6 @@ class LinkedList(MutableSequence):
             self._last = None
             self._first_head = None
             self._last_head = None
-            self._group_count = 0
         elif node is self._first:
             # pop from start
             self._first = node.next

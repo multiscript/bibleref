@@ -47,6 +47,7 @@ class TestLinkedList(unittest.TestCase):
         value = test_list._pop_node(test_list._node_at(0))
         self.assertEqual(value, 1)
         self.assertListEqual(list(test_list), [])
+        self.assertEqual(test_list, LinkedList())
         self.assertEqual(len(test_list), 0)
 
         test_list = LinkedList([5, 8, 2, 7, 3, 10])
