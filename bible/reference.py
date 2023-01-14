@@ -1134,7 +1134,7 @@ class BibleRangeList(util.LinkedList):
         return new_list
 
     def intersection_update(self, other_ref: 'BibleRef', flags: BibleFlag = None) -> 'BibleRangeList':
-        '''Removes from this range list all the verses that are also in other_ref, then consolidates
+        '''Removes from this range list all the verses that are not also in other_ref, then consolidates
         this list.
         '''
         if isinstance(other_ref, BibleVerse):
