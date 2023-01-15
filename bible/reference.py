@@ -895,7 +895,7 @@ class BibleRange:
         '''Returns a new BibleRangeList of verses that are in this range, but not in other_ref.
         other_ref can be a BibleVerse or BibleRange.
 
-        If this range and other_ref are disjoint, the list contains one item: this range itself.
+        If this range and other_ref are disjoint, the list contains one item: a copy of this range.
         If this range surrounds other_ref, the list contains two items:
             a lower-section BibleRange, and an upper-section BibleRange.
         If other_ref contains this range, the list is empty.
@@ -1119,43 +1119,45 @@ class BibleRangeList(util.LinkedList):
             other_ref = BibleRangeList([BibleRange(start=other_ref, end=other_ref, flags=BibleFlag.ALL)])
         elif isinstance(other_ref, BibleRange):
             other_ref = BibleRangeList([other_ref])
-        if isinstance(other_ref, BibleRangeList):
-            self.extend(other_ref)
-            self.consolidate(flags=flags)
-        else:
+        if not isinstance(other_ref, BibleRangeList):
             raise ValueError(f"{other_ref} is not a valid BibleRef")        
 
+        self.extend(other_ref)
+        self.consolidate(flags=flags)
+
     def intersection(self, other_ref: 'BibleRef', flags: BibleFlag = None) -> 'BibleRangeList':
-        '''Returns a new BibleRange of verses that are common to both this range list and other_ref.
+        '''Returns a new BibleRangeList of verses that are common to both this range list and other_ref.
         If there are no verses in common, the list is empty.
         '''
-        new_list = BibleRangeList(self)
-        new_list.intersection_update(other_ref, flags=flags)
-        return new_list
-
-    def intersection_update(self, other_ref: 'BibleRef', flags: BibleFlag = None) -> 'BibleRangeList':
-        '''Removes from this range list all the verses that are not also in other_ref, then consolidates
-        this list.
-        '''
+        # Each BibleRefList is effectively a union of its elements.
+        # Key set theory identity:
+        #   (A0 ∪ A1) ∩ (B0 ∪ B1) = (A0 ∩ B0) ∪ (A0 ∩ B1) ∪ (A1 ∩ B0) ∪ (A1 ∩ B1)
+        # So the intersection of two BibleRefLists is a new list of the intersection of each item
+        # combination.
         if isinstance(other_ref, BibleVerse):
             # Convert to BibleRangeList (and we don't enforce existing flags for conversions)
             other_ref = BibleRangeList([BibleRange(start=other_ref, end=other_ref, flags=BibleFlag.ALL)])
         elif isinstance(other_ref, BibleRange):
             other_ref = BibleRangeList([other_ref])
-        if isinstance(other_ref, BibleRangeList):
-            for node in self._node_iter():
-                self_range = node.value
-                for other_range in other_ref:
-                    intersection_list = self_range.intersection(other_range, flags=flags)
-                    if len(intersection_list) > 0:
-                        # We're modifying the list in place, which normally is a bad idea.
-                        # But by inserting our new elements before the current element
-                        # the self._node_iter() iterator continues to work correctly.
-                        self._insert_before(node, intersection_list[0])
-                self._pop_node(node)
-            self.consolidate(flags=flags)
-        else:
+        if not isinstance(other_ref, BibleRangeList):
             raise ValueError(f"{other_ref} is not a valid BibleRef")        
+
+        new_list = BibleRangeList()
+        for self_range in self:
+            for other_range in other_ref:
+                item_intersection_list = self_range.intersection(other_range, flags=flags)
+                if len(item_intersection_list) > 0:
+                    new_list.append(item_intersection_list[0])
+        new_list.consolidate(flags=flags)
+        return new_list
+
+    def intersection_update(self, other_ref: 'BibleRef', flags: BibleFlag = None) -> 'BibleRangeList':
+        '''Updates this range list to be only the verses that are common to this range list and
+        other_ref, then consolidates this list.
+        '''
+        intersection_list = self.intersection(other_ref, flags=flags)
+        self.clear()
+        self.extend(intersection_list)
 
     def __contains__(self, bible_ref) -> bool:
         '''Returns True if item is a BibleRef that falls within this range, otherwise False.

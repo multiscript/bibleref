@@ -152,14 +152,17 @@ class LinkedList(MutableSequence):
             self.group_head.parent._pop_node(node)
 
     def __init__(self, iterable: Iterable = None):
-        self._first: LinkedList.Node = None          # First node
-        self._last: LinkedList.Node = None           # Last node
-        self._node_count: int = 0                       # Count of nodes
-        self._first_head: LinkedList.Node = None     # First node that is a group head
-        self._last_head: LinkedList.Node = None      # Last node that is a group head
-        self._group_count: int = 0                    # Count of groups
+        self.clear()
         if iterable is not None:
             self.extend(iterable)
+
+    def clear(self):
+        self._first: LinkedList.Node = None          # First node
+        self._last: LinkedList.Node = None           # Last node
+        self._node_count: int = 0                    # Count of nodes
+        self._first_head: LinkedList.Node = None     # First node that is a group head
+        self._last_head: LinkedList.Node = None      # Last node that is a group head
+        self._group_count: int = 0                   # Count of groups
 
     def _check_type(self, value):
         '''Subclasses can override to raise an exception if the provided
@@ -449,11 +452,6 @@ class LinkedList(MutableSequence):
             node = node.next
         # At this point item not found
         raise ValueError(f"Value {value} not found in list")        
-
-    def clear(self):
-        self._first = None
-        self._last = None
-        self._length = 0
 
     def reverse(self):
         '''For simplicity, this also clears all existing groups and places all elements
