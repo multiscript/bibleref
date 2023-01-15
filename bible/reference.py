@@ -1205,6 +1205,30 @@ class BibleRangeList(util.LinkedList):
             self_node = self_node.next
         self.consolidate()
 
+    def sym_difference(self, other_ref: 'BibleRef', flags: BibleFlag = None) -> 'BibleRangeList':
+        '''Returns a new BibleRangeList of verses that are either in this range list, or in other_ref,
+        but not both.
+        '''
+        if isinstance(other_ref, BibleVerse):
+            # Convert to BibleRangeList (and we don't enforce existing flags for conversions)
+            other_ref = BibleRangeList([BibleRange(start=other_ref, end=other_ref, flags=BibleFlag.ALL)])
+        elif isinstance(other_ref, BibleRange):
+            other_ref = BibleRangeList([other_ref])
+        if not isinstance(other_ref, BibleRangeList):
+            raise ValueError(f"{other_ref} is not a valid BibleRef")        
+        
+        union_list = self.union(other_ref, flags=flags)
+        intersection_list = self.intersection(other_ref, flags=flags)
+        return union_list.difference(intersection_list, flags=flags)
+
+    def sym_difference_update(self, other_ref: 'BibleRef', flags: BibleFlag = None) -> 'BibleRangeList':
+        '''Updates this range list to be only the verses that are either in this range list, or in other_ref,
+        but not both, then consolidates this list.
+        '''
+        sym_difference_list = self.sym_difference(other_ref, flags=flags)
+        self.clear()
+        self.extend(sym_difference_list)
+
     def __contains__(self, bible_ref) -> bool:
         '''Returns True if item is a BibleRef that falls within this range, otherwise False.
         '''
