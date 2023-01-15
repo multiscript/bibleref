@@ -1129,11 +1129,6 @@ class BibleRangeList(util.LinkedList):
         '''Returns a new BibleRangeList of verses that are common to both this range list and other_ref.
         If there are no verses in common, the list is empty.
         '''
-        # Each BibleRefList is effectively a union of its elements.
-        # Key set theory identity:
-        #   (A0 ∪ A1) ∩ (B0 ∪ B1) = (A0 ∩ B0) ∪ (A0 ∩ B1) ∪ (A1 ∩ B0) ∪ (A1 ∩ B1)
-        # So the intersection of two BibleRefLists is a new list of the intersection of each item
-        # combination.
         if isinstance(other_ref, BibleVerse):
             # Convert to BibleRangeList (and we don't enforce existing flags for conversions)
             other_ref = BibleRangeList([BibleRange(start=other_ref, end=other_ref, flags=BibleFlag.ALL)])
@@ -1142,6 +1137,11 @@ class BibleRangeList(util.LinkedList):
         if not isinstance(other_ref, BibleRangeList):
             raise ValueError(f"{other_ref} is not a valid BibleRef")        
 
+        # Each BibleRefList is effectively a union of its elements.
+        # Key set theory identity:
+        #   (A0 ∪ A1) ∩ (B0 ∪ B1) = (A0 ∩ B0) ∪ (A0 ∩ B1) ∪ (A1 ∩ B0) ∪ (A1 ∩ B1)
+        # So the intersection of two BibleRefLists is a new list of the intersection of each item
+        # combination.
         new_list = BibleRangeList()
         for self_range in self:
             for other_range in other_ref:
@@ -1158,6 +1158,52 @@ class BibleRangeList(util.LinkedList):
         intersection_list = self.intersection(other_ref, flags=flags)
         self.clear()
         self.extend(intersection_list)
+
+    def difference(self, other_ref: 'BibleRef', flags: BibleFlag = None) -> 'BibleRangeList':
+        '''Returns a new BibleRangeList of verses that are in this range list, but not in other_ref.
+        '''
+        new_list = BibleRangeList(self)
+        new_list.difference_update(other_ref, flags=flags)
+        return new_list
+
+    def difference_update(self, other_ref: 'BibleRef', flags: BibleFlag = None) -> 'BibleRangeList':
+        '''Removes from this range list the verses that are in other_ref, then consolidates this list.
+        '''
+        if isinstance(other_ref, BibleVerse):
+            # Convert to BibleRangeList (and we don't enforce existing flags for conversions)
+            other_ref = BibleRangeList([BibleRange(start=other_ref, end=other_ref, flags=BibleFlag.ALL)])
+        elif isinstance(other_ref, BibleRange):
+            other_ref = BibleRangeList([other_ref])
+        if not isinstance(other_ref, BibleRangeList):
+            raise ValueError(f"{other_ref} is not a valid BibleRef")        
+
+        # Each BibleRefList is effectively a union of its elements.
+        # Key set theory identity: (where \ means set difference, so A \ B = A - B)
+        #   (A0 ∪ A1) \ (B0 ∪ B1) = [(A0 \ B0) \ B1] ∪ [(A1 \ B0) \ B1]
+        # So the difference of two BibleRefLists is a new list of the cumulative difference of each
+        # item in the second list from each item in the first list.
+        #
+        # What's a little difficult is that the difference of two items can itself result in a list
+        # (of two items). As a result, it's easiest to calculate the difference in-place.
+        #
+        # In-place set difference requires us to make many updates to this list during iteration,
+        # beyond what a for-loop can cope with. Therefore we use a while loop.
+        self_node = self._first
+        while self_node is not None:
+            for other_range in other_ref:
+                self_range = self_node.value
+                item_difference_list = self_range.difference(other_range, flags=flags)
+                if len(item_difference_list) > 0:
+                    # This item_difference_list now should replace self_node, and self_node
+                    # changed to point to the first of the result items. The easiest
+                    # way to do this is to insert the result items starting from the end:
+                    old_self_node = self_node
+                    for difference_range in reversed(item_difference_list):
+                        self._insert_before(self_node, difference_range)
+                        self_node = self_node.prev
+                    self._pop_node(old_self_node)
+            self_node = self_node.next
+        self.consolidate()
 
     def __contains__(self, bible_ref) -> bool:
         '''Returns True if item is a BibleRef that falls within this range, otherwise False.

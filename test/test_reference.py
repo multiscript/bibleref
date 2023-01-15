@@ -593,6 +593,17 @@ class TestBibleReference(unittest.TestCase):
         list_2 = BibleRangeList("John 12-15; Luke 12-15; Mark 1-3; Matt 15-16")
         self.assertEqual(list_1.intersection(list_2), BibleRangeList("Luke 12, John 14-15"))
 
+    def test_bible_range_list_difference(self):
+        list_1 = BibleRangeList("Matt 2-4; Mark 6-8; Luke 10-12; John 14-18")
+        
+        list_2 = BibleRangeList("John 1-3; Luke 9-10; Matt 3-5; Mark 12")
+        self.assertEqual(list_1.difference(list_2),
+                         BibleRangeList("Matt 2, Mark 6-8, Luke 11-12, John 14-18"))
+
+        list_2 = BibleRangeList("John 16; Luke 11; Mark 1-3; Matt 15-16")
+        self.assertEqual(list_1.difference(list_2),
+                         BibleRangeList("Matt 2-4, Mark 6-8, Luke 10, 12, John 14-15, 17-18"))
+
     def test_bible_range_list_to_string(self):
         # Start range spans a book, after a ref from same book
         self.assertEqual(BibleRangeList(
