@@ -1,8 +1,11 @@
+'''Submodule for parsing strings into Bible references. Considered an implementation detail. Most of the
+contents of this submodule should not be relied upon.
+'''
 from lark import Lark, UnexpectedInput
 from lark import Transformer, v_args
 from lark.visitors import VisitError
 
-from . import ref
+from bibleref import ref, BibleRefException
 
 
 MAJOR_LIST_SEP_SENTINEL = object()
@@ -43,7 +46,8 @@ def _parse(string, flags: ref.BibleFlag = None):
     return range_groups_list
 
 
-class BibleRefParsingError(Exception):
+class BibleRefParsingError(BibleRefException):
+    '''Raised when there is an error parsing a string into Bible reference.'''
     def __init__(self, mesg, meta_info=None, start_pos=None, end_pos=None, *args, **kwargs):
         super().__init__(mesg, *args, **kwargs)
         if meta_info is not None:
@@ -57,6 +61,7 @@ class BibleRefParsingError(Exception):
 
 @v_args(meta=True)
 class BibleRefTransformer(Transformer):
+    '''Lark Transformer for parsing strings into Bible references.'''
     def __init__(self, *args, flags: ref.BibleFlag = None, **kwargs):
         super().__init__(*args, **kwargs)
         self.cur_book = None            # Tracks implied current book

@@ -25,7 +25,7 @@ class LinkedList(MutableSequence):
     Groups are created by calling append_group(), or append() or prepend() with new_group
     set to True.
     '''
-    class Node:
+    class _Node:
         '''Nodes of the linked list.
         
         Groups are defined by setting node.is_group_head to True for the first node
@@ -34,11 +34,11 @@ class LinkedList(MutableSequence):
         def __init__(self, value, prev=None, next=None, parent=None):
             self.value = value
             self.parent: 'LinkedList' = parent
-            self.prev: 'LinkedList.Node' = prev
-            self.next: 'LinkedList.Node' = next
+            self.prev: 'LinkedList._Node' = prev
+            self.next: 'LinkedList._Node' = next
             self.is_group_head: bool = False  # True if this node is the start of a group.
-            self.prev_head: 'LinkedList.Node' = None # If this is a group head, link to next group head.
-            self.next_head: 'LinkedList.Node' = None # If this is a group head, link to prev group head.
+            self.prev_head: 'LinkedList._Node' = None # If this is a group head, link to next group head.
+            self.next_head: 'LinkedList._Node' = None # If this is a group head, link to prev group head.
 
         def clear_group_head(self):
             self.is_group_head = False
@@ -71,7 +71,12 @@ class LinkedList(MutableSequence):
             return str(self)
 
     class GroupViews:
-        '''Collection of Group views.'''
+        '''Collection of `Group` views.
+        
+        The number of `Group`s in the view is returned by `len(group_view)`. Iterating over a `GroupView`
+        returns each individual `Group`. A `GroupView` can be indexed to return a particular `Group`:
+        e.g. `group_view[2]`
+        '''
         def __init__(self, parent: 'LinkedList'):
             self.parent = parent
 
@@ -108,7 +113,7 @@ class LinkedList(MutableSequence):
 
     class GroupView:
         '''Group view object. Provides access to the items in the group.'''
-        def __init__(self, group_head: 'LinkedList.Node'):
+        def __init__(self, group_head: 'LinkedList._Node'):
             self.group_head = group_head
 
         def _check_group_head(self):
@@ -155,11 +160,11 @@ class LinkedList(MutableSequence):
             self.extend(iterable)
 
     def clear(self):
-        self._first: LinkedList.Node = None          # First node
-        self._last: LinkedList.Node = None           # Last node
+        self._first: LinkedList._Node = None          # First node
+        self._last: LinkedList._Node = None           # Last node
         self._node_count: int = 0                    # Count of nodes
-        self._first_head: LinkedList.Node = None     # First node that is a group head
-        self._last_head: LinkedList.Node = None      # Last node that is a group head
+        self._first_head: LinkedList._Node = None     # First node that is a group head
+        self._last_head: LinkedList._Node = None      # Last node that is a group head
         self._group_count: int = 0                   # Count of groups
 
     def _check_type(self, value):
@@ -168,8 +173,8 @@ class LinkedList(MutableSequence):
         '''
         pass
 
-    def _check_is_child(self, node: Node):
-        if not isinstance(node, LinkedList.Node) or node.parent is not self:
+    def _check_is_child(self, node: _Node):
+        if not isinstance(node, LinkedList._Node) or node.parent is not self:
             raise ValueError(f"List is not the parent of this node: {node}")
 
     def _conform_index(self, index: int):
@@ -198,7 +203,7 @@ class LinkedList(MutableSequence):
             return node
 
     def _insert_first(self, value):
-        self._first = self.Node(value, parent=self)
+        self._first = self._Node(value, parent=self)
         self._last = self._first
         self._node_count += 1
         # First node also forms the head of the first group
@@ -214,10 +219,10 @@ class LinkedList(MutableSequence):
             self._last_head = self._first
             self._group_count = 1
 
-    def _insert_before(self, node: 'LinkedList.Node', value, new_group: bool = False):
+    def _insert_before(self, node: 'LinkedList._Node', value, new_group: bool = False):
         self._check_is_child(node)
         inserting_first = True if node is self._first else None
-        new = self.Node(value, prev=node.prev, next=node, parent=self)
+        new = self._Node(value, prev=node.prev, next=node, parent=self)
         if node.prev is not None:
             node.prev.next = new
         node.prev = new
@@ -240,10 +245,10 @@ class LinkedList(MutableSequence):
                 # New node will automatically become part of an existing group
                 pass
 
-    def _insert_after(self, node: 'LinkedList.Node', value, new_group: bool = False):
+    def _insert_after(self, node: 'LinkedList._Node', value, new_group: bool = False):
         self._check_is_child(node)
         inserting_last = True if node is self._last else None
-        new = self.Node(value, prev=node, next=node.next, parent=self)
+        new = self._Node(value, prev=node, next=node.next, parent=self)
         if node.next is not None:
             node.next.prev = new
         node.next = new
@@ -254,7 +259,7 @@ class LinkedList(MutableSequence):
         if new_group:
             self._insert_new_group_at_node(new)
 
-    def _insert_new_group_before_head(self, node: 'LinkedList.Node', keep_existing_head: bool = False):
+    def _insert_new_group_before_head(self, node: 'LinkedList._Node', keep_existing_head: bool = False):
         old_head = node.next
         node.is_group_head = True
         node.prev_head = old_head.prev_head
@@ -275,7 +280,7 @@ class LinkedList(MutableSequence):
         if self._first_head is old_head:
             self._first_head = node
 
-    def _insert_new_group_at_node(self, node: 'LinkedList.Node'):
+    def _insert_new_group_at_node(self, node: 'LinkedList._Node'):
         node.is_group_head = True
         prev_group_head = self._find_group_head(node.prev)
         node.prev_head = prev_group_head
@@ -287,12 +292,12 @@ class LinkedList(MutableSequence):
             self._last_head = node
         self._group_count += 1
 
-    def _find_group_head(self, node: 'LinkedList.Node'):
+    def _find_group_head(self, node: 'LinkedList._Node'):
         while not node.is_group_head:
             node = node.prev
         return node
 
-    def _pop_node(self, node: 'LinkedList.Node'):
+    def _pop_node(self, node: 'LinkedList._Node'):
         self._check_is_child(node)
         if self._node_count == 1:
             # pop only element
@@ -344,13 +349,13 @@ class LinkedList(MutableSequence):
 
         return node.value
 
-    def _pop_before(self, node: 'LinkedList.Node'):
+    def _pop_before(self, node: 'LinkedList._Node'):
         self._check_is_child(node)
         if node is self._first:
             raise IndexError("Can't pop before first node")
         return self._pop_node(node.prev)
 
-    def _pop_after(self, node: 'LinkedList.Node'):
+    def _pop_after(self, node: 'LinkedList._Node'):
         self._check_is_child(node)
         if node is self._last:
             raise IndexError("Can't pop after last node")
@@ -385,7 +390,7 @@ class LinkedList(MutableSequence):
         limit_index = self._conform_index(limit_index-1) + 1
         if min_index > limit_index: # Swap
             (limit_index, min_index) = (min_index, limit_index)
-        node: LinkedList.Node = self._first
+        node: LinkedList._Node = self._first
         for index in range(limit_index):
             if node.value == value and index >= min_index:
                 return index
@@ -476,7 +481,7 @@ class LinkedList(MutableSequence):
         (self._first, self._last) = self._merge_sort(self._first, clear_group_heads=True)
         self._setup_single_group()
 
-    def _merge_sort(self, first_node: 'LinkedList.Node', clear_group_heads=False):
+    def _merge_sort(self, first_node: 'LinkedList._Node', clear_group_heads=False):
         '''Sorts a list beginning with first_node, and returns a tuple of (new_first_node, new_last_node).
         '''
         if first_node is None or first_node.next is None:
@@ -491,7 +496,7 @@ class LinkedList(MutableSequence):
                                                                first_node_B, last_node_B)
         return (new_first_node, new_last_node)
 
-    def _split(self, first_node: 'LinkedList.Node', clear_group_heads=False):
+    def _split(self, first_node: 'LinkedList._Node', clear_group_heads=False):
         '''Given the first node of a sublist, splits the list in half and returns the first
         node of the second half.'''
         slow_node = first_node
@@ -514,8 +519,8 @@ class LinkedList(MutableSequence):
         first_node_B.prev = None
         return first_node_B
 
-    def _merge_sublists(self, first_node_A: 'LinkedList.Node', last_node_A: 'LinkedList.Node',
-                              first_node_B: 'LinkedList.Node', last_node_B: 'LinkedList.Node'):
+    def _merge_sublists(self, first_node_A: 'LinkedList._Node', last_node_A: 'LinkedList._Node',
+                              first_node_B: 'LinkedList._Node', last_node_B: 'LinkedList._Node'):
         '''Combines two sublists (A and B) into a single sorted list. Returns a tuple of
         (new_first_node, new_last_node)'''
         if first_node_A is None:
