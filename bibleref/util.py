@@ -1,8 +1,6 @@
 from collections.abc import MutableSequence, Iterable
 
-
-class ListError(Exception):
-    pass
+from bibleref import BibleRefException
 
 
 #
@@ -115,7 +113,7 @@ class LinkedList(MutableSequence):
 
         def _check_group_head(self):
             if not self.group_head.is_group_head or self.group_head.parent is None:
-                raise ListError("Group head has been modified")
+                raise GroupViewError("Group head has been modified")
 
         def __iter__(self):
             # Iterates over nodes in the group
@@ -611,7 +609,11 @@ class LinkedList(MutableSequence):
     
     def __str__(self):
         return str(self.to_nested_lists())
-    
+
+
+class GroupViewError(BibleRefException):
+    '''Raised when an no-longer-valid GroupView is accessed.'''
+
 
 
 

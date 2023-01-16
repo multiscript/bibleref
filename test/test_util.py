@@ -1,6 +1,6 @@
 import unittest
 
-from bibleref.util import LinkedList, ListError
+from bibleref.util import LinkedList, GroupViewError
 
 
 class TestLinkedList(unittest.TestCase):    
@@ -232,19 +232,19 @@ class TestLinkedList(unittest.TestCase):
         del test_list[3]
         self.assertEqual(test_list.to_nested_lists(), [[2, 8, 4], [9, 6], [3, 7, 5]])
         self.assertEqual(len(test_list.groups), 3)
-        self.assertRaises(ListError, lambda: group_1[0])
+        self.assertRaises(GroupViewError, lambda: group_1[0])
         self.assertEqual(group_2[0], 3)
 
         del test_list[3]
         self.assertEqual(test_list.to_nested_lists(), [[2, 8, 4], [6], [3, 7, 5]])
         self.assertEqual(len(test_list.groups), 3)
-        self.assertRaises(ListError, lambda: group_1[0])
+        self.assertRaises(GroupViewError, lambda: group_1[0])
         self.assertEqual(group_2[0], 3)
 
         del test_list[3]
         self.assertEqual(test_list.to_nested_lists(), [[2, 8, 4], [3, 7, 5]])
         self.assertEqual(len(test_list.groups), 2)
-        self.assertRaises(ListError, lambda: group_1[0])
+        self.assertRaises(GroupViewError, lambda: group_1[0])
         self.assertEqual(group_2[0], 3)
 
         del test_list[3]
