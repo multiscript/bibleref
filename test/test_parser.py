@@ -1,8 +1,8 @@
 from pprint import pprint
 import unittest
 
-from bible.reference import BibleBook, BibleRange
-from bible.parser import BibleRefParsingError, _parse as parse
+from bibleref.reference import BibleBook, BibleRange
+from bibleref.parser import BibleRefParsingError, _parse as parse
 
 class TestBibleParser(unittest.TestCase):
     def test_parse(self):

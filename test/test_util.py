@@ -1,6 +1,6 @@
 import unittest
 
-from bible.util import LinkedList, ListError
+from bibleref.util import LinkedList, ListError
 
 
 class TestLinkedList(unittest.TestCase):    
