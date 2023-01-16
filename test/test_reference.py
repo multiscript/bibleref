@@ -1,5 +1,5 @@
 import unittest
-from bibleref.reference import BibleBook, BibleVerse, BibleRange, BibleRangeList, \
+from bibleref.ref import BibleBook, BibleVerse, BibleRange, BibleRangeList, \
                             BibleFlag, BibleVersePart as BVP, InvalidReferenceError, \
                             MultibookRangeNotAllowedError
 

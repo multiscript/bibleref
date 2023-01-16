@@ -6,10 +6,10 @@ string conversion.** It's designed for future use with [Multiscript](https://mul
 as a standalone package. Its only dependency is the [Lark](https://github.com/lark-parser/lark) parsing toolkit.
 
 `bibleref` defines the following primary classes:
-  - `bibleref.reference.BibleBook`:      An Enum of books in the Bible, with extra methods.
-  - `bibleref.reference.BibleVerse`:     A reference to a single Bible verse (e.g. Matt 2:3)
-  - `bibleref.reference.BibleRange`:     A reference to a continuous range of Bible verses (e.g. Matt 2:3-4:5)
-  - `bibleref.reference.BibleRangeList`: A specialised list of `BibleRange`s, allowing for grouping and
+  - `bibleref.ref.BibleBook`:      An Enum of books in the Bible, with extra methods.
+  - `bibleref.ref.BibleVerse`:     A reference to a single Bible verse (e.g. Matt 2:3)
+  - `bibleref.ref.BibleRange`:     A reference to a continuous range of Bible verses (e.g. Matt 2:3-4:5)
+  - `bibleref.ref.BibleRangeList`: A specialised list of `BibleRange`s, allowing for grouping and
   set-style operations.
 
 (There is no `BibleChapter` class, as chapters are usually best handled as a `BibleRange`.)
@@ -22,18 +22,18 @@ The Bible book, chapter and verse data is specified in the `bibleref.data` sub-m
 
 # Global Flags
  
-The global attribute `bibleref.reference.flags` is a `bibleref.reference.BibleFlag` enum whose elements control
+The global attribute `bibleref.ref.flags` is a `bibleref.ref.BibleFlag` enum whose elements control
 package-wide behaviour. Many methods take a `flags` keyword-argument that overrides the global `flags` attribute
 during the execution of that method.
 
 The effect of each flag is as follows:
 
-### `bibleref.reference.BibleFlag.MULTIBOOK`
+### `bibleref.ref.BibleFlag.MULTIBOOK`
 
 Defaults to unset. When set, `BibleRange`s can be constructed that span multiple books. Existing multibook ranges
 behave correctly even when `MULTIBOOK` is unset.
 
-### `bibleref.reference.BibleFlag.VERSE_0`
+### `bibleref.ref.BibleFlag.VERSE_0`
 
 Defaults to unset. When set, BibleVerses can be constructed where the first verse number of some chapters is 0, not
 1. (This is currently just the Psalms that have superscriptions.) When you need to mix references that do or don't
@@ -42,4 +42,4 @@ allow for verse 0, it may be easier to choose one value for all your code, and t
 
 
 '''
-from .reference import BibleBook, BibleFlag, BibleRange, BibleRangeList, BibleRef, BibleVerse, BibleVersePart
+from .ref import BibleBook, BibleFlag, BibleRange, BibleRangeList, BibleRef, BibleVerse, BibleVersePart

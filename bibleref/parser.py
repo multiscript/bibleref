@@ -2,7 +2,7 @@ from lark import Lark, UnexpectedInput
 from lark import Transformer, v_args
 from lark.visitors import VisitError
 
-from . import reference
+from . import ref
 
 
 MAJOR_LIST_SEP_SENTINEL = object()
@@ -12,7 +12,7 @@ MINOR_LIST_SEP_SENTINEL = object()
 _parser = None
 _transformer = None
 
-def _parse(string, flags: reference.BibleFlag = None):
+def _parse(string, flags: ref.BibleFlag = None):
     global _parser, _transformer
     if _parser is None:
         # from pathlib import Path
@@ -57,7 +57,7 @@ class BibleRefParsingError(Exception):
 
 @v_args(meta=True)
 class BibleRefTransformer(Transformer):
-    def __init__(self, *args, flags: reference.BibleFlag = None, **kwargs):
+    def __init__(self, *args, flags: ref.BibleFlag = None, **kwargs):
         super().__init__(*args, **kwargs)
         self.cur_book = None            # Tracks implied current book
         self.cur_chap_num = None        # Tracks implied current chapter
@@ -83,12 +83,12 @@ class BibleRefTransformer(Transformer):
         return parent_list
 
     def dual_ref(self, meta, children): # Children: single_ref RANGE_SEP single_ref
-        first: reference.BibleRange = children[0]
-        second: reference.BibleRange = children[2]
+        first: ref.BibleRange = children[0]
+        second: ref.BibleRange = children[2]
         # We don't need to update self.cur_book or self.cur_chap_num as they will
         # have already been updated by the parsing of the second BibleRange child.
         try:
-            bible_range = reference.BibleRange(first.start.book, first.start.chap_num, first.start.verse_num,
+            bible_range = ref.BibleRange(first.start.book, first.start.chap_num, first.start.verse_num,
                                                second.end.book, second.end.chap_num, second.end.verse_num,
                                                flags=self.flags)
         except Exception as e:
@@ -96,17 +96,17 @@ class BibleRefTransformer(Transformer):
         return bible_range
 
     def book_only_ref(self, meta, children): # Children: BOOK_NAME
-        book: reference.BibleBook = children[0]
+        book: ref.BibleBook = children[0]
         self.cur_book = book
         self.at_verse_level = False
         try:
-            bible_range = reference.BibleRange(book, flags=self.flags)
+            bible_range = ref.BibleRange(book, flags=self.flags)
         except Exception as e:
             raise BibleRefParsingError(str(e), meta)
         return bible_range
         
     def book_num_ref(self, meta, children): # Children: BOOK_NAME NUM
-        book: reference.BibleBook = children[0]
+        book: ref.BibleBook = children[0]
         num: int = children[1]
         self.cur_book = book
         # For single-chapter books, bare numbers represent verses instead of chapters
@@ -115,24 +115,24 @@ class BibleRefTransformer(Transformer):
         try:
             if is_single_chap:
                 self.cur_chap_num = book.min_chap_num()
-                bible_range = reference.BibleRange(book, self.cur_chap_num, num,
+                bible_range = ref.BibleRange(book, self.cur_chap_num, num,
                                                    flags=self.flags)
             else:
                 self.cur_chap_num = num
-                bible_range = reference.BibleRange(book, num, flags=self.flags)
+                bible_range = ref.BibleRange(book, num, flags=self.flags)
         except Exception as e:
             raise BibleRefParsingError(str(e), meta)
         return bible_range
 
     def book_chap_verse_ref(self, meta, children): # Children: BOOK_NAME NUM VERSE_SEP NUM
-        book: reference.BibleBook = children[0]
+        book: ref.BibleBook = children[0]
         chap_num: int = children[1]
         verse_num: int = children [3]
         self.cur_book = book
         self.cur_chap_num = chap_num
         self.at_verse_level = True
         try:
-            bible_range = reference.BibleRange(book, chap_num, verse_num, flags=self.flags)
+            bible_range = ref.BibleRange(book, chap_num, verse_num, flags=self.flags)
         except Exception as e:
             raise BibleRefParsingError(str(e), meta)
         return bible_range
@@ -140,13 +140,13 @@ class BibleRefTransformer(Transformer):
     def chap_verse_ref(self, meta, children): # Children: NUM VERSE_SEP NUM
         if self.cur_book is None:
             raise BibleRefParsingError("No book specified", meta)
-        book: reference.BibleBook = self.cur_book
+        book: ref.BibleBook = self.cur_book
         chap_num: int = children[0]
         verse_num: int = children [2]
         self.cur_chap_num = chap_num
         self.at_verse_level = True
         try:
-            bible_range = reference.BibleRange(book, chap_num, verse_num, flags=self.flags)
+            bible_range = ref.BibleRange(book, chap_num, verse_num, flags=self.flags)
         except Exception as e:
             raise BibleRefParsingError(str(e), meta)
         return bible_range
@@ -154,7 +154,7 @@ class BibleRefTransformer(Transformer):
     def num_only_ref(self, meta, children): # Children: NUM
         if self.cur_book is None:
             raise BibleRefParsingError("No book specified", meta)
-        book: reference.BibleBook = self.cur_book
+        book: ref.BibleBook = self.cur_book
         num: int = children[0]
         is_single_chap = (book.chap_count() == 1)
         try:
@@ -163,9 +163,9 @@ class BibleRefTransformer(Transformer):
                     self.cur_chap_num = book.min_chap_num()
                 elif self.cur_chap_num is None:
                     raise BibleRefParsingError("No chapter specified", meta)
-                bible_range = reference.BibleRange(book, self.cur_chap_num, num, flags=self.flags)
+                bible_range = ref.BibleRange(book, self.cur_chap_num, num, flags=self.flags)
             else: # Book, chapter ref
-                bible_range = reference.BibleRange(book, num, flags=self.flags)
+                bible_range = ref.BibleRange(book, num, flags=self.flags)
         except Exception as e:
             if isinstance(e, BibleRefParsingError):
                 raise e
@@ -182,7 +182,7 @@ class BibleRefTransformer(Transformer):
         return MINOR_LIST_SEP_SENTINEL
 
     def BOOK_NAME(self, token):
-        book = reference.BibleBook.from_str(str(token))
+        book = ref.BibleBook.from_str(str(token))
         if book is None:
             raise BibleRefParsingError(f"{str(token)} is not a valid book name", None,
                                        token.start_pos, token.end_pos)
