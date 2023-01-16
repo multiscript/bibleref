@@ -16,6 +16,29 @@ as a standalone package. Its only dependency is the [Lark](https://github.com/la
 
 Each of these classes can also be directly imported from `bibleref`.
 
+# Example
+
+```python
+>>> from bibleref import *
+>>> range_list = BibleRangeList("Mark 3:1-4:2; 5:6-8, 10; Matt 4")
+>>> print(range_list)
+Mark 3-4:2; 5:6-8, 10; Matthew 4
+>>> range_list[1]
+BibleRange(Mark 5:6-5:8)
+>>> range_list[1].start
+BibleVerse(Mark 5:6)
+>>> range_list[1].end
+BibleVerse(Mark 5:8)
+>>> range_list[1].end.book
+<BibleBook.Mark: 'Mark'>
+>>> for verse in range_list[1]:
+...     print(verse)
+... 
+Mark 5:6
+Mark 5:7
+Mark 5:8
+```
+
 # Data
 
 The Bible book, chapter and verse data is specified in the `bibleref.data` sub-module.
