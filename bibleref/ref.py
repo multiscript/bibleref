@@ -257,9 +257,9 @@ class BibleVerse:
     '''A reference to a single Bible verse (e.g. Matt 2:3).
 
     Contains 3 primary attributes:
-     - `book`:   The `BibleBook` of the book of the reference.
-     - `chap`:   The chapter number (indexed from 1) of the reference.
-     - `verse`:  The verse number (indexed from 0 or 1) of the reference.
+     - `book`:       The `BibleBook` of the book of the reference.
+     - `chap_num`:   The chapter number (indexed from 1) of the reference.
+     - `verse_num`:  The verse number (indexed from 0 or 1) of the reference.
 
     BibleVerses are immutable.
     '''
@@ -270,15 +270,14 @@ class BibleVerse:
     def __init__(self, *args, flags: BibleFlag = None):
         '''A `BibleVerse` can be constructed in any of the following ways:
 
-        1. From a single string: BibleVerse("Mark 2:3")
+        1. From a single string: `BibleVerse("Mark 2:3")`
 
-        2. From a Bible book, chapter and verse numbers. The Bible book can
-           be a string name (), or a BibleBook enum:
-           BibleVerse("Mark", 2, 3), or BibleVerse(BibleBook.Mark, 2, 3)
+        2. From a Bible book, chapter and verse numbers. The Bible book can be a string name, or a `BibleBook` enum:
+           `BibleVerse("Mark", 2, 3)`, or `BibleVerse(BibleBook.Mark, 2, 3)`
             
-        3. As a copy of another BibleVerse: BibleVerse(existing_bible_verse)
+        3. As a copy of another BibleVerse: `BibleVerse(existing_bible_verse)`
 
-        If the supplied arguments are not a valid verse, raises an InvalidReferenceError.
+        If the supplied arguments are not a valid verse, raises an `InvalidReferenceError`.
         '''
         if len(args) == 1:
             if isinstance(args[0], str):
@@ -320,82 +319,79 @@ class BibleVerse:
             object.__setattr__(self, "verse_num", verse_num)
 
     def min_chap_num(self) -> int:
-        '''Return lowest chapter number (indexed from 1) of the BibleBook containing this verse.
+        '''Return lowest chapter number (indexed from 1) of the `BibleBook` containing this verse.
         '''
         return self.book.min_chap_num()
 
     def max_chap_num(self) -> int:
-        '''Return highest chapter number (indexed from 1) of the BibleBook containing this verse.
+        '''Return highest chapter number (indexed from 1) of the `BibleBook` containing this verse.
         '''
         return self.book.max_chap_num()
     
     def chap_count(self):
-        '''Returns the number of chapters in the BibleBook containing this verse.
+        '''Returns the number of chapters in the `BibleBook` containing this verse.
         '''
         return self.book.chap_count()
 
     def min_verse_num(self, chap_num: int = None, flags: BibleFlag = None) -> int:
-        '''Return the lowest verse number (usually indexed from 1) for the specified chapter
-        of the BibleBook containing this verse. If no chapter is specified, it returns the
-        lowest verse number of the chapter containing this verse.
+        '''Return the lowest verse number (0 or 1) for the specified chapter of the `BibleBook` containing
+        this verse. If no chapter is specified, it returns the lowest verse number of the chapter containing
+        this `BibleVerse`.
         '''
         if chap_num is None:
             chap_num = self.chap_num
         return self.book.min_verse_num(chap_num, flags=flags)
 
     def max_verse_num(self, chap_num: int) -> int:
-        '''Return the highest verse number (usually indexed from 1) for the specified chapter
-        of the BibleBook containing this verse. If no chapter is specified, it returns the
-        highest verse number of the chapter containing this verse.
+        '''Return the highest verse number for the specified chapter of the `BibleBook` containing this verse.
+        If no chapter is specified, it returns the highest verse number of the chapter containing this `BibleVerse`.
         '''
         if chap_num is None:
             chap_num = self.chap_num
         return self.book.max_verse_num(chap_num)
 
     def first_verse(self, chap_num: int = None, flags: BibleFlag = None) -> 'BibleVerse':
-        '''Returns the first BibleVerse of the specified chapter of the BibleBook containing
-        this verse. If chap is None, it returns the first BibleVerse of the chapter
-        containing this verse.
+        '''Returns the first `BibleVerse` of the specified chapter of the `BibleBook` containing
+        this verse. If chap is `None`, it returns the first `BibleVerse` of the chapter containing this
+        `BibleVerse`.
         '''
         if chap_num is None:
             chap_num = self.chap_num
         return self.book.first_verse(chap_num, flags=flags)
 
     def last_verse(self, chap_num: int = None) -> 'BibleVerse':
-        '''Returns the last BibleVerse of the specified chapter of the BibleBook containing
-        this verse. If chap is None, it returns the last BibleVerse of the chapter
-        containing this verse.
+        '''Returns the last `BibleVerse` of the specified chapter of the `BibleBook` containing
+        this verse. If chap is `None`, it returns the last `BibleVerse` of the chapter containing this
+        `BibleVerse`.
         '''
         if chap_num is None:
             chap_num = self.chap_num
         return self.book.last_verse(chap_num)
 
     def verse_0_to_1(self) -> 'BibleVerse':
-        '''If this BibleVerse refers to a verse number 0, returns an identical BibleVerse
-        except with a verse number of 1. Otherwise, returns the original BibleVerse.'''
+        '''If the `verse_num` of this `BibleVerse` is 0, returns an identical BibleVerse except with `verse_num`
+        set to 1. Otherwise, returns the original `BibleVerse`.'''
         if self.verse_num == 0:
             return BibleVerse(self.book, self.chap_num, 1)
         else:
             return self
     
     def verse_1_to_0(self) -> 'BibleVerse':
-        '''If this BibleVerse refers to a verse number 1, and a verse 0 is possible for the
-        same chapter, returns an identical BibleVerse except with a verse number of 0.
-        Otherwise, returns the original BibleVerse. The value of the global 'flags'
-        attribute is ignored.'''
+        '''If the `verse_num` of this `BibleVerse` is 1, and a verse 0 is possible for the
+        same chapter, returns an identical `BibleVerse` except with `verse_num` set to 0. Otherwise, returns the
+        original `BibleVerse`. **Note**: The value of the global attribute `bibleref.ref.flags` is *ignored*.'''
         if self.verse_num == 1 and self.min_verse_num(self.chap_num, flags=BibleFlag.VERSE_0) == 0:
             return BibleVerse(self.book, self.chap_num, 0, flags=BibleFlag.VERSE_0)
         else:
             return self
 
     def add(self, num_verses: int, flags: BibleFlag = None) -> 'BibleVerse':
-        '''Returns a new BibleVerse that is num_verses after this BibleVerse.
+        '''Returns a new `BibleVerse` that is `num_verses` after this `BibleVerse`.
         
-        If BibleFlag.MULTIBOOK is set (either set by the 'flags' argument or,
-        if None, by the global attribute), and the result would be beyond the current
-        book, a verse in the next book is returned. Otherwise, if the verse
-        does not exist, None is returned. If this BibleVerse already refers to
-        verse number 0, VERSE_0 is set on the flags argument for this call.
+        If `BibleFlag.MULTIBOOK` is set (either by the `flags` argument or, if `None`, by the global attribute), and
+        the result would be beyond the current book, a verse in the next book is returned. Otherwise, if the verse
+        does not exist, `None` is returned. If the `verse_num` of this `BibleVerse` is already 0,
+        `BibleFlag.VERSE_0` is force set on the `flags` argument for this call.
         '''
         flags = flags or globals()['flags'] or BibleFlag.NONE
         book = self.book
@@ -421,13 +417,12 @@ class BibleVerse:
         return BibleVerse(book, chap_num, verse_num, flags=flags)
 
     def subtract(self, num_verses: int, flags: BibleFlag = None) -> 'BibleVerse':
-        '''Return a new BibleVerse that is num_verses before this BibleVerse.
+        '''Return a new `BibleVerse` that is `num_verses` before this `BibleVerse`.
         
-        If BibleFlag.MULTIBOOK is set (either set by the 'flags' argument or,
-        if None, the global attribute), and the result would be before the current
-        book, a verse in the previous book is returned. Otherwise, if the verse
-        does not exist, None is returned. If this BibleVerse already refers to
-        verse number 0, VERSE_0 is set on the flags argument for this call.
+        If `BibleFlag.MULTIBOOK` is set (either set by the `flags` argument or, if `None`, the global attribute), and
+        the result would be before the current book, a verse in the previous book is returned. Otherwise, if the
+        verse does not exist, None is returned. If the `verse_num` of this `BibleVerse` is already 0,
+        `BibleFlag.VERSE_0` is force set on the `flags` argument for this call.
         '''
         flags = flags or globals()['flags'] or BibleFlag.NONE
         book = self.book
@@ -460,13 +455,13 @@ class BibleVerse:
 
     def str(self, abbrev: bool = False, alt_sep: bool = False, nospace: bool = False,
             verse_parts: BibleVersePart = BibleVersePart.FULL_REF) -> str:
-        '''Returns a configurable string representation of this BibleVerse.
+        '''Returns a configurable string representation of this BibleVerse, as follows:
 
-        If abbrev is True, the abbreviated name of the book is used (instead of the full name).
-        If alt_sep is True, chapter and verse numbers are separated by the alternate
-          separator ('.' by default) instead of the standard separator (':' by default).
-        If nospace is True, no spaces are included in the string.
-        verse_parts is a combination of BibleVersePart flags, controlling what combination of book,
+        - If `abbrev` is True, the abbreviated name of the book is used (instead of the full name).
+        - If `alt_sep` is True, chapter and verse numbers are separated by the alternate
+          separator (`.` by default) instead of the standard separator (`:` by default).
+        - If `nospace` is True, no spaces are included in the string.
+        - `verse_parts` is a combination of `BibleVersePart` flags, controlling what combination of book,
           chapter & verse are displayed.
         '''
         if self.book.chap_count() == 1:
