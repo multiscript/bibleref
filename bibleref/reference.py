@@ -1,31 +1,4 @@
-'''A module for storing and manipulating references to Bible books, verses and ranges.
 
-This module defines the following primary classes:
-    BibleBook:      An Enum of books in the Bible, with extra methods.
-    BibleVerse:     A reference to a single Bible verse (e.g. Matt 2:3)
-    BibleRange:     A reference to a continuous range of Bible verses (e.g. Matt 2:3-4:5)
-    BibleRangeList: A list of BibleRanges, allowing for grouping and set-style operations.
-
-    (There is no BibleChapter class, as chapters are usually best handled as a BibleRange.)
-
-The module attribute 'flags' is a BibleFlag enum whose elements control the following
-module behaviours:
-    MULTIBOOK: Defaults to unset. When set, BibleRanges can be constructed that span
-                 multiple books. Existing multibook ranges behave correctly even when
-                 MULTIBOOK is unset. 
-    VERSE_0:   Defaults to unset. When set, BibleVerses can be constructed where the
-                 first verse number of some chapters is 0, not 1. (This is currently
-                 just the Psalms that have superscriptions.) When you need to mix
-                 references that do or don't allow for verse 0, it may be easier to
-                 choose one value for all your code, and then use the verse_0_to_1()
-                 and verse_1_to_0() methods on BibleVerses, BibleRanges and
-                 BibleRangeLists as necessary.
-
-Many methods take a 'flags' argument that takes overrides the module-level attribute during
-the execution of that method.
-
-The Bible book, chapter and verse data is specified in the sibling 'data' module.
-'''
 # TODO: Create module method to make it easier to keep existing flags but set/unset particular flags
 # TODO: Create context manager to temporarily set or unset particular flags
 # TODO: Implement add and subtract operators for BibleVerses
