@@ -3,10 +3,15 @@ from . import ref
 
 
 RANGE_SEP           = "-"
+'''RANGE_SEP'''
 MAJOR_LIST_SEP      = ";"
+'''MAJOR_LIST_SEP'''
 MINOR_LIST_SEP      = ","
+'''MINOR_LIST_SEP'''
 VERSE_SEP_STANDARD  = ":"
+'''VERSE_SEP_STANDARD'''
 VERSE_SEP_ALT   = "."
+'''VERSE_SEP_ALT'''
 
 name_data = {
     # Keys: Bible Book
@@ -82,6 +87,7 @@ name_data = {
     ref.BibleBook.Jude:     ("Jude",    "Jude",             4,   []),
     ref.BibleBook.Rev:      ("Rev",     "Revelation",       2,   ["The Revelation", "The Revelation to John"])
 }
+'''name_data'''
 
 order = [
     # List of Bible books in their sort order
@@ -152,6 +158,7 @@ order = [
     ref.BibleBook.Jude,
     ref.BibleBook.Rev
 ]
+'''order'''
 
 max_verses = {
     # Keys: Bible books
@@ -234,3 +241,4 @@ verse_0s = {
                         121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 138, 139, 140, 141, 142,
                         143, 144, 145])
 }
+'''verse_0s'''

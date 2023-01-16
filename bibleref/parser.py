@@ -47,7 +47,13 @@ def _parse(string, flags: ref.BibleFlag = None):
 
 
 class BibleRefParsingError(BibleRefException):
-    '''Raised when there is an error parsing a string into Bible reference.'''
+    '''Raised when there is an error parsing a string into Bible reference.
+    
+    Contains two extra attributes:
+    
+     - `start_pos`: index of the first unexpected character in the string for parsing.
+     - `end_pos`:   index of the last unexpected character in the string for parsing.
+    '''
     def __init__(self, mesg, meta_info=None, start_pos=None, end_pos=None, *args, **kwargs):
         super().__init__(mesg, *args, **kwargs)
         if meta_info is not None:

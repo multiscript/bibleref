@@ -71,11 +71,11 @@ class LinkedList(MutableSequence):
             return str(self)
 
     class GroupViews:
-        '''Collection of `Group` views.
+        '''A read-only collection of `GroupView` objects.
         
-        The number of `Group`s in the view is returned by `len(group_view)`. Iterating over a `GroupView`
-        returns each individual `Group`. A `GroupView` can be indexed to return a particular `Group`:
-        e.g. `group_view[2]`
+        The number of `GroupView` objects in the collection is returned by `len(group_views)`. Iterating over a
+        `GroupViews` collection returns each individual `GroupView`. A `GroupViews` collection can be indexed to
+        return a particular `GroupView`: e.g. `group_views[2]`
         '''
         def __init__(self, parent: 'LinkedList'):
             self.parent = parent
@@ -112,7 +112,19 @@ class LinkedList(MutableSequence):
             return LinkedList.GroupView(group_head)
 
     class GroupView:
-        '''Group view object. Provides access to the items in the group.'''
+        '''A view of a group (subset) of items in the LinkedList.
+        
+        Iterating over a GroupView returns the individual items in the view. A GroupView can be indexed
+        for get, set, and delete operations:
+
+        `value = group_view[2]`
+
+        `group_view[2] = value`
+
+        `del group_view[2]`
+
+        #TODO: Implement length of the group view.
+        '''
         def __init__(self, group_head: 'LinkedList._Node'):
             self.group_head = group_head
 
@@ -617,7 +629,7 @@ class LinkedList(MutableSequence):
 
 
 class GroupViewError(BibleRefException):
-    '''Raised when an no-longer-valid GroupView is accessed.'''
+    '''Raised when a no-longer-valid GroupView is accessed.'''
 
 
 

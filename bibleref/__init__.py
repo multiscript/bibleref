@@ -1,8 +1,8 @@
 '''
 # Overview
 
-**bibleref is a package for manipulating references to Bible books, verses and verse-ranges, including parsing and
-string conversion.** It's designed for future use with [Multiscript](https://multiscript.app), but it can be used
+**bibleref is a package for manipulating references to Bible books, verses and verse-ranges, including string parsing
+and conversion.** It's designed for future use with [Multiscript](https://multiscript.app), but it can be used
 as a standalone package. Its only dependency is the [Lark](https://github.com/lark-parser/lark) parsing toolkit.
 
 `bibleref` defines the following primary classes:
@@ -14,7 +14,7 @@ as a standalone package. Its only dependency is the [Lark](https://github.com/la
 
 (There is no `BibleChapter` class, as chapters are usually best handled as a `BibleRange`.)
 
-Each of these classes can also be directly imported from `bibleref`. They can each converted to and from strings.
+For convenience these classes can be directly imported from `bibleref`. They can each convert to and from strings.
 `BibleRange` and `BibleRangeList` implement common set operations (such as union, intersection, difference and 
 symmetric difference).
 
