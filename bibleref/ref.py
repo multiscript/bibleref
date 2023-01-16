@@ -15,19 +15,31 @@ from typing import Union
 #
 
 class BibleFlag(Flag):
-    '''A Flag used for controlling various behaviours throughout the module.'''
+    '''Flags used for controlling various behaviours throughout the package. These can be set globally for the package
+    using the `bibleref.ref.flags` attribute, or per-method for methods that includes a `flags` keyword argument.
+    '''
     NONE = 0
+    '''No `BibleFlag` flags are set.'''
     MULTIBOOK = auto()
+    '''When set, a `BibleRange` can be constructed that spans multiple Bible books. Existing multibook
+    ranges behave correctly even when `MULTIBOOK` is unset.'''
     VERSE_0 = auto()
+    '''When set, a `BibleVerse` can be constructed where the first verse number of some chapters
+    is 0, not 1. (This is currently true only for the Psalms that have superscriptions.) When you need to mix
+    references that do or don't allow for verse 0, it may be easier to set or clear `VERSE_0` for all your code, and
+    then use the `verse_0_to_1()` and `verse_1_to_0()` methods on `BibleVerse`, `BibleRange` and `BibleRangeList`
+    as necessary.'''
     ALL = MULTIBOOK | VERSE_0
+    '''All `BibleFlag` flags are set.'''
 
 flags = BibleFlag.NONE
+'''Global package attribute for `BibleFlag` settings.'''
 
 
 class BibleBook(Enum):
     '''An enum of books in the Bible.
 
-    A `BibleBook` has the following extra attributes (added during module import):
+    A `BibleBook` has the following extra attributes (added during package import):
       - `abbrev`:   The abbreviated name of the book
       - `title`:    The full title of the book.
       - `regex`:    A regex which matches any acceptable name/abbrev for the book.
@@ -225,12 +237,13 @@ from . import data
 
 
 class BibleVersePart(Flag):
-    '''Flag for referring to the 3 primary attributes of a BibleVerse.
+    '''Flags for referring to the 3 primary attributes of a BibleVerse.
     
-    Mainly used for converting BibleVerses, BibleRanges and BibleRangeLists to strings.
+    Mainly used internally for converting Bible references strings, to indicate which attributes will display in
+    a string representation.
     '''
     NONE    = 0
-    BOOK    = auto()
+    BOOK    = auto()   
     CHAP    = auto()
     VERSE   = auto()
     FULL_REF    = BOOK | CHAP | VERSE
@@ -244,9 +257,9 @@ class BibleVerse:
     '''A reference to a single Bible verse (e.g. Matt 2:3).
 
     Contains 3 primary attributes:
-        book:   The BibleBook of the book of the reference.
-        chap:   The chapter number (indexed from 1) of the reference.
-        verse:  The verse number (usually indexed from 1) of the reference.
+     - `book`:   The `BibleBook` of the book of the reference.
+     - `chap`:   The chapter number (indexed from 1) of the reference.
+     - `verse`:  The verse number (indexed from 0 or 1) of the reference.
 
     BibleVerses are immutable.
     '''
@@ -255,15 +268,15 @@ class BibleVerse:
     verse_num:  int
 
     def __init__(self, *args, flags: BibleFlag = None):
-        '''BibleVerses can be constructed in any of the following ways:
+        '''A `BibleVerse` can be constructed in any of the following ways:
 
-            1. From a single string: BibleVerse("Mark 2:3")
+        1. From a single string: BibleVerse("Mark 2:3")
 
-            2. From a Bible book, chapter and verse numbers. The Bible book can
-                 be a string name (), or a BibleBook enum:
-                 BibleVerse("Mark", 2, 3), or BibleVerse(BibleBook.Mark, 2, 3)
+        2. From a Bible book, chapter and verse numbers. The Bible book can
+           be a string name (), or a BibleBook enum:
+           BibleVerse("Mark", 2, 3), or BibleVerse(BibleBook.Mark, 2, 3)
             
-            3. As a copy of another BibleVerse: BibleVerse(existing_bible_verse)
+        3. As a copy of another BibleVerse: BibleVerse(existing_bible_verse)
 
         If the supplied arguments are not a valid verse, raises an InvalidReferenceError.
         '''
@@ -368,7 +381,7 @@ class BibleVerse:
     def verse_1_to_0(self) -> 'BibleVerse':
         '''If this BibleVerse refers to a verse number 1, and a verse 0 is possible for the
         same chapter, returns an identical BibleVerse except with a verse number of 0.
-        Otherwise, returns the original BibleVerse. The value of the module 'flags'
+        Otherwise, returns the original BibleVerse. The value of the global 'flags'
         attribute is ignored.'''
         if self.verse_num == 1 and self.min_verse_num(self.chap_num, flags=BibleFlag.VERSE_0) == 0:
             return BibleVerse(self.book, self.chap_num, 0, flags=BibleFlag.VERSE_0)
@@ -379,7 +392,7 @@ class BibleVerse:
         '''Returns a new BibleVerse that is num_verses after this BibleVerse.
         
         If BibleFlag.MULTIBOOK is set (either set by the 'flags' argument or,
-        if None, by the module attribute), and the result would be beyond the current
+        if None, by the global attribute), and the result would be beyond the current
         book, a verse in the next book is returned. Otherwise, if the verse
         does not exist, None is returned. If this BibleVerse already refers to
         verse number 0, VERSE_0 is set on the flags argument for this call.
@@ -411,7 +424,7 @@ class BibleVerse:
         '''Return a new BibleVerse that is num_verses before this BibleVerse.
         
         If BibleFlag.MULTIBOOK is set (either set by the 'flags' argument or,
-        if None, the module attribute), and the result would be before the current
+        if None, the global attribute), and the result would be before the current
         book, a verse in the previous book is returned. Otherwise, if the verse
         does not exist, None is returned. If this BibleVerse already refers to
         verse number 0, VERSE_0 is set on the flags argument for this call.
@@ -639,13 +652,13 @@ class BibleRange:
 
     def verse_0_to_1(self) -> 'BibleRange':
         '''Returns a new BibleRange created by calling verse_0_to_1() on both its start and end
-        BibleVerses. The value of the module 'flags' attribute is ignored.'''
+        BibleVerses. The value of the global 'flags' attribute is ignored.'''
         return BibleRange(start=self.start.verse_0_to_1(), end=self.end.verse_0_to_1(),
                           flags=BibleFlag.ALL)
 
     def verse_1_to_0(self) -> 'BibleRange':
         '''Returns a new BibleRange created by calling verse_1_to_0() on both its start and end
-        BibleVerses. The value of the module 'flags' attribute is ignored.'''
+        BibleVerses. The value of the global 'flags' attribute is ignored.'''
         return BibleRange(start=self.start.verse_1_to_0(), end=self.end.verse_1_to_0(),
                           flags=BibleFlag.ALL)
 
@@ -1015,7 +1028,7 @@ class BibleRangeList(util.LinkedList):
     def verse_0_to_1(self):
         '''Modifies the BibleRangeList in-place by calling verse_0_to_1() on every
         BibleRange in the list and using the result to replace the original range.
-        The value of the module 'flags' attribute is ignored. Returns None.'''
+        The value of the global 'flags' attribute is ignored. Returns None.'''
         for node in self._node_iter():
             node.value = node.value.verse_0_to_1()
         return None
@@ -1023,7 +1036,7 @@ class BibleRangeList(util.LinkedList):
     def verse_1_to_0(self):
         '''Modifies the BibleRangeList in-place by calling verse_1_to_0() on every
         BibleRange in the list and using the result to replace the original range.
-        The value of the module 'flags' attribute is ignored. Returns None.'''
+        The value of the global 'flags' attribute is ignored. Returns None.'''
         for node in self._node_iter():
             node.value = node.value.verse_1_to_0()
         return None
