@@ -82,7 +82,7 @@ class TestBibleReference(unittest.TestCase):
         self.assertEqual(verse.str(nospace=True), "Matthew5:3")
         self.assertEqual(verse.str(verse_parts=BVP.CHAP_VERSE), "5:3")
 
-        verse = BibleVerse(BibleBook._3Jn, 1, 4)
+        verse = BibleVerse(BibleBook.IIIJn, 1, 4)
         self.assertEqual(str(verse), "3 John 4")
         self.assertEqual(verse.str(abbrev=True), "3Jn 4")
         self.assertEqual(verse.str(), "3 John 4")
@@ -486,7 +486,7 @@ class TestBibleReference(unittest.TestCase):
         rng = BibleRange(BibleBook.Exod, 7, 1, None, 10, 12)
         self.assertEqual(str(rng), "Exodus 7-10:12")
 
-        rng = BibleRange(BibleBook._1Cor, 15, 1, BibleBook._2Cor, 1, 24, flags=BibleFlag.MULTIBOOK)
+        rng = BibleRange(BibleBook.ICor, 15, 1, BibleBook.IICor, 1, 24, flags=BibleFlag.MULTIBOOK)
         self.assertEqual(str(rng), "1 Corinthians 15-2 Corinthians 1")
 
         rng = BibleRange(BibleBook.Obad, 1, 10, None, 1, 12)
@@ -498,16 +498,16 @@ class TestBibleReference(unittest.TestCase):
         rng = BibleRange(BibleBook.Obad, 1, 10, BibleBook.Jonah, 2, 10, flags=BibleFlag.MULTIBOOK)
         self.assertEqual(str(rng), "Obadiah 10-Jonah 2")
 
-        rng = BibleRange(BibleBook._1Jn, 5, 18, BibleBook._3Jn, 1, 14, flags=BibleFlag.MULTIBOOK)
+        rng = BibleRange(BibleBook.IJn, 5, 18, BibleBook.IIIJn, 1, 14, flags=BibleFlag.MULTIBOOK)
         self.assertEqual(str(rng), "1 John 5:18-3 John")
 
-        rng = BibleRange(BibleBook._2Jn, 1, 1, BibleBook._3Jn, 1, 14, flags=BibleFlag.MULTIBOOK)
+        rng = BibleRange(BibleBook.IIJn, 1, 1, BibleBook.IIIJn, 1, 14, flags=BibleFlag.MULTIBOOK)
         self.assertEqual(str(rng), "2 John-3 John")
 
-        rng = BibleRange(BibleBook._2Jn, 1, 6, BibleBook._3Jn, 1, 14, flags=BibleFlag.MULTIBOOK)
+        rng = BibleRange(BibleBook.IIJn, 1, 6, BibleBook.IIIJn, 1, 14, flags=BibleFlag.MULTIBOOK)
         self.assertEqual(str(rng), "2 John 6-3 John")
 
-        rng = BibleRange(BibleBook._2Jn, 1, 1, BibleBook._3Jn, 1, 8, flags=BibleFlag.MULTIBOOK)
+        rng = BibleRange(BibleBook.IIJn, 1, 1, BibleBook.IIIJn, 1, 8, flags=BibleFlag.MULTIBOOK)
         self.assertEqual(str(rng), "2 John-3 John 8")
 
     def test_bible_range_string_roundtrip(self):

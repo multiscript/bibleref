@@ -27,93 +27,94 @@ flags = BibleFlag.NONE
 class BibleBook(Enum):
     '''An enum of books in the Bible.
 
-    Note that Python identifiers can't start with a number, so books like
-    1 Samuel are specified here as _1Sam.
-
-    BibleBooks have the following extra attributes (added during module import):
-      abbrev:   The abbreviated name of the book
-      title:    The full title of the book.
-      regex:    A regex which matches any acceptable name/abbrev for the book.
-      order:    An integer indicating its ordering in the collection of books (0-based).
+    A `BibleBook` has the following extra attributes (added during module import):
+      - `abbrev`:   The abbreviated name of the book
+      - `title`:    The full title of the book.
+      - `regex`:    A regex which matches any acceptable name/abbrev for the book.
+      - `order`:    An integer indicating its ordering in the collection of books (0-based).
+    
+    Two `BibleBook`s can be compared using the standard mathematical comparison operators, which compare their
+    position in the book ordering.
     '''
     # Extra private attributes:
     # _max_verses:  List of max verse number for each chapter (ascending by chapter).
     #               Len of list is number of chapters. 
     # _verse_0s:    If not None, set of chapter numbers (1-indexed) that can begin with a verse 0.
     #
-    Gen = "Gen" 
-    Exod = "Exod"
-    Lev = "Lev"
-    Num = "Num"
-    Deut = "Deut"
-    Josh = "Josh"
-    Judg = "Judg"
-    Ruth = "Ruth"
-    _1Sam = "1Sam"
-    _2Sam = "2Sam"
-    _1Kgs = "1Kgs"
-    _2Kgs = "2Kgs"
-    _1Chr = "1Chr"
-    _2Chr = "2Chr"
-    Ezra = "Ezra"
-    Neh = "Neh"
-    Esth = "Esth"
-    Job = "Job"
-    Psa = "Psa"
-    Prov = "Prov"
-    Eccl = "Eccl"
-    Song = "Song"
-    Isa = "Isa"
-    Jer = "Jer"
-    Lam = "Lam"
-    Ezek = "Ezek"
-    Dan = "Dan"
-    Hos = "Hos"
-    Joel = "Joel"
-    Amos = "Amos"
-    Obad = "Obad"
-    Jonah = "Jonah"
-    Mic = "Mic"
-    Nah = "Nah"
-    Hab = "Hab"
-    Zeph = "Zeph"
-    Hag = "Hag"
-    Zech = "Zech"
-    Mal = "Mal"
-    Matt = "Matt"
-    Mark = "Mark"
-    Luke = "Luke"
-    John = "John"
-    Acts = "Acts"
-    Rom = "Rom"
-    _1Cor = "1Cor"
-    _2Cor = "2Cor"
-    Gal = "Gal"
-    Eph = "Eph"
-    Phil = "Phil"
-    Col = "Col"
-    _1Thess = "1Thess"
-    _2Thess = "2Thess"
-    _1Tim = "1 Tim"
-    _2Tim = "2 Tim"
-    Titus = "Titus"
-    Phlm = "Phlm"
-    Heb = "Heb"
-    James = "James"
-    _1Pet = "1Pet"
-    _2Pet = "2Pet"
-    _1Jn = "1Jn"
-    _2Jn = "2Jn"
-    _3Jn = "3Jn"
-    Jude = "Jude"
-    Rev = "Rev"
+    Gen     = "Gen" 
+    Exod    = "Exod"
+    Lev     = "Lev"
+    Num     = "Num"
+    Deut    = "Deut"
+    Josh    = "Josh"
+    Judg    = "Judg"
+    Ruth    = "Ruth"
+    ISam    = "1Sam"
+    IISam   = "2Sam"
+    IKgs    = "1Kgs"
+    IIKgs   = "2Kgs"
+    IChr    = "1Chr"
+    IIChr   = "2Chr"
+    Ezra    = "Ezra"
+    Neh     = "Neh"
+    Esth    = "Esth"
+    Job     = "Job"
+    Psa     = "Psa"
+    Prov    = "Prov"
+    Eccl    = "Eccl"
+    Song    = "Song"
+    Isa     = "Isa"
+    Jer     = "Jer"
+    Lam     = "Lam"
+    Ezek    = "Ezek"
+    Dan     = "Dan"
+    Hos     = "Hos"
+    Joel    = "Joel"
+    Amos    = "Amos"
+    Obad    = "Obad"
+    Jonah   = "Jonah"
+    Mic     = "Mic"
+    Nah     = "Nah"
+    Hab     = "Hab"
+    Zeph    = "Zeph"
+    Hag     = "Hag"
+    Zech    = "Zech"
+    Mal     = "Mal"
+    Matt    = "Matt"
+    Mark    = "Mark"
+    Luke    = "Luke"
+    John    = "John"
+    Acts    = "Acts"
+    Rom     = "Rom"
+    ICor    = "1Cor"
+    IICor   = "2Cor"
+    Gal     = "Gal"
+    Eph     = "Eph"
+    Phil    = "Phil"
+    Col     = "Col"
+    ITh     = "1Th"
+    IITh    = "2Th"
+    ITim    = "1Tim"
+    IITim   = "2Tim"
+    Titus   = "Titus"
+    Phlm    = "Phlm"
+    Heb     = "Heb"
+    Jam     = "Jam"
+    IPet    = "1Pet"
+    IIPet   = "2Pet"
+    IJn     = "1Jn"
+    IIJn    = "2Jn"
+    IIIJn   = "3Jn"
+    Jude    = "Jude"
+    Rev     = "Rev"
 
     @classmethod
     def from_str(cls, string: str, raise_error: bool = False) -> 'BibleBook':
         '''Return the BibleBook matching the given string name.
+        Whitespace in `string` is stripped before matching.
         
         If no book matches and raise_error is False (the default), None is returned.
-        If no book matches and raise_error is True, an InvalidReferenceError is raised.
+        If no book matches and raise_error is True, an `InvalidReferenceError` is raised.
         '''
         string = string.strip()
         match = False
@@ -130,23 +131,22 @@ class BibleBook(Enum):
                 return None
 
     def min_chap_num(self) -> int:
-        '''Return lowest chapter number (indexed from 1) for this BibleBook.
+        '''Return lowest chapter number (currently always 1) for this `BibleBook`.
         '''
         return 1    # Currently always 1. Perhaps in future some books may have a chapter-0 prologue included?
 
     def max_chap_num(self) -> int:
-        '''Return highest chapter number (indexed from 1) for this BibleBook.
+        '''Return highest chapter number for this `BibleBook`.
         '''
         return len(self._max_verses)
     
     def chap_count(self):
-        '''Returns the number of chapters in this BibleBook.
+        '''Returns the number of chapters in this `BibleBook`.
         '''
         return (self.max_chap_num() - self.min_chap_num() + 1)
 
     def min_verse_num(self, chap_num: int, flags: BibleFlag = None) -> int:
-        '''Return the lowest verse number (usually indexed from 1) for the specified chapter
-        of this BibleBook.
+        '''Return the lowest verse number (0 or 1) for the specified chapter number of this `BibleBook`.
         '''
         flags = flags or globals()['flags'] or BibleFlag.NONE
         if chap_num < self.min_chap_num() or chap_num > self.max_chap_num():
@@ -154,31 +154,30 @@ class BibleBook(Enum):
         return 0 if (BibleFlag.VERSE_0 in flags and chap_num in self._verse_0s) else 1
 
     def max_verse_num(self, chap_num: int) -> int:
-        '''Return the highest verse number (usually indexed from 1) for the specified chapter
-        number of this BibleBook.
+        '''Return the highest verse number for the specified chapter number of this `BibleBook`.
         '''
         if chap_num < self.min_chap_num() or chap_num > self.max_chap_num():
             raise InvalidReferenceError(f"No chapter {chap_num} in {self.title}")
         return self._max_verses[chap_num-1]
 
     def first_verse(self, chap_num: int = None, flags: BibleFlag = None) -> 'BibleVerse':
-        '''Returns a BibleVerse for the first verse of the specified chapter of the BibleBook.
-        If chap is None, it returns the first verse of the enitre book.
+        '''Returns a `BibleVerse` for the first verse of the specified chapter of this `BibleBook`.
+        If chap is `None`, it returns the first verse of the entire book.
         '''
         if chap_num is None:
             chap_num = self.min_chap_num()
         return BibleVerse(self, chap_num, self.min_verse_num(chap_num, flags))        
 
     def last_verse(self, chap_num: int = None) -> 'BibleVerse':
-        '''Returns a BibleVerse for the last verse of the specified chapter of the BibleBook.
-        If chap is None, it returns the last verse of the entire book.
+        '''Returns a `BibleVerse` for the last verse of the specified chapter of this `BibleBook`.
+        If chap is `None`, it returns the last verse of the entire book.
         '''
         if chap_num is None:
             chap_num = self.max_chap_num()
         return BibleVerse(self, chap_num, self.max_verse_num(chap_num))        
 
     def next(self) -> 'BibleBook':
-        '''Returns the next BibleBook in the book ordering, or None if this is the final book.
+        '''Returns the next `BibleBook` in the book ordering, or `None` if this is the final book.
         '''
         if self.order == len(data.order)-1:
             return None
@@ -186,7 +185,7 @@ class BibleBook(Enum):
             return data.order[self.order+1]
 
     def prev(self) -> 'BibleBook':
-        '''Returns the previous BibleBook in the book ordering, or None if this is the first book.
+        '''Returns the previous `BibleBook` in the book ordering, or `None` if this is the first book.
         '''
         if self.order == 0:
             return None
