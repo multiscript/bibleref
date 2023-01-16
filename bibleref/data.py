@@ -1,5 +1,5 @@
 
-from . import ref as ref
+from . import ref
 
 
 RANGE_SEP           = "-"

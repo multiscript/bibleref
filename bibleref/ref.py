@@ -9,6 +9,7 @@ from enum import Enum, Flag, auto
 import re
 from typing import Union
 
+from bibleref import BibleRefException
 #
 # Set-style operations in this module are derived from the python-ranges module
 # at https://github.com/Superbird11/ranges, under the MIT Licence
@@ -45,8 +46,8 @@ class BibleBook(Enum):
       - `regex`:    A regex which matches any acceptable name/abbrev for the book.
       - `order`:    An integer indicating its ordering in the collection of books (0-based).
     
-    Two `BibleBook`s can be compared using the standard mathematical comparison operators, which compare their
-    position in the book ordering.
+    Two `BibleBook`s can be compared using the standard comparison operators, which compare the
+    books' position in the book ordering.
     '''
     # Extra private attributes:
     # _max_verses:  List of max verse number for each chapter (ascending by chapter).
@@ -261,7 +262,8 @@ class BibleVerse:
      - `chap_num`:   The chapter number (indexed from 1) of the reference.
      - `verse_num`:  The verse number (indexed from 0 or 1) of the reference.
 
-    BibleVerses are immutable.
+    BibleVerses are immutable. They can be compared using the standard comparison operators, which compare the
+    `book`, `chap_num` and `verse_num` in that order.
     '''
     book:       BibleBook
     chap_num:   int
@@ -277,7 +279,7 @@ class BibleVerse:
             
         3. As a copy of another BibleVerse: `BibleVerse(existing_bible_verse)`
 
-        If the supplied arguments are not a valid verse, raises an `InvalidReferenceError`.
+        If the supplied arguments are not a valid verse, an `InvalidReferenceError` is raised.
         '''
         if len(args) == 1:
             if isinstance(args[0], str):
@@ -493,17 +495,20 @@ class BibleRange:
     '''A reference to a continuous range of Bible verses (e.g. Matt 2:3-4:5).
 
     Contains 2 primary attributes:
-        start:  The first BibleVerse in the range (inclusive).
-        end:    The last BibleVerse in the range (inclusive).
+     - `start`:  The first `BibleVerse` in the range (inclusive).
+     - `end`:    The last `BibleVerse` in the range (inclusive).
     
-    A BibleRange is immutable.
+    BibleRanges are immutable. They can be compared using the standard comparison operators, which compare the
+    `start` and `end` in that order.
+
+    Iterating over a `BibleRange` returns each `BibleVerse` contained within the range.
     '''
     start: BibleVerse
     end: BibleVerse
 
     @classmethod
     def whole_bible(cls, flags: BibleFlag = None) -> 'BibleRange':
-        '''Returns a BibleRange representing the whole Bible.
+        '''Returns a `BibleRange` representing the whole Bible.
         '''
         flags = flags or globals()['flags'] or BibleFlag.NONE
         # By definition, we need to allow multibook to encompass whole Bible
@@ -516,33 +521,44 @@ class BibleRange:
     # TODO: Consider allowing a book and verse, without a chapter. Assume first or last chapter as necessary.
     def __init__(self, *args, start: BibleVerse = None, end: BibleVerse = None,
                  flags: BibleFlag = None):
-        '''A BibleRange can be constructed in any of the following ways:
+        '''A `BibleRange` can be constructed in any of the following ways:
 
-            1. From a single string: e.g. BibleRange("Mark 3:1-4:2")
+        1. From a single string: `BibleRange("Mark 3:1-4:2")`
 
-            2. From positional arguments in the following order:
-               Start book, start chap num, start verse num, end book, end chap num, end verse num
-               Start and end books can be string names or BibleBook enums.
-               Later arguments can be omitted or set to None, as in these examples:
+        2. From a start and end `BibleVerse`, which must be specified using the keyword arguments
+           `start` and `end`: `BibleRange(start=BibleVerse("Mark 3:1"), end=BibleVerse("Mark 4:2"))`
 
-                BibleRange(BibleBook.Matt, 2, 3, BibleBook.John, 4, 6, flags=BibleFlag.MULTIBOOK) # Matt 2:3-John 4:6
-                BibleRange(BibleBook.Matt) # Entire book: Matt 1:1-28:20
-                BibleRange(BibleBook.Matt, 2) # Entire chapter: Matt 2:1-23
-                BibleRange(BibleBook.Matt, 2, 3) # Single verse: Matt 2:3
-                BibleRange(BibleBook.Matt, None, None, BibleBook.John, flags=BibleFlag.MULTIBOOK) # Matt 1:1-John 21:25
-                BibleRange(BibleBook.Matt, None, None, None, 4) # Matt 1:1-4:25
-                BibleRange(BibleBook.Matt, None, None, None, None, 6) # Matt 1:1-1:6
-                BibleRange(BibleBook.Matt, 2, 3, None, 4, 6) # Matt 2:3-4:6
+        3. As a copy of an existing BibleRange: `BibleRange(existing_bible_range)`
 
-            3. From a start and end BibleVerse, which must be specified using the keywords
-               start and end.
-               e.g. BibleRange(start=BibleVerse("Mark 3:1"), end=BibleVerse("Mark 4:2"))
+        4. From positional arguments in the following order:
+           Start book, start `chap_num`, start `verse_num`, end book, end `chap_num`, end `verse_num`.
+           Start and end books can be string names or `BibleBook` enums.
+           Later arguments can be omitted or set to `None`, as in these examples:
 
-            4. As a copy of an existing BibleRange: BibleRange(existing_bible_range)
+           `BibleRange(BibleBook.Matt, 2, 3, BibleBook.John, 4, 6, flags=BibleFlag.MULTIBOOK) # Matt 2:3-John 4:6`
+           
+           `BibleRange(BibleBook.Matt) # Entire book: Matt 1:1-28:20`
+           
+           `BibleRange(BibleBook.Matt, 2) # Entire chapter: Matt 2:1-23`
+           
+           `BibleRange(BibleBook.Matt, 2, 3) # Single verse: Matt 2:3`
+           
+           `BibleRange(BibleBook.Matt, None, None, BibleBook.John, flags=BibleFlag.MULTIBOOK) # Matt 1:1-John 21:25`
+           
+           `BibleRange(BibleBook.Matt, None, None, None, 4) # Matt 1:1-4:25`
+           
+           `BibleRange(BibleBook.Matt, None, None, None, None, 6) # Matt 1:1-1:6`
+           
+           `BibleRange(BibleBook.Matt, 2, 3, None, 4, 6) # Matt 2:3-4:6`
 
-        If the start reference is obviously larger than the end reference, they are swapped around.
+       If the start verse is obviously greater than the end verse, they are swapped around.
         Note that it is sometimes not possible to distinguish a swapped start and end from
-        misformed arguments.           
+        misformed arguments.
+
+        If the supplied arguments are not a valid verse, an `InvalidReferenceError` is raised.
+        If the start and end verses are from different `BibleBooks` and `BibleFlag.MULTIBOOK` is not set globally
+        or using the `flags` argument, a `MultibookRangeNotAllowedError` is raised. If the arguments are of an
+        incorrect number or type, a `ValueError` is raised.     
         '''
         flags = flags or globals()['flags'] or BibleFlag.NONE
         if len(args) == 0:
@@ -646,66 +662,66 @@ class BibleRange:
         object.__setattr__(self, "end", end)
 
     def verse_0_to_1(self) -> 'BibleRange':
-        '''Returns a new BibleRange created by calling verse_0_to_1() on both its start and end
-        BibleVerses. The value of the global 'flags' attribute is ignored.'''
+        '''Returns a new `BibleRange` created by calling `verse_0_to_1()` on both the `start` and `end`
+        `BibleVerse` attributes.'''
         return BibleRange(start=self.start.verse_0_to_1(), end=self.end.verse_0_to_1(),
                           flags=BibleFlag.ALL)
 
     def verse_1_to_0(self) -> 'BibleRange':
-        '''Returns a new BibleRange created by calling verse_1_to_0() on both its start and end
-        BibleVerses. The value of the global 'flags' attribute is ignored.'''
+        '''Returns a new `BibleRange` created by calling `verse_1_to_0()` on both the `start` and `end`
+        `BibleVerse` attributes. **Note**: The value of the global attribute `bibleref.ref.flags` is *ignored*.'''
         return BibleRange(start=self.start.verse_1_to_0(), end=self.end.verse_1_to_0(),
                           flags=BibleFlag.ALL)
 
     def is_whole_book(self, flags: BibleFlag = None) -> bool:
-        '''Returns True if this BibleRange exactly spans a whole book, else False.'''
+        '''Returns `True` if this `BibleRange` exactly spans one whole book, else `False`.'''
         return  (self.start.book == self.end.book) and \
                 (self.start == self.start.book.first_verse(None, flags)) and \
                 (self.end == self.end.book.last_verse())
 
     def spans_start_book(self, flags: BibleFlag = None) -> bool:
-        '''Returns True if this BibleRange includes the whole book containing the
-        starting verse, else False.'''
+        '''Returns `True` if this `BibleRange` includes the whole book that contains the `start` verse,
+        else `False`.'''
         return  (self.start == self.start.book.first_verse(None, flags)) and \
                 (self.end >= self.start.book.last_verse())
 
     def spans_end_book(self, flags: BibleFlag = None) -> bool:
-        '''Returns True if this BibleRange includes the whole book containing the
-        ending verse, else False.'''
+        '''Returns `True` if this `BibleRange` includes the whole book that contains the `end` verse,
+        else `False`.'''
         return  (self.end == self.end.book.last_verse()) and \
                 (self.start <= self.end.book.first_verse(None, flags))
 
     def is_whole_chap(self, flags: BibleFlag = None) -> bool:
-        '''Returns True if this BibleRange exactly spans one whole chapter, else False.'''
+        '''Returns `True` if this `BibleRange` exactly spans one whole chapter, else `False`.'''
         return  (self.start.book == self.end.book) and \
                 (self.start == self.start.book.first_verse(self.start.chap_num, flags=flags)) and \
                 (self.end == self.end.book.last_verse(self.start.chap_num))
 
     def spans_start_chap(self, flags: BibleFlag = None) -> bool:
-        '''Returns True if this BibleRange exactly spans the whole chapter containing the
-        starting verse, else False.'''
+        '''Returns `True` if this `BibleRange` includes the whole chapter that contains the `start` verse,
+        else `False`.'''
         return  (self.start == self.start.book.first_verse(self.start.chap_num, flags=flags)) and \
                 (self.end >= self.start.book.last_verse(self.start.chap_num))
 
     def spans_end_chap(self, flags: BibleFlag = None) -> bool:
-        '''Returns True if this BibleRange exactly spans the whole chapter containing the
-        ending verse, else False.'''
+        '''Returns `True` if this `BibleRange` includes the whole chapter that contains the `end` verse,
+        else `False`.'''
         return  (self.end == self.end.book.last_verse(self.end.chap_num)) and \
                 (self.start <= self.end.book.first_verse(self.end.chap_num, flags=flags))
 
     def is_single_verse(self) -> bool:
-        '''Returns True if the BibleRange exactly spans a single verse, else False.'''
+        '''Returns `True` if the `BibleRange` exactly contains a single verse, else `False`.'''
         return  (self.start == self.end)
 
     def split(self, *, by_book: bool = False, by_chap: bool = False, num_verses: bool = None,
               flags: BibleFlag = None):
-        '''Split this range into a BibleRangeList of smaller consecutive ranges.
+        '''Split this `BibleRange` into a `BibleRangeList` of smaller consecutive ranges, as follows:
         
-        If by_book is true, splits are made at the end of each book.
-        If by_chap is true, splits are made end of each chapter.
-        If num_verses is specified, splits are made after (no more than) the specified number of verses.
-        by_book, by_chap and num_verses can be set in any combination, but one of them must be True,
-          otherwise a ValueError will be raised.
+        - If `by_book` is `True`, splits are made at the end of each book.
+        - If `by_chap` is `True`, splits are made end of each chapter.
+        - If `num_verses` is specified, splits are made after (no more than) the specified number of verses.
+        - `by_book`, `by_chap` and `num_verses` can be set in any combination, but one of them must be `True`,
+          otherwise a `ValueError` will be raised.
         '''
         if not (by_book or by_chap or num_verses):
             raise ValueError("Must split by at least one of book, chapter, or number of verses")
@@ -758,7 +774,7 @@ class BibleRange:
         return BibleRangeList(split_result, flags=flags)
 
     def is_disjoint(self, other_ref: 'BibleRef') -> bool:
-        '''Returns True if this range doesn't overlap with any verses in other_ref, otherwise False.
+        '''Returns `True` if this range doesn't overlap with any verses in `other_ref`, otherwise `False`.
         '''
         if isinstance(other_ref, BibleRangeList):
             return other_ref.is_disjoint(self) # is_disjoint() is commutative, so use the list implementation
@@ -772,10 +788,11 @@ class BibleRange:
             raise ValueError(f"{other_ref} is not a valid BibleRef")
 
     def is_adjacent(self, other_ref: 'BibleRef', flags: BibleFlag = None) -> bool:
-        '''Returns True if this range is adjacent to other_ref, otherwise False.
-        A range is adjacent to another verse or range if their bounds are just one verse apart.
-        A range is adjacent to a range list if it is disjoint to the entire list and adjacent
-        to at least one range in the list.
+        '''Returns `True` if this range is adjacent to `other_ref`, otherwise `False`.
+        
+        A `BibleRange` is considered adjacent to another `BibleVerse` or `BibleRange` if their bounds are a single
+        verse apart. A `BibleRange` is considered adjacent to a `BibleRangeList` if it is disjoint
+        to the entire list and adjacent to at least one `BibleRange` in the list.
         '''
         if isinstance(other_ref, BibleRangeList):
             # BibleRangeList doesn't define is_adjacent(), so we have to implement here
@@ -791,10 +808,10 @@ class BibleRange:
             raise ValueError(f"{other_ref} is not a valid BibleRef")
 
     def contains(self, other_ref: 'BibleRef') -> bool:
-        '''Returns True if the verses in other_ref all fall within this range. Otherwise
-        returns False.
+        '''Returns `True` if all the verses in `other_ref` fall within this `BibleRange`. Otherwise
+        returns `False`.
 
-        The same result is returned using the 'in' operator (i.e. other_ref in bible_range).
+        The same result is returned using the 'in' operator (i.e. `other_ref in bible_range`).
         '''
         if isinstance(other_ref, BibleRangeList):
             # contains() is not commutative, but we still use the BibleRangeList implementation.
@@ -809,8 +826,8 @@ class BibleRange:
             raise ValueError(f"{other_ref} is not a valid BibleRef")
 
     def surrounds(self, other_ref: 'BibleRef') -> bool:
-        '''Returns True if the verses in other_ref all fall within this range, without
-        including this range's first or last verse. Otherwise, returns False.
+        '''Returns `True` if all the verses in `other_ref` fall within this `BibleRange`, *without*
+        including this range's `start` or `end` `BibleVerse`. Otherwise, returns `False`.
         '''
         if isinstance(other_ref, BibleRangeList):
             # BibleRangeList doesn't define surrounds(), so we have to implement here
@@ -825,12 +842,11 @@ class BibleRange:
             raise ValueError(f"{other_ref} is not a valid BibleRef")
 
     def union(self, other_ref: 'BibleRef', flags: BibleFlag = None) -> 'BibleRangeList':
-        '''Returns a new BibleRangeList of verses that are in this range or other_ref.
-        other_ref can be a BibleVerse or BibleRange.
+        '''Returns a new `BibleRangeList` of verses that are either in this range or `other_ref`.
         
-        If this range and other_ref overlap or are adjacent, the resulting list contains
-        a single BibleRange encompassing them both. Otherwise, the list contains two elements:
-        this range and other_ref (converted to a BibleRange if necessary).
+        If this range and `other_ref` overlap or are adjacent, the resulting `BibleRangeList` contains one element:
+        a single `BibleRange` encompassing them both. Otherwise, the list contains two elements:
+        this `BibleRange` and `other_ref` (converted to a `BibleRange` if necessary).
         '''
         if isinstance(other_ref, BibleRangeList):
             # Use the BibleRangeList implementation
@@ -850,8 +866,9 @@ class BibleRange:
             raise ValueError(f"{other_ref} is not a valid BibleRef")
 
     def intersection(self, other_ref: 'BibleRef', flags: BibleFlag = None) -> 'BibleRangeList':
-        '''Returns a new BibleRange of verses that are common to both this range and other_ref.
-        If there are verses in common, the list contains a single range.
+        '''Returns a new `BibleRangeList` of verses that are common to both this range and `other_ref`.
+        
+        If there are verses in common, the list contains a single `BibleRange` element.
         If there are no verses in common, the list is empty.
         '''
         if isinstance(other_ref, BibleRangeList):
@@ -872,13 +889,12 @@ class BibleRange:
 
     def difference(self, other_ref: Union[BibleVerse, 'BibleRange'],
                    flags: BibleFlag = None) -> 'BibleRangeList':
-        '''Returns a new BibleRangeList of verses that are in this range, but not in other_ref.
-        other_ref can be a BibleVerse or BibleRange.
+        '''Returns a new `BibleRangeList` of verses that are in this range, but not in `other_ref`.
 
-        If this range and other_ref are disjoint, the list contains one item: a copy of this range.
-        If this range surrounds other_ref, the list contains two items:
-            a lower-section BibleRange, and an upper-section BibleRange.
-        If other_ref contains this range, the list is empty.
+        If this range and `other_ref` are disjoint, the list contains one element: a copy of this `BibleRange`.
+        If this range surrounds `other_ref`, the list contains two elements:
+            a lower-section `BibleRange`, and an upper-section `BibleRange`.
+        If `other_ref` contains this range, the list is empty.
         '''
         if isinstance(other_ref, BibleVerse):
             # Convert to BibleRange (and we don't enforce existing flags for conversions)
@@ -899,11 +915,11 @@ class BibleRange:
 
     def sym_difference(self, other_ref: Union[BibleVerse, 'BibleRange'],
                    flags: BibleFlag = None) -> 'BibleRangeList':
-        '''Returns a new BibleRangeList of verses that are either in this range, or in other_ref,
-        but not both. other_ref can be a BibleVerse or BibleRange.
+        '''Returns a new `BibleRangeList` of verses that are either in this range, or in `other_ref`,
+        but not both.
 
-        Depending on this range or other_ref, the list contains either one or two BibleRanges.
-        If this range and other_ref are exactly equal, this list is empty.
+        Depending on this range and `other_ref`, the `BibleRangeList` contains either one or two
+        `BibleRange` elements. If this range and `other_ref` are exactly equal, this list is empty.
         '''
         if isinstance(other_ref, BibleVerse):
             # Convert to BibleRange (and we don't enforce existing flags for conversions)
@@ -937,12 +953,12 @@ class BibleRange:
         return self.str()
 
     def str(self, abbrev=False, alt_sep=False, nospace=False, flags: BibleFlag = None):
-        '''Returns a configurable string representation of this BibleRange.
+        '''Returns a configurable string representation of this `BibleRange`, as follows:
 
-        If abbrev is True, the abbreviated name of the book is used (instead of the full name).
-        If alt_sep is True, chapter and verse numbers are separated by the alternate
-          separator (defaults to '.') instead of the standard separator (defaults to ':').
-        If nospace is True, no spaces are included in the string.
+        - If `abbrev` is `True`, the abbreviated name of the book is used (instead of the full name).
+        - If `alt_sep` is `True`, chapter and verse numbers are separated by the alternate
+          separator (defaults to `.`) instead of the standard separator (defaults to `:`).
+        - If `nospace` is `True`, no spaces are included in the string.
         '''
         if self.spans_start_book():
             start_parts = BibleVersePart.BOOK
@@ -981,7 +997,7 @@ class BibleRange:
 
 
 class BibleRangeList(util.LinkedList):
-    '''A list of BibleRanges, allowing for grouping and set-style operations.
+    '''A list of `BibleRange` elements, allowing for grouping and set-style operations.
 
     Currently implemented as a doubly-linked list, though this should be treated
     as an implementation detail, and not relied upon.
@@ -989,15 +1005,13 @@ class BibleRangeList(util.LinkedList):
     def __init__(self, *args, flags: BibleFlag = None):
         '''A BibleRange can be constructed in any of the following ways:
 
-            1. From a single string:
-                 BibleRangeList("Mark 3:1-4:2; 5:6-8, 10; Matt 4")
+        1. From a single string: `BibleRangeList("Mark 3:1-4:2; 5:6-8, 10; Matt 4")`
 
-            2. From any iterable containing BibleRanges:
-                 BibleRangeList([BibleRange("Mark 3:1-4:2"), BibleRange("Mark 5:6-8"),
-                                 BibleRange("Mark 5:10"), BibleRange("Matt 4")])
+        2. From any iterable containing BibleRanges:
+           `BibleRangeList([BibleRange("Mark 3:1-4:2"), BibleRange("Mark 5:6-8"),
+                            BibleRange("Mark 5:10"), BibleRange("Matt 4")])`
             
-            3. As a copy of an existing BibleRangeList:
-                 BibleRangeList(existing_bible_range_list)
+        3. As a copy of an existing BibleRangeList: `BibleRangeList(existing_bible_range_list)`
         '''
         flags = flags or globals()['flags']
 
@@ -1021,24 +1035,23 @@ class BibleRangeList(util.LinkedList):
             raise TypeError(f"Item is not a BibleRange: {value}")
 
     def verse_0_to_1(self):
-        '''Modifies the BibleRangeList in-place by calling verse_0_to_1() on every
-        BibleRange in the list and using the result to replace the original range.
-        The value of the global 'flags' attribute is ignored. Returns None.'''
+        '''Modifies this list *in-place* by calling `verse_0_to_1()` on every `BibleRange` in the list
+        and using the result to replace the original range. Returns `None`.'''
         for node in self._node_iter():
             node.value = node.value.verse_0_to_1()
         return None
 
     def verse_1_to_0(self):
-        '''Modifies the BibleRangeList in-place by calling verse_1_to_0() on every
-        BibleRange in the list and using the result to replace the original range.
-        The value of the global 'flags' attribute is ignored. Returns None.'''
+        '''Modifies this list *in-place* by calling `verse_1_to_0()` on every `BibleRange` in the list
+        and using the result to replace the original range. Returns `None`.
+        **Note**: The value of the global attribute `bibleref.ref.flags` is *ignored*.'''
         for node in self._node_iter():
             node.value = node.value.verse_1_to_0()
         return None
 
     def consolidate(self, flags: BibleFlag = None):
-        '''Sorts this list and merges ranges wherever possible. The result is the smallest
-        list of disjoint, non-adjacent ranges spanning the same verses as in the original
+        '''Sorts this list in-place and merges ranges wherever possible. The result is the smallest
+        list of disjoint, non-adjacent `BibleRange` elements spanning the same verses as in the original
         list.
 
         All groups are removed and replaced with a single group.
@@ -1057,7 +1070,7 @@ class BibleRangeList(util.LinkedList):
                 node = node.next
 
     def is_disjoint(self, other_ref: 'BibleRef') -> bool:
-        '''Returns True if this range list doesn't overlap with other_ref, otherwise False.
+        '''Returns `True` if every `BibleRange` is disjoint with all the verses in `other_ref`, otherwise `False`.
         '''
         if isinstance(other_ref, BibleVerse):
             # Convert to BibleRangeList (and we don't enforce existing flags for conversions)
@@ -1067,10 +1080,10 @@ class BibleRangeList(util.LinkedList):
         return all(self_range.is_disjoint(other_range) for self_range in self for other_range in other_ref)
 
     def contains(self, other_ref: 'BibleRef', flags: BibleFlag = None) -> bool:
-        '''Returns True if the verses in other_ref all fall within this range list. Otherwise
-        returns False.
+        '''Returns `True` if all the verses in `other_ref` fall within at least one of the `BibleRange` elements
+        in this list. Otherwise returns `False`.
 
-        The same result is returned using the 'in' operator (i.e. other_ref in bible_range_list).
+        The same result is returned using the 'in' operator (i.e. `other_ref in bible_range_list`).
         '''
         if isinstance(other_ref, BibleVerse):
             # Convert to BibleRangeList (and we don't enforce existing flags for conversions)
@@ -1084,15 +1097,15 @@ class BibleRangeList(util.LinkedList):
         return all(any(self_range.contains(other_range) for self_range in self_copy) for other_range in other_ref)
 
     def union(self, other_ref: 'BibleRef', flags: BibleFlag = None) -> 'BibleRangeList':
-        '''Returns a new BibleRangeList containing all the verses in this range list
-        and all the verses in other_ref to this range list, then consolidates this list.
+        '''Creates a new `BibleRangeList` that contains all the verses in this `BibleRangeList`
+        and all the verses in `other_ref`, then consolidates the result and returns it.
         '''
         new_list = BibleRangeList(self)
         new_list.union_update(other_ref, flags=flags)
         return new_list
 
     def union_update(self, other_ref: 'BibleRef', flags: BibleFlag = None) -> 'BibleRangeList':
-        '''Adds all the verses in other_ref to this range list, then consolidates this list.
+        '''Updates this list to be the union of its existing elements and `other_ref`, then consolidates this list.
         '''
         if isinstance(other_ref, BibleVerse):
             # Convert to BibleRangeList (and we don't enforce existing flags for conversions)
@@ -1106,8 +1119,8 @@ class BibleRangeList(util.LinkedList):
         self.consolidate(flags=flags)
 
     def intersection(self, other_ref: 'BibleRef', flags: BibleFlag = None) -> 'BibleRangeList':
-        '''Returns a new BibleRangeList of verses that are common to both this range list and other_ref.
-        If there are no verses in common, the list is empty.
+        '''Creates a new `BibleRangeList` of verses that are common to both this `BibleRangeList` and `other_ref`,
+        then consolidates the result and returns it. If there are no verses in common, the returned list is empty.
         '''
         if isinstance(other_ref, BibleVerse):
             # Convert to BibleRangeList (and we don't enforce existing flags for conversions)
@@ -1132,22 +1145,23 @@ class BibleRangeList(util.LinkedList):
         return new_list
 
     def intersection_update(self, other_ref: 'BibleRef', flags: BibleFlag = None) -> 'BibleRangeList':
-        '''Updates this range list to be only the verses that are common to this range list and
-        other_ref, then consolidates this list.
+        '''Updates this list to be the intersection of its existing elements and `other_ref`, then consolidates
+        this list.
         '''
         intersection_list = self.intersection(other_ref, flags=flags)
         self.clear()
         self.extend(intersection_list)
 
     def difference(self, other_ref: 'BibleRef', flags: BibleFlag = None) -> 'BibleRangeList':
-        '''Returns a new BibleRangeList of verses that are in this range list, but not in other_ref.
+        '''Returns a new `BibleRangeList` of verses that are in this `BibleRangeList`, but not in `other_ref`.
         '''
         new_list = BibleRangeList(self)
         new_list.difference_update(other_ref, flags=flags)
         return new_list
 
     def difference_update(self, other_ref: 'BibleRef', flags: BibleFlag = None) -> 'BibleRangeList':
-        '''Removes from this range list the verses that are in other_ref, then consolidates this list.
+        '''Updates this list to be the difference of its existing elements and `other_ref`, then consolidates
+        this list.
         '''
         if isinstance(other_ref, BibleVerse):
             # Convert to BibleRangeList (and we don't enforce existing flags for conversions)
@@ -1186,7 +1200,7 @@ class BibleRangeList(util.LinkedList):
         self.consolidate()
 
     def sym_difference(self, other_ref: 'BibleRef', flags: BibleFlag = None) -> 'BibleRangeList':
-        '''Returns a new BibleRangeList of verses that are either in this range list, or in other_ref,
+        '''Returns a new `BibleRangeList` of verses that are either in this `BibleRangeList`, or in `other_ref`,
         but not both.
         '''
         if isinstance(other_ref, BibleVerse):
@@ -1202,8 +1216,8 @@ class BibleRangeList(util.LinkedList):
         return union_list.difference(intersection_list, flags=flags)
 
     def sym_difference_update(self, other_ref: 'BibleRef', flags: BibleFlag = None) -> 'BibleRangeList':
-        '''Updates this range list to be only the verses that are either in this range list, or in other_ref,
-        but not both, then consolidates this list.
+        '''Updates this list to be the symmetric difference of its existing elements and `other_ref`, then
+        consolidates this list.
         '''
         sym_difference_list = self.sym_difference(other_ref, flags=flags)
         self.clear()
@@ -1222,18 +1236,18 @@ class BibleRangeList(util.LinkedList):
 
     def str(self, abbrev: bool = False, alt_sep: bool = False, nospace: bool = False,
                preserve_groups: bool = True, flags: BibleFlag = None):
-        '''Returns a string representation of this BibleRangeList.
+        '''Returns a configuratble string representation of this BibleRangeList, as follows:
 
-        If abbrev is True, the abbreviated name of the book is used (instead of the full name).
-        If alt_sep is True, chapter and verse numbers are separated by the alternate
-          separator (defaults to '.') instead of the standard separator (defaults to ':').
-        If nospace is True, no spaces are included in the string.
-        If preserve_groups is True, the major group separator is always used between groups,
-           and only between groups, with the minor group separator used exclusively within
-           groups. Parsing the resulting string should yield an equivalent BibleRangeList.
-        If preserve_groups is False, major and minor group separators are used as necessary
-           to create the most conventional resulting string, which may result in different
-           passage groupings.
+        - If `abbrev` is `True`, the abbreviated name of the book is used (instead of the full name).
+        - If `alt_sep` is `True`, chapter and verse numbers are separated by the alternate
+          separator (defaults to `.`) instead of the standard separator (defaults to `:`).
+        - If `nospace` is `True`, no spaces are included in the string.
+        - If `preserve_groups` is `True`, the major group separator is always used between groups,
+          and only between groups, with the minor group separator used exclusively within
+          groups. Parsing the resulting string should yield an equivalent `BibleRangeList`.
+        - If `preserve_groups` is `False`, major and minor group separators are used as necessary
+          to create the most conventional resulting string, which may result in different
+          passage groupings.
         '''
         cur_book = None
         cur_chap = None
@@ -1369,14 +1383,17 @@ class BibleRangeList(util.LinkedList):
 
 
 BibleRef = Union[BibleVerse, BibleRange, BibleRangeList]
+'''A convenience type to indicate either a `BibleVerse`, `BibleRange` or `BibleRangeList`.'''
 
 
-class MultibookRangeNotAllowedError(Exception):
-    pass
+class MultibookRangeNotAllowedError(BibleRefException):
+    '''Raised when trying to create a `BibleRange` with a different start and end `BibleBook` and
+    `BibleFlag.MULTIBOOK` is not set (either globally or in a `flags` method argument).'''
 
 
-class InvalidReferenceError(Exception):
-    pass
+class InvalidReferenceError(BibleRefException):
+    '''Raided when trying to instantiate a BibleBook, BibleVerse or BibleRange that is not a valid
+    Bible reference.'''
 
 
 def _add_abbrevs_and_titles():

@@ -9,12 +9,14 @@ as a standalone package. Its only dependency is the [Lark](https://github.com/la
   - `bibleref.ref.BibleBook`:      An Enum of books in the Bible, with extra methods.
   - `bibleref.ref.BibleVerse`:     A reference to a single Bible verse (e.g. Matt 2:3)
   - `bibleref.ref.BibleRange`:     A reference to a continuous range of Bible verses (e.g. Matt 2:3-4:5)
-  - `bibleref.ref.BibleRangeList`: A specialised list of `BibleRange`s, allowing for grouping and
+  - `bibleref.ref.BibleRangeList`: A specialised list of `BibleRange` elements, allowing for grouping and
   set-style operations.
 
 (There is no `BibleChapter` class, as chapters are usually best handled as a `BibleRange`.)
 
-Each of these classes can also be directly imported from `bibleref`.
+Each of these classes can also be directly imported from `bibleref`. They can each converted to and from strings.
+`BibleRange` and `BibleRangeList` implement common set operations (such as union, intersection, difference and 
+symmetric difference).
 
 # Example
 
@@ -65,4 +67,10 @@ and `verse_1_to_0()` methods on `BibleVerse`, `BibleRange` and `BibleRangeList` 
 
 
 '''
+class BibleRefException(Exception):
+    '''Parent class for all Exception types in this package.'''
+
+
 from .ref import BibleBook, BibleFlag, BibleRange, BibleRangeList, BibleRef, BibleVerse, BibleVersePart
+
+
