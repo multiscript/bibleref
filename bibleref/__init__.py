@@ -1,9 +1,9 @@
 '''
 # Overview
 
-**bibleref is a package for manipulating references to Bible books, verses and verse-ranges, including string parsing
-and conversion.** It's designed for future use with [Multiscript](https://multiscript.app), but it can be used
-as a standalone package. Its only dependency is the [Lark](https://github.com/lark-parser/lark) parsing toolkit.
+**bibleref is a Python package for manipulating references to Bible books, verses and verse-ranges, including string
+parsing and conversion.** It's designed for future use with [Multiscript](https://multiscript.app), but it can be
+used as a standalone package. Its only dependency is the [Lark](https://github.com/lark-parser/lark) parsing toolkit.
 
 `bibleref` defines the following primary classes:
   - `bibleref.ref.BibleBook`:      An Enum of books in the Bible, with extra methods.
