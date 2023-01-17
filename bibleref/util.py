@@ -63,15 +63,15 @@ class GroupedList(MutableSequence):
         def __le__(self, other):
             return self.value.__le__(other.value)
 
-        def __str__(self):
-            group = f" G {self._id(self.prev_head)} {id(self)} {self._id(self.next_head)}" if self.is_group_head else ""
-            return f"Node({str(self.value)}{group})"
-
         def _id(self, obj):
             return id(obj) if obj is not None else None
 
         def __repr__(self):
             return str(self)
+
+        def __str__(self):
+            group = f" G {self._id(self.prev_head)} {id(self)} {self._id(self.next_head)}" if self.is_group_head else ""
+            return f"Node({str(self.value)}{group})"
 
     class GroupViews:
         '''A read-only collection of `GroupView` objects.
@@ -114,6 +114,12 @@ class GroupedList(MutableSequence):
             group_head = self._group_at(group_index)
             return GroupedList.GroupView(group_head)
 
+        def __repr__(self):
+            return f"GroupViews({str(self)})"
+
+        def __str__(self):
+            return str(list(self))
+
     class GroupView:
         '''A view of a group (subset) of items in the LinkedList.
         
@@ -131,7 +137,7 @@ class GroupedList(MutableSequence):
 
         def _check_group_head(self):
             if not self.group_head.is_group_head or self.group_head.parent is None:
-                raise GroupViewError("Group head has been modified")
+                raise GroupViewError("GroupView has been modified")
 
         def __len__(self):
             count = 0
@@ -155,8 +161,8 @@ class GroupedList(MutableSequence):
             node = self.group_head
             for i in range(index):
                 node = node.next
-                if node is None:
-                    raise IndexError(f"List index {i} out of range")
+                if node is None or node.is_group_head:
+                    raise IndexError(f"List index {i+1} out of range")
             return node
 
         def __getitem__(self, index):
@@ -172,6 +178,12 @@ class GroupedList(MutableSequence):
             self._check_group_head()
             node = self._node_at(index)
             self.group_head.parent._pop_node(node)
+        
+        def __repr__(self):
+            return f"GroupView({str(self)})"
+
+        def __str__(self):
+            return str(list(self))
 
     def __init__(self, iterable: Iterable = None):
         self.clear()
@@ -666,6 +678,9 @@ class GroupedList(MutableSequence):
         self.extend(iterable)
         return self
     
+    def __repr__(self):
+        return f"GroupedList({str(self)})"
+
     def __str__(self):
         return str(self.to_nested_lists())
 

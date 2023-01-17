@@ -1011,6 +1011,22 @@ class BibleRangeList(util.GroupedList):
            Bible ranges into a new group. Each minor group-separator (`,` by default) places subsequent
            passages into the same group.
 
+            ```python
+            >>> from bibleref import *
+            >>> range_list = BibleRangeList("Mark 3:1-4:2; 5:6-8, 10; Matt 4")
+            >>> len(range_list.groups)
+            3
+            >>> range_list.groups[0]
+            GroupView([BibleRange(Mark 3-4:2)])
+            >>> range_list.groups[1]
+            GroupView([BibleRange(Mark 5:6-5:8), BibleRange(Mark 5:10)])
+            >>> range_list.groups[2]
+            GroupView([BibleRange(Matthew 4)])
+            >>> range_list.groups[1][0]
+            BibleRange(Mark 5:6-5:8)
+            >>> range_list.groups[1][1]
+            BibleRange(Mark 5:10)
+            ```
         2. From any iterable containing BibleRanges:
            `BibleRangeList([BibleRange("Mark 3:1-4:2"), BibleRange("Mark 5:6-8"),
                             BibleRange("Mark 5:10"), BibleRange("Matt 4")])`
