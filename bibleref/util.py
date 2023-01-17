@@ -7,7 +7,7 @@ from bibleref import BibleRefException
 # This linked list is derived from the implementation in the python-ranges module
 # at https://github.com/Superbird11/ranges, under the MIT Licence
 #
-class LinkedList(MutableSequence):
+class GroupedList(MutableSequence):
     '''A linked list, with the ability to also group items.
     
     A group is a view of a subset of the list. By default, all items are placed in one
@@ -24,6 +24,9 @@ class LinkedList(MutableSequence):
     
     Groups are created by calling append_group(), or append() or prepend() with new_group
     set to True.
+
+    This linked list implementation is derived from [python-ranges](https://github.com/Superbird11/ranges)
+    module, under the MIT Licence.
     '''
     class _Node:
         '''Nodes of the linked list.
@@ -33,12 +36,12 @@ class LinkedList(MutableSequence):
         '''
         def __init__(self, value, prev=None, next=None, parent=None):
             self.value = value
-            self.parent: 'LinkedList' = parent
-            self.prev: 'LinkedList._Node' = prev
-            self.next: 'LinkedList._Node' = next
+            self.parent: 'GroupedList' = parent
+            self.prev: 'GroupedList._Node' = prev
+            self.next: 'GroupedList._Node' = next
             self.is_group_head: bool = False  # True if this node is the start of a group.
-            self.prev_head: 'LinkedList._Node' = None # If this is a group head, link to next group head.
-            self.next_head: 'LinkedList._Node' = None # If this is a group head, link to prev group head.
+            self.prev_head: 'GroupedList._Node' = None # If this is a group head, link to next group head.
+            self.next_head: 'GroupedList._Node' = None # If this is a group head, link to prev group head.
 
         def clear_group_head(self):
             self.is_group_head = False
@@ -77,10 +80,10 @@ class LinkedList(MutableSequence):
         `GroupViews` collection returns each individual `GroupView`. A `GroupViews` collection can be indexed to
         return a particular `GroupView`: e.g. `group_views[2]`
         '''
-        def __init__(self, parent: 'LinkedList'):
+        def __init__(self, parent: 'GroupedList'):
             self.parent = parent
 
-        def _conform_group_index(self, group_index: int):
+        def _conform_group_index(self, group_index: int) -> int:
             ''' Check the group index is within range. If negative, convert to its
             positive equivalent. Return the resulting index.
             '''
@@ -90,7 +93,7 @@ class LinkedList(MutableSequence):
                 raise IndexError(f"Group index {group_index} out of range")
             return group_index
 
-        def _group_at(self, group_index: int):
+        def _group_at(self, group_index: int) -> 'GroupedList._Node':
             group_index = self._conform_group_index(group_index)
             group_head = self.parent._first_head
             for i in range(group_index):
@@ -101,15 +104,15 @@ class LinkedList(MutableSequence):
             return self.parent._group_count
 
         def __iter__(self):
-            '''Yields a LinkedList.Group for each group in the list.'''
+            '''Yields a `GroupedList.GroupView` for each group in the list.'''
             group_head = self.parent._first_head
             while group_head is not None:
-                yield LinkedList.GroupView(group_head)
+                yield GroupedList.GroupView(group_head)
                 group_head = group_head.next_head
 
         def __getitem__(self, group_index):
             group_head = self._group_at(group_index)
-            return LinkedList.GroupView(group_head)
+            return GroupedList.GroupView(group_head)
 
     class GroupView:
         '''A view of a group (subset) of items in the LinkedList.
@@ -125,7 +128,7 @@ class LinkedList(MutableSequence):
 
         #TODO: Implement length of the group view.
         '''
-        def __init__(self, group_head: 'LinkedList._Node'):
+        def __init__(self, group_head: 'GroupedList._Node'):
             self.group_head = group_head
 
         def _check_group_head(self):
@@ -133,7 +136,7 @@ class LinkedList(MutableSequence):
                 raise GroupViewError("Group head has been modified")
 
         def __iter__(self):
-            # Iterates over nodes in the group
+            '''Yields each item in the view.'''
             self._check_group_head()
             node = self.group_head
             yield node.value
@@ -141,7 +144,7 @@ class LinkedList(MutableSequence):
                 node = node.next
                 yield node.value
 
-        def _node_at(self, index):
+        def _node_at(self, index) -> 'GroupedList._Node':
             if index < 0:
                 raise IndexError(f"Groups don't accept negative indices")
             self._check_group_head()
@@ -172,11 +175,12 @@ class LinkedList(MutableSequence):
             self.extend(iterable)
 
     def clear(self):
-        self._first: LinkedList._Node = None          # First node
-        self._last: LinkedList._Node = None           # Last node
+        '''Removes all items from the list.'''
+        self._first: GroupedList._Node = None          # First node
+        self._last: GroupedList._Node = None           # Last node
         self._node_count: int = 0                    # Count of nodes
-        self._first_head: LinkedList._Node = None     # First node that is a group head
-        self._last_head: LinkedList._Node = None      # Last node that is a group head
+        self._first_head: GroupedList._Node = None     # First node that is a group head
+        self._last_head: GroupedList._Node = None      # Last node that is a group head
         self._group_count: int = 0                   # Count of groups
 
     def _check_type(self, value):
@@ -186,10 +190,10 @@ class LinkedList(MutableSequence):
         pass
 
     def _check_is_child(self, node: _Node):
-        if not isinstance(node, LinkedList._Node) or node.parent is not self:
+        if not isinstance(node, GroupedList._Node) or node.parent is not self:
             raise ValueError(f"List is not the parent of this node: {node}")
 
-    def _conform_index(self, index: int):
+    def _conform_index(self, index: int) -> int:
         ''' Check the index is within range. If negative, convert to its
         positive equivalent. Return the resulting index.
         '''
@@ -199,7 +203,7 @@ class LinkedList(MutableSequence):
             raise IndexError(f"List index {index} out of range")
         return index
 
-    def _node_at(self, index: int):
+    def _node_at(self, index: int) -> 'GroupedList._Node':
         index = self._conform_index(index)
         if index <= self._node_count // 2:
             # Node is closer to the start, so search from there
@@ -215,6 +219,7 @@ class LinkedList(MutableSequence):
             return node
 
     def _insert_first(self, value):
+        '''Inserts `value` as the first element of the list.'''
         self._first = self._Node(value, parent=self)
         self._last = self._first
         self._node_count += 1
@@ -222,8 +227,10 @@ class LinkedList(MutableSequence):
         self._setup_single_group()
 
     def _setup_single_group(self):
+        '''Sets up the first group of the list.
+        
+        Assumes there are no existing groups.'''
         if len(self) > 0:
-            # Assumes no other groups are set up
             self._first.is_group_head = True
             self._first.prev_head = None
             self._first.next_head = None
@@ -231,7 +238,8 @@ class LinkedList(MutableSequence):
             self._last_head = self._first
             self._group_count = 1
 
-    def _insert_before(self, node: 'LinkedList._Node', value, new_group: bool = False):
+    def _insert_before(self, node: 'GroupedList._Node', value, new_group: bool = False):
+        '''Inserts `value` in the list before `node`.'''
         self._check_is_child(node)
         inserting_first = True if node is self._first else None
         new = self._Node(value, prev=node.prev, next=node, parent=self)
@@ -257,7 +265,8 @@ class LinkedList(MutableSequence):
                 # New node will automatically become part of an existing group
                 pass
 
-    def _insert_after(self, node: 'LinkedList._Node', value, new_group: bool = False):
+    def _insert_after(self, node: 'GroupedList._Node', value, new_group: bool = False):
+        '''Inserts `value` in the list after `node`.'''
         self._check_is_child(node)
         inserting_last = True if node is self._last else None
         new = self._Node(value, prev=node, next=node.next, parent=self)
@@ -271,7 +280,7 @@ class LinkedList(MutableSequence):
         if new_group:
             self._insert_new_group_at_node(new)
 
-    def _insert_new_group_before_head(self, node: 'LinkedList._Node', keep_existing_head: bool = False):
+    def _insert_new_group_before_head(self, node: 'GroupedList._Node', keep_existing_head: bool = False):
         old_head = node.next
         node.is_group_head = True
         node.prev_head = old_head.prev_head
@@ -292,7 +301,7 @@ class LinkedList(MutableSequence):
         if self._first_head is old_head:
             self._first_head = node
 
-    def _insert_new_group_at_node(self, node: 'LinkedList._Node'):
+    def _insert_new_group_at_node(self, node: 'GroupedList._Node'):
         node.is_group_head = True
         prev_group_head = self._find_group_head(node.prev)
         node.prev_head = prev_group_head
@@ -304,12 +313,14 @@ class LinkedList(MutableSequence):
             self._last_head = node
         self._group_count += 1
 
-    def _find_group_head(self, node: 'LinkedList._Node'):
+    def _find_group_head(self, node: 'GroupedList._Node') -> 'GroupedList._Node':
+        '''Search for the next group head, beginning at `node`, and returning the group head node.'''
         while not node.is_group_head:
             node = node.prev
         return node
 
-    def _pop_node(self, node: 'LinkedList._Node'):
+    def _pop_node(self, node: 'GroupedList._Node'):
+        '''Remove `node` from this list, and returns the node's value.'''
         self._check_is_child(node)
         if self._node_count == 1:
             # pop only element
@@ -361,29 +372,35 @@ class LinkedList(MutableSequence):
 
         return node.value
 
-    def _pop_before(self, node: 'LinkedList._Node'):
+    def _pop_before(self, node: 'GroupedList._Node'):
+        '''Remove the node before this `node` from this list, and return's the value of the popped node.'''
         self._check_is_child(node)
         if node is self._first:
             raise IndexError("Can't pop before first node")
         return self._pop_node(node.prev)
 
-    def _pop_after(self, node: 'LinkedList._Node'):
+    def _pop_after(self, node: 'GroupedList._Node'):
+        '''Remove the node after this `node` from this list, and returns the value of the popped node.'''
         self._check_is_child(node)
         if node is self._last:
             raise IndexError("Can't pop after last node")
         return self._pop_node(node.next)
 
     def _node_iter(self):
+        '''Return an iterator that yields the nodes in this list.'''
         node = self._first
         while node is not None:
             yield node
             node = node.next
 
     @property
-    def groups(self):
-        return LinkedList.GroupViews(self)
+    def groups(self) -> GroupViews:
+        '''Returns the `GroupViews` collection for this list.'''
+        return GroupedList.GroupViews(self)
     
     def to_nested_lists(self):
+        '''Returns this list represented as a list of groups, which are in turn a list of the group's
+        values.'''
         outer_list = []
         for group in self.groups:
             inner_list = []
@@ -393,6 +410,8 @@ class LinkedList(MutableSequence):
         return outer_list
 
     def index(self, value, min_index: int = None, limit_index: int =None):
+        '''Returns the index of the first occurrence of `value` in the list, at or after `min_index`
+        and before `limit_index`.'''
         if min_index is None:
             min_index = 0
         if limit_index is None:
@@ -402,7 +421,7 @@ class LinkedList(MutableSequence):
         limit_index = self._conform_index(limit_index-1) + 1
         if min_index > limit_index: # Swap
             (limit_index, min_index) = (min_index, limit_index)
-        node: LinkedList._Node = self._first
+        node: GroupedList._Node = self._first
         for index in range(limit_index):
             if node.value == value and index >= min_index:
                 return index
@@ -411,6 +430,7 @@ class LinkedList(MutableSequence):
         raise ValueError(f"Value {value} not found in list")        
             
     def count(self, value):
+        '''Returns the total number of occurrences of `value` in this list.'''
         self._check_type(value)
         count = 0
         for node_value in self:
@@ -419,6 +439,9 @@ class LinkedList(MutableSequence):
         return count         
 
     def prepend(self, value, new_group: bool = False):
+        '''Inserts `value` at the start of this list.
+        
+        If `new_group` is true, the `value` forms a new group.'''
         self._check_type(value)
         if self._node_count == 0:
             self._insert_first(value)
@@ -426,6 +449,9 @@ class LinkedList(MutableSequence):
             self._insert_before(self._first, value, new_group)
 
     def append(self, value, new_group: bool = False):
+        '''Inserts `value` at the end of this list.
+        
+        If `new_group` is true, the `value` forms a new group.'''
         self._check_type(value)
         if self._node_count == 0:
             self._insert_first(value)
@@ -433,16 +459,21 @@ class LinkedList(MutableSequence):
             self._insert_after(self._last, value, new_group)
                
     def append_group(self, iterable):
+        '''Appends each element of `iterable` to the end of this list.
+        
+        The new elements all form a single new group.'''
         is_first_item = True
         for item in iterable:
             self.append(item, new_group=is_first_item)
             is_first_item = False
 
     def extend(self, iterable):
+        '''Appends each element of `iterable` to the end of this list.'''
         for item in iterable:
             self.append(item)
 
     def insert(self, index: int, value):
+        '''Inserts `value` into this list at the given `index`.'''
         self._check_type(value)
         if index == 0:
             self.prepend(value)
@@ -452,12 +483,14 @@ class LinkedList(MutableSequence):
             self._insert_before(self._node_at(index), value)
 
     def pop(self, index: int = None):
+        '''Removes the item at the given `index`, and returns its value.'''
         if index is None:
             index = self._node_count - 1
         index = self._conform_index(index)
         return self._pop_node(self._node_at(index))
 
     def remove(self, value):
+        '''Removes the first occurence of the given `value` from this list.'''
         self._check_type(value)
         node = self._first
         while node is not None:
@@ -469,7 +502,9 @@ class LinkedList(MutableSequence):
         raise ValueError(f"Value {value} not found in list")        
 
     def reverse(self):
-        '''For simplicity, this also clears all existing groups and places all elements
+        '''Reverses the elements of this list in-place.
+        
+        For simplicity, this also clears all existing groups and places all elements
         in one new group.
         '''
         if self._node_count == 0:
@@ -488,13 +523,13 @@ class LinkedList(MutableSequence):
     #
 
     def sort(self):
-        '''Sorts the list in place. All groups are removed and replaced with a single
+        '''Sorts this list in-place. All existing groups are cleared and replaced with a single
         new group.'''
         (self._first, self._last) = self._merge_sort(self._first, clear_group_heads=True)
         self._setup_single_group()
 
-    def _merge_sort(self, first_node: 'LinkedList._Node', clear_group_heads=False):
-        '''Sorts a list beginning with first_node, and returns a tuple of (new_first_node, new_last_node).
+    def _merge_sort(self, first_node: 'GroupedList._Node', clear_group_heads=False):
+        '''Sorts a list beginning with `first_node`, and returns a tuple of (new_first_node, new_last_node).
         '''
         if first_node is None or first_node.next is None:
             return (first_node, first_node)
@@ -508,7 +543,7 @@ class LinkedList(MutableSequence):
                                                                first_node_B, last_node_B)
         return (new_first_node, new_last_node)
 
-    def _split(self, first_node: 'LinkedList._Node', clear_group_heads=False):
+    def _split(self, first_node: 'GroupedList._Node', clear_group_heads=False):
         '''Given the first node of a sublist, splits the list in half and returns the first
         node of the second half.'''
         slow_node = first_node
@@ -531,8 +566,8 @@ class LinkedList(MutableSequence):
         first_node_B.prev = None
         return first_node_B
 
-    def _merge_sublists(self, first_node_A: 'LinkedList._Node', last_node_A: 'LinkedList._Node',
-                              first_node_B: 'LinkedList._Node', last_node_B: 'LinkedList._Node'):
+    def _merge_sublists(self, first_node_A: 'GroupedList._Node', last_node_A: 'GroupedList._Node',
+                              first_node_B: 'GroupedList._Node', last_node_B: 'GroupedList._Node'):
         '''Combines two sublists (A and B) into a single sorted list. Returns a tuple of
         (new_first_node, new_last_node)'''
         if first_node_A is None:
@@ -571,18 +606,21 @@ class LinkedList(MutableSequence):
     def __eq__(self, other) -> bool:
         return self.equals(other)
 
-    def equals(self, other, compare_groups=True) -> bool:
-        '''If compare_groups is True, the groups of the two lists must match. Otherwise,
-        only the list items must match.'''
-        if not isinstance(other, LinkedList):
-            return False
-        if len(self) != len(other):
+    def equals(self, other_iterable, compare_groups=True) -> bool:
+        '''Returns `True` if each element of this list equals the corresponding element in `other_iterable`,
+        otherwise `False`.
+        
+        If `compare_groups` is `True`, `other_iterable` must also be a `GroupedList` and the groups of the
+        two lists must match, otherwise returns `False`.'''
+        if len(self) != len(other_iterable):
             return False
         if compare_groups:
-            if self._group_count != other._group_count:
+            if not isinstance(other_iterable, GroupedList):
+                return False
+            if self._group_count != other_iterable._group_count:
                 return False
             self_groups = list(self.groups)
-            other_groups = list(other.groups)
+            other_groups = list(other_iterable.groups)
             for i in range(len(self_groups)):
                 try:
                     for self_item, other_item in zip(list(self_groups[i]), list(other_groups[i]), strict=True):
@@ -591,7 +629,7 @@ class LinkedList(MutableSequence):
                 except ValueError:
                     return False
         else:
-            for self_item, other_item in zip(self, other):
+            for self_item, other_item in zip(self, other_iterable):
                 if self_item != other_item:
                     return False
         return True

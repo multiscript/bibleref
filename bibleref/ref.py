@@ -996,7 +996,7 @@ class BibleRange:
             return result.strip()
 
 
-class BibleRangeList(util.LinkedList):
+class BibleRangeList(util.GroupedList):
     '''A list of `BibleRange` elements, allowing for grouping and set-style operations.
 
     Currently implemented as a doubly-linked list, though this should be treated
