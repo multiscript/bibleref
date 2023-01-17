@@ -999,13 +999,18 @@ class BibleRange:
 class BibleRangeList(util.GroupedList):
     '''A list of `BibleRange` elements, allowing for grouping and set-style operations.
 
-    Currently implemented as a doubly-linked list, though this should be treated
-    as an implementation detail, and not relied upon.
+    Currently the grouping functionality is provided via a superclass (`bibleref.util.GroupedList`), though this
+    should be considered an implementation detail. This also means the list is implemented as a doubly-linked list,
+    though this should also be treated as an implementation detail.
     '''
     def __init__(self, *args, flags: BibleFlag = None):
         '''A BibleRange can be constructed in any of the following ways:
 
         1. From a single string: `BibleRangeList("Mark 3:1-4:2; 5:6-8, 10; Matt 4")`
+
+           When parsing a string, each major group-separator (`;` by default) places subsequent
+           Bible ranges into a new group. Each minor group-separator (`,` by default) places subsequent
+           passages into the same group.
 
         2. From any iterable containing BibleRanges:
            `BibleRangeList([BibleRange("Mark 3:1-4:2"), BibleRange("Mark 5:6-8"),
@@ -1029,6 +1034,11 @@ class BibleRangeList(util.GroupedList):
                 super().__init__(*args)
         else:
             super().__init__(args)
+
+    @property
+    def groups(self) -> util.GroupedList.GroupViews:
+        '''Returns the `bibleref.util.GroupedList.GroupViews` collection for this list.'''
+        return super().groups    
 
     def _check_type(self, value):
         if not isinstance(value, BibleRange):
@@ -1380,6 +1390,50 @@ class BibleRangeList(util.GroupedList):
         
         # We've completed all groups
         return result_str
+
+    #
+    # We wrap our public superclass methods, so that pdoc auto-generates our documentation, and also to emphasise
+    # that the implementation could change.
+    #
+
+    def index(self, value, min_index: int = None, limit_index: int =None):
+        return super().index(value, min_index, limit_index)
+
+    def count(self, value):
+        return super().count(value)
+
+    def prepend(self, value, new_group: bool = False):
+        return super().prepend(value, new_group)
+    
+    def append(self, value, new_group: bool = False):
+        return super().append(value, new_group)
+
+    def append_group(self, iterable):
+        return super().append_group(iterable)
+
+    def extend(self, iterable):
+        return super().extend(iterable)
+    
+    def insert(self, index: int, value):
+        return super().insert(index, value)
+
+    def pop(self, index: int = None):
+        return super().pop(index)
+
+    def remove(self, value):
+        return super().remove(value)
+
+    def clear(self):
+        return super().clear()
+    
+    def reverse(self):
+        return super().reverse()
+    
+    def sort(self):
+        return super().sort()
+
+    def equals(self, other_iterable, compare_groups=True) -> bool:
+        return super().equals(other_iterable, compare_groups)
 
 
 BibleRef = Union[BibleVerse, BibleRange, BibleRangeList]

@@ -77,7 +77,8 @@ class GroupedList(MutableSequence):
         '''A read-only collection of `GroupView` objects.
         
         Iterating over a`GroupViews` collection returns each individual `GroupView`. `len(group_views)`
-        gives its length. The collection can be indexed to return a particular `GroupView`: e.g. `group_views[2]`
+        gives the collection length. The collection can be indexed to return a particular
+        `GroupView`: e.g. `group_views[2]`
         '''
         def __init__(self, parent: 'GroupedList'):
             self.parent = parent
