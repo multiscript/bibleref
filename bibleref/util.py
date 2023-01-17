@@ -8,7 +8,7 @@ from bibleref import BibleRefException
 # at https://github.com/Superbird11/ranges, under the MIT Licence
 #
 class GroupedList(MutableSequence):
-    '''A linked list, with the ability to also group items.
+    '''A linked-list, with the ability to also group items.
     
     A group is a view of a subset of the list. By default, all items are placed in one
     group. All items belong to one group only, such that the collection of groups spans
@@ -25,7 +25,7 @@ class GroupedList(MutableSequence):
     Groups are created by calling append_group(), or append() or prepend() with new_group
     set to True.
 
-    This linked list implementation is derived from [python-ranges](https://github.com/Superbird11/ranges)
+    This linked-list implementation is derived from [python-ranges](https://github.com/Superbird11/ranges)
     module, under the MIT Licence.
     '''
     class _Node:
@@ -76,9 +76,8 @@ class GroupedList(MutableSequence):
     class GroupViews:
         '''A read-only collection of `GroupView` objects.
         
-        The number of `GroupView` objects in the collection is returned by `len(group_views)`. Iterating over a
-        `GroupViews` collection returns each individual `GroupView`. A `GroupViews` collection can be indexed to
-        return a particular `GroupView`: e.g. `group_views[2]`
+        Iterating over a`GroupViews` collection returns each individual `GroupView`. `len(group_views)`
+        gives its length. The collection can be indexed to return a particular `GroupView`: e.g. `group_views[2]`
         '''
         def __init__(self, parent: 'GroupedList'):
             self.parent = parent
@@ -125,8 +124,6 @@ class GroupedList(MutableSequence):
         `group_view[2] = value`
 
         `del group_view[2]`
-
-        #TODO: Implement length of the group view.
         '''
         def __init__(self, group_head: 'GroupedList._Node'):
             self.group_head = group_head
@@ -134,6 +131,12 @@ class GroupedList(MutableSequence):
         def _check_group_head(self):
             if not self.group_head.is_group_head or self.group_head.parent is None:
                 raise GroupViewError("Group head has been modified")
+
+        def __len__(self):
+            count = 0
+            for item in self:
+                count += 1
+            return count
 
         def __iter__(self):
             '''Yields each item in the view.'''
@@ -173,15 +176,6 @@ class GroupedList(MutableSequence):
         self.clear()
         if iterable is not None:
             self.extend(iterable)
-
-    def clear(self):
-        '''Removes all items from the list.'''
-        self._first: GroupedList._Node = None          # First node
-        self._last: GroupedList._Node = None           # Last node
-        self._node_count: int = 0                    # Count of nodes
-        self._first_head: GroupedList._Node = None     # First node that is a group head
-        self._last_head: GroupedList._Node = None      # Last node that is a group head
-        self._group_count: int = 0                   # Count of groups
 
     def _check_type(self, value):
         '''Subclasses can override to raise an exception if the provided
@@ -399,8 +393,8 @@ class GroupedList(MutableSequence):
         return GroupedList.GroupViews(self)
     
     def to_nested_lists(self):
-        '''Returns this list represented as a list of groups, which are in turn a list of the group's
-        values.'''
+        '''Returns this `GroupedList` represented as a regular Python list of groups, which are in turn a regular
+        list of the group's values.'''
         outer_list = []
         for group in self.groups:
             inner_list = []
@@ -500,6 +494,15 @@ class GroupedList(MutableSequence):
             node = node.next
         # At this point item not found
         raise ValueError(f"Value {value} not found in list")        
+
+    def clear(self):
+        '''Removes all items from the list.'''
+        self._first: GroupedList._Node = None          # First node
+        self._last: GroupedList._Node = None           # Last node
+        self._node_count: int = 0                    # Count of nodes
+        self._first_head: GroupedList._Node = None     # First node that is a group head
+        self._last_head: GroupedList._Node = None      # Last node that is a group head
+        self._group_count: int = 0                   # Count of groups
 
     def reverse(self):
         '''Reverses the elements of this list in-place.
