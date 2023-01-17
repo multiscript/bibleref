@@ -999,9 +999,8 @@ class BibleRange:
 class BibleRangeList(util.GroupedList):
     '''A list of `BibleRange` elements, allowing for grouping and set-style operations.
 
-    Currently the grouping functionality is provided via a superclass (`bibleref.util.GroupedList`), though this
-    should be considered an implementation detail. This also means the list is implemented as a doubly-linked list,
-    though this should also be treated as an implementation detail.
+    Currently the grouping functionality is provided via a superclass (`bibleref.util.GroupedList`, a doubly-linked
+    list), though this should be considered an implementation detail.
     '''
     def __init__(self, *args, flags: BibleFlag = None):
         '''A BibleRange can be constructed in any of the following ways:
