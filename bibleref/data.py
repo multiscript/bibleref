@@ -15,13 +15,13 @@ minor_list_sep      = ","
 
 Separates Bible ranges in the same group. Usually separates ranges in the same chapter.'''
 
-verse_sep_std  = ":"
+verse_sep_std       = ":"
 '''Standard verse separator character, used to separate chapter and verse numbers'''
 
-verse_sep_alt   = "."
+verse_sep_alt       = "."
 '''Alternate verse separator character, used to separate chapter and verse numbers'''
 
-book_order = []
+book_order          = []
 '''
 List of Bible books in their sort order.
 '''
@@ -132,7 +132,7 @@ default_name_data = {
     ref.BibleBook.Joel:     ("Joel",    "Joel",             3,   ["Jl"]),
     ref.BibleBook.Amos:     ("Amos",    "Amos",             2,   []),
     ref.BibleBook.Obad:     ("Obad",    "Obadiah",          2,   ["Obd"]),
-    ref.BibleBook.Jonah:    ("Jonah",   "Jonah",            3,   ["Jnh"]),
+    ref.BibleBook.Jonah:    ("Jona",    "Jonah",            3,   ["Jnh"]),
     ref.BibleBook.Mic:      ("Mic",     "Micah",            2,   ["Mc"]),
     ref.BibleBook.Nah:      ("Nah",     "Nahum",            2,   []),
     ref.BibleBook.Hab:      ("Hab",     "Habakkuk",         3,   ["Hbk"]),
@@ -152,14 +152,14 @@ default_name_data = {
     ref.BibleBook.Eph:      ("Eph",     "Ephesians",        2,   []),
     ref.BibleBook.Phil:     ("Phil",    "Philippians",      4,   ["Pp", "Php"]), # Phil acceptable abbrev
     ref.BibleBook.Col:      ("Col",     "Colossians",       2,   []),
-    ref.BibleBook.ITh:   ("1Thess",  "1 Thessalonians",  2,   ["1 Ths"]),
-    ref.BibleBook.IITh:  ("2Thess",  "2 Thessalonians",  2,   ["2 Ths"]),
+    ref.BibleBook.ITh:      ("1Th",     "1 Thessalonians",  2,   ["1 Ths"]),
+    ref.BibleBook.IITh:     ("2Th",     "2 Thessalonians",  2,   ["2 Ths"]),
     ref.BibleBook.ITim:     ("1Tim",    "1 Timothy",        2,   []),
     ref.BibleBook.IITim:    ("2Tim",    "2 Timothy",        2,   []),
-    ref.BibleBook.Titus:    ("Titus",   "Titus",            2,   []),
+    ref.BibleBook.Titus:    ("Tit",     "Titus",            2,   []),
     ref.BibleBook.Phlm:     ("Phlm",    "Philemon",         5,   ["Pm", "Phm", "Phlm"]), # Phil not acceptable abbrev
     ref.BibleBook.Heb:      ("Heb",     "Hebrews",          2,   []),
-    ref.BibleBook.Jam:    ("James",   "James",            2,   ["Jm", "Jas"]),
+    ref.BibleBook.Jam:      ("Jam",     "James",            2,   ["Jm", "Jas"]),
     ref.BibleBook.IPet:     ("1Pet",    "1 Peter",          1,   ["1 Pt"]),
     ref.BibleBook.IIPet:    ("2Pet",    "2 Peter",          1,   ["2 Pt"]),
     ref.BibleBook.IJn:      ("1Jn",     "1 John",           1,   ["1 Jn", "1 Jhn"]),
