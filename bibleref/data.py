@@ -169,8 +169,8 @@ default_name_data = {
     ref.BibleBook.Rev:      ("Rev",     "Revelation",       2,   ["The Revelation", "The Revelation to John"])
 }
 '''
-Keys: Bible Book
-Values: (Abbrev title, Full title, Min unique chars (excl. numbers), List of extra recognised abbrevs)
+- Keys: Bible Book
+- Values: (Abbrev title, Full title, Min unique chars (excl. numbers), List of extra recognised abbrevs)
 
 The min unique chars is the minimum number of characters in the full title (after any initial "1 ",
 "2 " or "3 " has been stripped out) needed to uniquely identify the book.
@@ -246,8 +246,8 @@ default_max_verses = {
     ref.BibleBook.Rev:      [20, 29, 22, 11, 14, 17, 17, 13, 21, 11, 19, 17, 18, 20, 8, 21, 18, 24, 21, 15, 27, 21]
 }
 '''
-Keys: Bible books
-Values: List of max verse number for each chapter (ascending by chapter). Len of list is number of chapters.
+- Keys: Bible books
+- Values: List of max verse number for each chapter (ascending by chapter). Len of list is number of chapters.
 '''
 
 
@@ -260,6 +260,6 @@ default_verse_0s = {
                         143, 144, 145])
 }
 '''
-Keys: Bible books
-Values: Set of chapter numbers (1-indexed) that can begin with a verse 0.
+- Keys: Bible books
+- Values: Set of chapter numbers (1-indexed) that can begin with a verse 0.
 '''

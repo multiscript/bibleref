@@ -1538,11 +1538,13 @@ def set_regexes(name_data_dict: dict):
             book.regex = re.compile(total_pattern, re.IGNORECASE)
 
 def set_book_order(book_order: list):
+    # TODO: Handle books not in book_order
     data.book_order = book_order
     for i in range(len(book_order)):
         book_order[i].order = i
 
 def set_max_verses(max_verses: dict):
+    # TODO: Handle books not in max_verses
     for book, max_verse_list in max_verses.items():
         book._max_verses = max_verse_list
 
