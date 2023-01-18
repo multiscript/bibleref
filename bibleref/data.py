@@ -2,95 +2,32 @@
 from . import ref
 
 
-RANGE_SEP           = "-"
-'''RANGE_SEP'''
-MAJOR_LIST_SEP      = ";"
-'''MAJOR_LIST_SEP'''
-MINOR_LIST_SEP      = ","
-'''MINOR_LIST_SEP'''
-VERSE_SEP_STANDARD  = ":"
-'''VERSE_SEP_STANDARD'''
-VERSE_SEP_ALT   = "."
-'''VERSE_SEP_ALT'''
+range_sep           = "-"
+'''Range separator character used to separate start and end of a Bible range.'''
 
-name_data = {
-    # Keys: Bible Book
-    # Values: (Abbrev title, Full title, Min unique chars (excl. numbers), List of extra recognised abbrevs)
-    #
-    # The min unique chars is the minimum number of characters in the full title (after any initial "1 ",
-    # "2 " or "3 " has been stripped out) needed to uniquely identify the book.
-    #
-    ref.BibleBook.Gen:      ("Gen",     "Genesis",          2,   ["Gn"]),
-    ref.BibleBook.Exod:     ("Exod",    "Exodus",           2,   []),
-    ref.BibleBook.Lev:      ("Lev",     "Leviticus",        2,   ["Lv"]),
-    ref.BibleBook.Num:      ("Num",     "Numbers",          2,   ["Nm", "Nb"]),
-    ref.BibleBook.Deut:     ("Deut",    "Deuteronomy",      2,   ["Dt"]),
-    ref.BibleBook.Josh:     ("Josh",    "Joshua",           3,   ["Js", "Jsh"]),
-    ref.BibleBook.Judg:     ("Judg",    "Judges",           4,   ["Jg", "Jdg", "Jdgs"]),
-    ref.BibleBook.Ruth:     ("Ruth",    "Ruth",             2,   ["Ruth"]),
-    ref.BibleBook.ISam:     ("1Sam",    "1 Samuel",         1,   ["1 Sm"]),
-    ref.BibleBook.IISam:    ("2Sam",    "2 Samuel",         1,   ["2 Sm"]),
-    ref.BibleBook.IKgs:     ("1Kgs",    "1 Kings",          1,   ["1 Kg", "1 Kgs"]),
-    ref.BibleBook.IIKgs:    ("2Kgs",    "2 Kings",          1,   ["2 Kg", "2 Kgs"]),
-    ref.BibleBook.IChr:     ("1Chr",    "1 Chronicles",     2,   []),
-    ref.BibleBook.IIChr:    ("2Chr",    "2 Chronicles",     2,   []),
-    ref.BibleBook.Ezra:     ("Ezra",    "Ezra",             3,   []),
-    ref.BibleBook.Neh:      ("Neh",     "Nehemiah",         2,   []),
-    ref.BibleBook.Esth:     ("Esth",    "Esther",           2,   []),
-    ref.BibleBook.Job:      ("Job",     "Job",              3,   ["Jb"]),
-    ref.BibleBook.Psa:      ("Psa",     "Psalms",           2,   ["Pslm", "Psm", "Pss"]),
-    ref.BibleBook.Prov:     ("Prov",    "Proverbs",         2,   ["Prv"]),
-    ref.BibleBook.Eccl:     ("Eccl",    "Ecclesiastes",     2,   []),
-    ref.BibleBook.Song:     ("Song",    "Song of Songs",    2,   ["Song of Sol", "Song of Solo", "Song of Solomon", "SOS"]),
-    ref.BibleBook.Isa:      ("Isa",     "Isaiah",           2,   []),
-    ref.BibleBook.Jer:      ("Jer",     "Jeremiah",         2,   ["Jr"]),
-    ref.BibleBook.Lam:      ("Lam",     "Lamentations",     2,   []),
-    ref.BibleBook.Ezek:     ("Ezek",    "Ezekiel",          3,   ["Ezk"]),
-    ref.BibleBook.Dan:      ("Dan",     "Daniel",           2,   ["Dn"]),
-    ref.BibleBook.Hos:      ("Hos",     "Hosea",            2,   []),
-    ref.BibleBook.Joel:     ("Joel",    "Joel",             3,   ["Jl"]),
-    ref.BibleBook.Amos:     ("Amos",    "Amos",             2,   []),
-    ref.BibleBook.Obad:     ("Obad",    "Obadiah",          2,   ["Obd"]),
-    ref.BibleBook.Jonah:    ("Jonah",   "Jonah",            3,   ["Jnh"]),
-    ref.BibleBook.Mic:      ("Mic",     "Micah",            2,   ["Mc"]),
-    ref.BibleBook.Nah:      ("Nah",     "Nahum",            2,   []),
-    ref.BibleBook.Hab:      ("Hab",     "Habakkuk",         3,   ["Hbk"]),
-    ref.BibleBook.Zeph:     ("Zeph",    "Zephaniah",        3,   ["Zp", "Zph"]),
-    ref.BibleBook.Hag:      ("Hag",     "Haggai",           3,   ["Hg"]),
-    ref.BibleBook.Zech:     ("Zech",    "Zechariah",        3,   ["Zc"]),
-    ref.BibleBook.Mal:      ("Mal",     "Malachi",          3,   ["Ml"]),
-    ref.BibleBook.Matt:     ("Matt",    "Matthew",          3,   ["Mt"]),
-    ref.BibleBook.Mark:     ("Mark",    "Mark",             3,   ["Mk", "Mrk"]),
-    ref.BibleBook.Luke:     ("Luke",    "Luke",             2,   ["Lk"]),
-    ref.BibleBook.John:     ("John",    "John",             3,   ["Jn", "Jhn"]),
-    ref.BibleBook.Acts:     ("Acts",    "Acts",             2,   []),
-    ref.BibleBook.Rom:      ("Rom",     "Romans",           2,   ["Rm"]),
-    ref.BibleBook.ICor:     ("1Cor",    "1 Corinthians",    2,   []),
-    ref.BibleBook.IICor:    ("2Cor",    "2 Corinthians",    2,   []),
-    ref.BibleBook.Gal:      ("Gal",     "Galatians",        2,   []),
-    ref.BibleBook.Eph:      ("Eph",     "Ephesians",        2,   []),
-    ref.BibleBook.Phil:     ("Phil",    "Philippians",      4,   ["Pp", "Php"]), # Phil acceptable abbrev
-    ref.BibleBook.Col:      ("Col",     "Colossians",       2,   []),
-    ref.BibleBook.ITh:   ("1Thess",  "1 Thessalonians",  2,   ["1 Ths"]),
-    ref.BibleBook.IITh:  ("2Thess",  "2 Thessalonians",  2,   ["2 Ths"]),
-    ref.BibleBook.ITim:     ("1Tim",    "1 Timothy",        2,   []),
-    ref.BibleBook.IITim:    ("2Tim",    "2 Timothy",        2,   []),
-    ref.BibleBook.Titus:    ("Titus",   "Titus",            2,   []),
-    ref.BibleBook.Phlm:     ("Phlm",    "Philemon",         5,   ["Pm", "Phm", "Phlm"]), # Phil not acceptable abbrev
-    ref.BibleBook.Heb:      ("Heb",     "Hebrews",          2,   []),
-    ref.BibleBook.Jam:    ("James",   "James",            2,   ["Jm", "Jas"]),
-    ref.BibleBook.IPet:     ("1Pet",    "1 Peter",          1,   ["1 Pt"]),
-    ref.BibleBook.IIPet:    ("2Pet",    "2 Peter",          1,   ["2 Pt"]),
-    ref.BibleBook.IJn:      ("1Jn",     "1 John",           1,   ["1 Jn", "1 Jhn"]),
-    ref.BibleBook.IIJn:     ("2Jn",     "2 John",           1,   ["2 Jn", "2 Jhn"]),
-    ref.BibleBook.IIIJn:    ("3Jn",     "3 John",           1,   ["3 Jn", "3 Jhn"]),
-    ref.BibleBook.Jude:     ("Jude",    "Jude",             4,   []),
-    ref.BibleBook.Rev:      ("Rev",     "Revelation",       2,   ["The Revelation", "The Revelation to John"])
-}
-'''name_data'''
+major_list_sep      = ";"
+'''Major list separator character.
 
-order = [
-    # List of Bible books in their sort order
+Separates Bible ranges in different groups. Usually separates ranges in different chapters.'''
+
+minor_list_sep      = ","
+'''Minor list separator character.
+
+Separates Bible ranges in the same group. Usually separates ranges in the same chapter.'''
+
+verse_sep_standard  = ":"
+'''Standard verse separator character, used to separate chapter and verse numbers'''
+
+verse_sep_alt   = "."
+'''Alternate verse separator character, used to separate chapter and verse numbers'''
+
+book_order = []
+'''
+List of Bible books in their sort order.
+'''
+
+
+default_book_order = [
     ref.BibleBook.Gen,
     ref.BibleBook.Exod,
     ref.BibleBook.Lev,
@@ -158,11 +95,89 @@ order = [
     ref.BibleBook.Jude,
     ref.BibleBook.Rev
 ]
-'''order'''
+'''
+Default list of Bible books in their sort order.
+'''
 
-max_verses = {
-    # Keys: Bible books
-    # Values: List of max verse number for each chapter (ascending by chapter). Len of list is number of chapters.
+
+default_name_data = {
+    ref.BibleBook.Gen:      ("Gen",     "Genesis",          2,   ["Gn"]),
+    ref.BibleBook.Exod:     ("Exod",    "Exodus",           2,   []),
+    ref.BibleBook.Lev:      ("Lev",     "Leviticus",        2,   ["Lv"]),
+    ref.BibleBook.Num:      ("Num",     "Numbers",          2,   ["Nm", "Nb"]),
+    ref.BibleBook.Deut:     ("Deut",    "Deuteronomy",      2,   ["Dt"]),
+    ref.BibleBook.Josh:     ("Josh",    "Joshua",           3,   ["Js", "Jsh"]),
+    ref.BibleBook.Judg:     ("Judg",    "Judges",           4,   ["Jg", "Jdg", "Jdgs"]),
+    ref.BibleBook.Ruth:     ("Ruth",    "Ruth",             2,   ["Ruth"]),
+    ref.BibleBook.ISam:     ("1Sam",    "1 Samuel",         1,   ["1 Sm"]),
+    ref.BibleBook.IISam:    ("2Sam",    "2 Samuel",         1,   ["2 Sm"]),
+    ref.BibleBook.IKgs:     ("1Kgs",    "1 Kings",          1,   ["1 Kg", "1 Kgs"]),
+    ref.BibleBook.IIKgs:    ("2Kgs",    "2 Kings",          1,   ["2 Kg", "2 Kgs"]),
+    ref.BibleBook.IChr:     ("1Chr",    "1 Chronicles",     2,   []),
+    ref.BibleBook.IIChr:    ("2Chr",    "2 Chronicles",     2,   []),
+    ref.BibleBook.Ezra:     ("Ezra",    "Ezra",             3,   []),
+    ref.BibleBook.Neh:      ("Neh",     "Nehemiah",         2,   []),
+    ref.BibleBook.Esth:     ("Esth",    "Esther",           2,   []),
+    ref.BibleBook.Job:      ("Job",     "Job",              3,   ["Jb"]),
+    ref.BibleBook.Psa:      ("Psa",     "Psalms",           2,   ["Pslm", "Psm", "Pss"]),
+    ref.BibleBook.Prov:     ("Prov",    "Proverbs",         2,   ["Prv"]),
+    ref.BibleBook.Eccl:     ("Eccl",    "Ecclesiastes",     2,   []),
+    ref.BibleBook.Song:     ("Song",    "Song of Songs",    2,   ["Song of Sol", "Song of Solo", "Song of Solomon", "SOS"]),
+    ref.BibleBook.Isa:      ("Isa",     "Isaiah",           2,   []),
+    ref.BibleBook.Jer:      ("Jer",     "Jeremiah",         2,   ["Jr"]),
+    ref.BibleBook.Lam:      ("Lam",     "Lamentations",     2,   []),
+    ref.BibleBook.Ezek:     ("Ezek",    "Ezekiel",          3,   ["Ezk"]),
+    ref.BibleBook.Dan:      ("Dan",     "Daniel",           2,   ["Dn"]),
+    ref.BibleBook.Hos:      ("Hos",     "Hosea",            2,   []),
+    ref.BibleBook.Joel:     ("Joel",    "Joel",             3,   ["Jl"]),
+    ref.BibleBook.Amos:     ("Amos",    "Amos",             2,   []),
+    ref.BibleBook.Obad:     ("Obad",    "Obadiah",          2,   ["Obd"]),
+    ref.BibleBook.Jonah:    ("Jonah",   "Jonah",            3,   ["Jnh"]),
+    ref.BibleBook.Mic:      ("Mic",     "Micah",            2,   ["Mc"]),
+    ref.BibleBook.Nah:      ("Nah",     "Nahum",            2,   []),
+    ref.BibleBook.Hab:      ("Hab",     "Habakkuk",         3,   ["Hbk"]),
+    ref.BibleBook.Zeph:     ("Zeph",    "Zephaniah",        3,   ["Zp", "Zph"]),
+    ref.BibleBook.Hag:      ("Hag",     "Haggai",           3,   ["Hg"]),
+    ref.BibleBook.Zech:     ("Zech",    "Zechariah",        3,   ["Zc"]),
+    ref.BibleBook.Mal:      ("Mal",     "Malachi",          3,   ["Ml"]),
+    ref.BibleBook.Matt:     ("Matt",    "Matthew",          3,   ["Mt"]),
+    ref.BibleBook.Mark:     ("Mark",    "Mark",             3,   ["Mk", "Mrk"]),
+    ref.BibleBook.Luke:     ("Luke",    "Luke",             2,   ["Lk"]),
+    ref.BibleBook.John:     ("John",    "John",             3,   ["Jn", "Jhn"]),
+    ref.BibleBook.Acts:     ("Acts",    "Acts",             2,   []),
+    ref.BibleBook.Rom:      ("Rom",     "Romans",           2,   ["Rm"]),
+    ref.BibleBook.ICor:     ("1Cor",    "1 Corinthians",    2,   []),
+    ref.BibleBook.IICor:    ("2Cor",    "2 Corinthians",    2,   []),
+    ref.BibleBook.Gal:      ("Gal",     "Galatians",        2,   []),
+    ref.BibleBook.Eph:      ("Eph",     "Ephesians",        2,   []),
+    ref.BibleBook.Phil:     ("Phil",    "Philippians",      4,   ["Pp", "Php"]), # Phil acceptable abbrev
+    ref.BibleBook.Col:      ("Col",     "Colossians",       2,   []),
+    ref.BibleBook.ITh:   ("1Thess",  "1 Thessalonians",  2,   ["1 Ths"]),
+    ref.BibleBook.IITh:  ("2Thess",  "2 Thessalonians",  2,   ["2 Ths"]),
+    ref.BibleBook.ITim:     ("1Tim",    "1 Timothy",        2,   []),
+    ref.BibleBook.IITim:    ("2Tim",    "2 Timothy",        2,   []),
+    ref.BibleBook.Titus:    ("Titus",   "Titus",            2,   []),
+    ref.BibleBook.Phlm:     ("Phlm",    "Philemon",         5,   ["Pm", "Phm", "Phlm"]), # Phil not acceptable abbrev
+    ref.BibleBook.Heb:      ("Heb",     "Hebrews",          2,   []),
+    ref.BibleBook.Jam:    ("James",   "James",            2,   ["Jm", "Jas"]),
+    ref.BibleBook.IPet:     ("1Pet",    "1 Peter",          1,   ["1 Pt"]),
+    ref.BibleBook.IIPet:    ("2Pet",    "2 Peter",          1,   ["2 Pt"]),
+    ref.BibleBook.IJn:      ("1Jn",     "1 John",           1,   ["1 Jn", "1 Jhn"]),
+    ref.BibleBook.IIJn:     ("2Jn",     "2 John",           1,   ["2 Jn", "2 Jhn"]),
+    ref.BibleBook.IIIJn:    ("3Jn",     "3 John",           1,   ["3 Jn", "3 Jhn"]),
+    ref.BibleBook.Jude:     ("Jude",    "Jude",             4,   []),
+    ref.BibleBook.Rev:      ("Rev",     "Revelation",       2,   ["The Revelation", "The Revelation to John"])
+}
+'''
+Keys: Bible Book
+Values: (Abbrev title, Full title, Min unique chars (excl. numbers), List of extra recognised abbrevs)
+
+The min unique chars is the minimum number of characters in the full title (after any initial "1 ",
+"2 " or "3 " has been stripped out) needed to uniquely identify the book.
+'''
+
+
+default_max_verses = {
     ref.BibleBook.Gen:      [31, 25, 24, 26, 32, 22, 24, 22, 29, 32, 32, 20, 18, 24, 21, 16, 27, 33, 38, 18, 34, 24, 20, 67, 34, 35, 46, 22, 35, 43, 55, 32, 20, 31, 29, 43, 36, 30, 23, 23, 57, 38, 34, 34, 28, 34, 31, 22, 33, 26],
     ref.BibleBook.Exod:     [22, 25, 22, 31, 23, 30, 25, 32, 35, 29, 10, 51, 22, 31, 27, 36, 16, 27, 25, 26, 36, 31, 33, 18, 40, 37, 21, 43, 46, 38, 18, 35, 23, 35, 35, 38, 29, 31, 43, 38],
     ref.BibleBook.Lev:      [17, 16, 17, 35, 19, 30, 38, 36, 24, 20, 47, 8, 59, 57, 33, 34, 16, 30, 37, 27, 24, 33, 44, 23, 55, 46, 34],
@@ -171,11 +186,11 @@ max_verses = {
     ref.BibleBook.Josh:     [18, 24, 17, 24, 15, 27, 26, 35, 27, 43, 23, 24, 33, 15, 63, 10, 18, 28, 51, 9, 45, 34, 16, 33],
     ref.BibleBook.Judg:     [36, 23, 31, 24, 31, 40, 25, 35, 57, 18, 40, 15, 25, 20, 20, 31, 13, 31, 30, 48, 25],
     ref.BibleBook.Ruth:     [22, 23, 18, 22],
-    ref.BibleBook.ISam:    [28, 36, 21, 22, 12, 21, 17, 22, 27, 27, 15, 25, 23, 52, 35, 23, 58, 30, 24, 42, 15, 23, 29, 22, 44, 25, 12, 25, 11, 31, 13],
+    ref.BibleBook.ISam:     [28, 36, 21, 22, 12, 21, 17, 22, 27, 27, 15, 25, 23, 52, 35, 23, 58, 30, 24, 42, 15, 23, 29, 22, 44, 25, 12, 25, 11, 31, 13],
     ref.BibleBook.IISam:    [27, 32, 39, 12, 25, 23, 29, 18, 13, 19, 27, 31, 39, 33, 37, 23, 29, 33, 43, 26, 22, 51, 39, 25],
-    ref.BibleBook.IKgs:    [53, 46, 28, 34, 18, 38, 51, 66, 28, 29, 43, 33, 34, 31, 34, 34, 24, 46, 21, 43, 29, 53],
+    ref.BibleBook.IKgs:     [53, 46, 28, 34, 18, 38, 51, 66, 28, 29, 43, 33, 34, 31, 34, 34, 24, 46, 21, 43, 29, 53],
     ref.BibleBook.IIKgs:    [18, 25, 27, 44, 27, 33, 20, 29, 37, 36, 21, 21, 25, 29, 38, 20, 41, 37, 37, 21, 26, 20, 37, 20, 30],
-    ref.BibleBook.IChr:    [54, 55, 24, 43, 26, 81, 40, 40, 44, 14, 47, 40, 14, 17, 29, 43, 27, 17, 19, 8, 30, 19, 32, 31, 31, 32, 34, 21, 30],
+    ref.BibleBook.IChr:     [54, 55, 24, 43, 26, 81, 40, 40, 44, 14, 47, 40, 14, 17, 29, 43, 27, 17, 19, 8, 30, 19, 32, 31, 31, 32, 34, 21, 30],
     ref.BibleBook.IIChr:    [17, 18, 17, 22, 14, 42, 22, 18, 31, 19, 23, 16, 22, 15, 19, 14, 19, 34, 11, 37, 20, 12, 21, 27, 28, 23, 9, 27, 36, 27, 21, 33, 25, 33, 27, 23],
     ref.BibleBook.Ezra:     [11, 70, 13, 24, 17, 22, 28, 36, 15, 44],
     ref.BibleBook.Neh:      [11, 20, 32, 23, 19, 19, 73, 18, 38, 39, 36, 47, 31],
@@ -208,32 +223,35 @@ max_verses = {
     ref.BibleBook.John:     [51, 25, 36, 54, 47, 71, 53, 59, 41, 42, 57, 50, 38, 31, 27, 33, 26, 40, 42, 31, 25],
     ref.BibleBook.Acts:     [26, 47, 26, 37, 42, 15, 60, 40, 43, 48, 30, 25, 52, 28, 41, 40, 34, 28, 41, 38, 40, 30, 35, 27, 27, 32, 44, 31],
     ref.BibleBook.Rom:      [32, 29, 31, 25, 21, 23, 25, 39, 33, 21, 36, 21, 14, 23, 33, 27],
-    ref.BibleBook.ICor:    [31, 16, 23, 21, 13, 20, 40, 13, 27, 33, 34, 31, 13, 40, 58, 24],
+    ref.BibleBook.ICor:     [31, 16, 23, 21, 13, 20, 40, 13, 27, 33, 34, 31, 13, 40, 58, 24],
     ref.BibleBook.IICor:    [24, 17, 18, 18, 21, 18, 16, 24, 15, 18, 33, 21, 14],
     ref.BibleBook.Gal:      [24, 21, 29, 31, 26, 18],
     ref.BibleBook.Eph:      [23, 22, 21, 32, 33, 24],
     ref.BibleBook.Phil:     [30, 30, 21, 23],
     ref.BibleBook.Col:      [29, 23, 25, 18],
-    ref.BibleBook.ITh:  [10, 20, 13, 18, 28],
-    ref.BibleBook.IITh:  [12, 17, 18],
-    ref.BibleBook.ITim:    [20, 15, 16, 16, 25, 21],
+    ref.BibleBook.ITh:      [10, 20, 13, 18, 28],
+    ref.BibleBook.IITh:     [12, 17, 18],
+    ref.BibleBook.ITim:     [20, 15, 16, 16, 25, 21],
     ref.BibleBook.IITim:    [18, 26, 17, 22],
     ref.BibleBook.Titus:    [16, 15, 15],
     ref.BibleBook.Phlm:     [25],
     ref.BibleBook.Heb:      [14, 18, 19, 16, 14, 20, 28, 13, 28, 39, 40, 29, 25],
-    ref.BibleBook.Jam:    [27, 26, 18, 17, 20],
-    ref.BibleBook.IPet:    [25, 25, 22, 19, 14],
+    ref.BibleBook.Jam:      [27, 26, 18, 17, 20],
+    ref.BibleBook.IPet:     [25, 25, 22, 19, 14],
     ref.BibleBook.IIPet:    [21, 22, 18],
-    ref.BibleBook.IJn:     [10, 29, 24, 21, 21],
+    ref.BibleBook.IJn:      [10, 29, 24, 21, 21],
     ref.BibleBook.IIJn:     [13],
-    ref.BibleBook.IIIJn:     [14],
+    ref.BibleBook.IIIJn:    [14],
     ref.BibleBook.Jude:     [25],
     ref.BibleBook.Rev:      [20, 29, 22, 11, 14, 17, 17, 13, 21, 11, 19, 17, 18, 20, 8, 21, 18, 24, 21, 15, 27, 21]
 }
+'''
+Keys: Bible books
+Values: List of max verse number for each chapter (ascending by chapter). Len of list is number of chapters.
+'''
 
-verse_0s = {
-    # Keys: Bible books
-    # Values: Set of chapter numbers (1-indexed) that can begin with a verse 0.
+
+default_verse_0s = {
     ref.BibleBook.Psa:  set([3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27,
                         28, 29, 30, 31, 32, 34, 35, 36, 37, 38, 39, 40, 41, 42, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53,
                         54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 72, 73, 74, 75, 76, 77, 78,
@@ -241,4 +259,7 @@ verse_0s = {
                         121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 138, 139, 140, 141, 142,
                         143, 144, 145])
 }
-'''verse_0s'''
+'''
+Keys: Bible books
+Values: Set of chapter numbers (1-indexed) that can begin with a verse 0.
+'''

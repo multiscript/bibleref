@@ -4,12 +4,14 @@
 # TODO: Implement add and subtract operators for BibleVerses
 # TODO: Implement count of chapters and verses in a BibleRange and BibleRangeList
 # TODO: Implement set operators as standard operators
+
 from dataclasses import dataclass
 from enum import Enum, Flag, auto
 import re
 from typing import Union
 
 from bibleref import BibleRefException
+
 #
 # Set-style operations in this module are derived from the python-ranges module
 # at https://github.com/Superbird11/ranges, under the MIT Licence
@@ -21,15 +23,18 @@ class BibleFlag(Flag):
     '''
     NONE = 0
     '''No `BibleFlag` flags are set.'''
+
     MULTIBOOK = auto()
     '''When set, a `BibleRange` can be constructed that spans multiple Bible books. Existing multibook
     ranges behave correctly even when `MULTIBOOK` is unset.'''
+
     VERSE_0 = auto()
     '''When set, a `BibleVerse` can be constructed where the first verse number of some chapters
     is 0, not 1. (This is currently true only for the Psalms that have superscriptions.) When you need to mix
     references that do or don't allow for verse 0, it may be easier to set or clear `VERSE_0` for all your code, and
     then use the `verse_0_to_1()` and `verse_1_to_0()` methods on `BibleVerse`, `BibleRange` and `BibleRangeList`
     as necessary.'''
+
     ALL = MULTIBOOK | VERSE_0
     '''All `BibleFlag` flags are set.'''
 
@@ -132,7 +137,7 @@ class BibleBook(Enum):
         string = string.strip()
         match = False
         for book in BibleBook:
-            if book.regex.fullmatch(string) is not None:
+            if book.regex is not None and book.regex.fullmatch(string) is not None:
                 match = True
                 break
         if match:
@@ -192,10 +197,10 @@ class BibleBook(Enum):
     def next(self) -> 'BibleBook':
         '''Returns the next `BibleBook` in the book ordering, or `None` if this is the final book.
         '''
-        if self.order == len(data.order)-1:
+        if self.order == len(data.book_order)-1:
             return None
         else:
-            return data.order[self.order+1]
+            return data.book_order[self.order+1]
 
     def prev(self) -> 'BibleBook':
         '''Returns the previous `BibleBook` in the book ordering, or `None` if this is the first book.
@@ -203,7 +208,7 @@ class BibleBook(Enum):
         if self.order == 0:
             return None
         else:
-            return data.order[self.order-1]
+            return data.book_order[self.order-1]
 
     def __lt__(self, other):
         if not isinstance(other, BibleBook):
@@ -478,7 +483,7 @@ class BibleVerse:
         verse_str = str(self.verse_num) if BibleVersePart.VERSE in verse_parts else ""
         
         if BibleVersePart.CHAP_VERSE in verse_parts:
-            verse_sep = data.VERSE_SEP_ALT if alt_sep else data.VERSE_SEP_STANDARD
+            verse_sep = data.verse_sep_alt if alt_sep else data.verse_sep_standard
         else:
             verse_sep = ""
 
@@ -513,8 +518,8 @@ class BibleRange:
         flags = flags or globals()['flags'] or BibleFlag.NONE
         # By definition, we need to allow multibook to encompass whole Bible
         flags |= BibleFlag.MULTIBOOK
-        start_book = data.order[0]
-        end_book = data.order[len(data.order)-1]
+        start_book = data.book_order[0]
+        end_book = data.book_order[len(data.book_order)-1]
         return BibleRange(start=start_book.first_verse(flags=flags),
                           end=end_book.last_verse(), flags=flags)
 
@@ -975,7 +980,7 @@ class BibleRange:
             end_str = ""
             range_sep = ""
         else: 
-            range_sep = data.RANGE_SEP
+            range_sep = data.range_sep
             if self.end.book != self.start.book:
                 at_verse_level = False
             
@@ -1294,11 +1299,11 @@ class BibleRangeList(util.GroupedList):
                     if cur_book == bible_range.start.book: # Continuing same book
                         if at_verse_level: # We're in a list of verses
                             if not preserve_groups: # Use major list sep to return to chapters
-                                list_sep = data.MAJOR_LIST_SEP
+                                list_sep = data.major_list_sep
                                 start_parts = BibleVersePart.CHAP
                                 at_verse_level = False
                             else: # Preserving groups
-                                if list_sep == data.MAJOR_LIST_SEP:
+                                if list_sep == data.major_list_sep:
                                     # We're straight after a major list ref, so must return to chap level
                                     start_parts = BibleVersePart.CHAP
                                     at_verse_level = False
@@ -1309,11 +1314,11 @@ class BibleRangeList(util.GroupedList):
                                     force_dual_ref = True
                         else: # We're in a list of chapters
                             if not preserve_groups: # Use major list sep between chapters
-                                list_sep = data.MAJOR_LIST_SEP
+                                list_sep = data.major_list_sep
                                 start_parts = BibleVersePart.CHAP
                                 at_verse_level = False
                             else: # Preserving groups
-                                if list_sep == data.MAJOR_LIST_SEP:
+                                if list_sep == data.major_list_sep:
                                     # We're straight after a major list ref, so can return to chap level
                                     start_parts = BibleVersePart.CHAP
                                     at_verse_level = False
@@ -1330,7 +1335,7 @@ class BibleRangeList(util.GroupedList):
                                         force_dual_ref = True
                     else: # Start of a different book
                         if not preserve_groups: # Use major list sep between books
-                            list_sep = data.MAJOR_LIST_SEP
+                            list_sep = data.major_list_sep
                         start_parts = BibleVersePart.BOOK_CHAP
                         at_verse_level = False
                     cur_chap = bible_range.start.chap_num
@@ -1340,11 +1345,11 @@ class BibleRangeList(util.GroupedList):
                             start_parts = BibleVersePart.VERSE
                         else: # At chap level or verse level in a different chap
                             if not preserve_groups: # Use major list sep between chapters
-                                list_sep = data.MAJOR_LIST_SEP
+                                list_sep = data.major_list_sep
                             start_parts = BibleVersePart.CHAP_VERSE
                     else: # Different book
                         if not preserve_groups: # Use major list sep between books
-                            list_sep = data.MAJOR_LIST_SEP
+                            list_sep = data.major_list_sep
                         start_parts = BibleVersePart.FULL_REF
                     cur_chap = bible_range.start.chap_num
                     at_verse_level = True # All single verses move us to verse level
@@ -1358,7 +1363,7 @@ class BibleRangeList(util.GroupedList):
                     end_str = ""
                     range_sep = ""
                 else:
-                    range_sep = data.RANGE_SEP
+                    range_sep = data.range_sep
                     if bible_range.end.book != bible_range.start.book:
                         at_verse_level = False
 
@@ -1396,11 +1401,11 @@ class BibleRangeList(util.GroupedList):
                 else:
                     result_str += range_str.strip()
 
-                list_sep = data.MINOR_LIST_SEP # Minor list separator by default within groups
+                list_sep = data.minor_list_sep # Minor list separator by default within groups
             
             # We've have completed the group
             if preserve_groups:
-                list_sep = data.MAJOR_LIST_SEP # Major list separator between groups
+                list_sep = data.major_list_sep # Major list separator between groups
                 at_verse_level=False
         
         # We've completed all groups
@@ -1465,12 +1470,22 @@ class InvalidReferenceError(BibleRefException):
     Bible reference.'''
 
 
-def _add_abbrevs_and_titles():
-    for book, name_data in data.name_data.items():
-        book.abbrev = name_data[0]
-        book.title = name_data[1]
+def set_name_data(name_data_dict: dict):
+    set_abbrevs_and_titles(name_data_dict)
+    set_regexes(name_data_dict)
 
-def _add_regexes():
+def set_abbrevs_and_titles(name_data_dict: dict):
+    for book in BibleBook:
+        if book not in name_data_dict:
+            print(f"No name data for {book}")
+            book.abbrev = None
+            book.title = None
+        else:
+            name_data = name_data_dict[book]
+            book.abbrev = name_data[0]
+            book.title = name_data[1]
+
+def set_regexes(name_data_dict: dict):
     '''Add a 'regex' attribute to each BibleBook for a regex matching acceptable names.
 
     For each book, several regex patterns are joined together.
@@ -1478,62 +1493,68 @@ def _add_regexes():
     Any characters beyond the minimum are optional, but must be correct.
     Extra patterns are derived from the list of any extra recognised abbreviations.
     '''
-    for book, name_data in data.name_data.items():
-        # For clarity, the comments show what happens for the example of "1 John"
-        full_title = name_data[1]    # e.g. "1 John"
-        min_chars = name_data[2]     # e.g. 1
-        extra_abbrevs = name_data[3] #
-        full_title_pattern = ""
+    for book in BibleBook:
+        if book not in name_data_dict:
+            print(f"No name data for {book}")
+            book.regex = None
+        else:
+            name_data = name_data_dict[book]
 
-        # Peel off any numeric prefix, and match variations on the prefix.
-        # e.g. full_title_pattern = r"(1|I)\s*"
-        #      full_title = "John"
-        if full_title[0:2] == "1 " or full_title[0:2] == "2 " or full_title[0:2] == "3 ":
-            full_title_pattern = full_title[0:2]
-            full_title_pattern = full_title_pattern.replace("1 ", r"(1\s*|I\s+)") 
-            full_title_pattern = full_title_pattern.replace("2 ", r"(2\s*|II\s+)")
-            full_title_pattern = full_title_pattern.replace("3 ", r"(3\s*|III\s+)")
-            full_title = full_title[2:]
-        
-        # Add the minimum number of unique characters
-        # e.g. full_title_pattern = r"(1|I)\s*J"
-        full_title_pattern += full_title[0:min_chars]
+            # For clarity, the comments show what happens for the example of "1 John"
+            full_title = name_data[1]    # e.g. "1 John"
+            min_chars = name_data[2]     # e.g. 1
+            extra_abbrevs = name_data[3] #
+            full_title_pattern = ""
 
-        # Add the rest of full title characters as optional matches.
-        # e.g. full_title_pattern = r"(1|I)\s*J(o(h(n)?)?)?"
-        for char in full_title[min_chars:]:
-            full_title_pattern += "(" + char
-        full_title_pattern += ")?" * (len(full_title)-min_chars)
+            # Peel off any numeric prefix, and match variations on the prefix.
+            # e.g. full_title_pattern = r"(1|I)\s*"
+            #      full_title = "John"
+            if full_title[0:2] == "1 " or full_title[0:2] == "2 " or full_title[0:2] == "3 ":
+                full_title_pattern = full_title[0:2]
+                full_title_pattern = full_title_pattern.replace("1 ", r"(1\s*|I\s+)") 
+                full_title_pattern = full_title_pattern.replace("2 ", r"(2\s*|II\s+)")
+                full_title_pattern = full_title_pattern.replace("3 ", r"(3\s*|III\s+)")
+                full_title = full_title[2:]
+            
+            # Add the minimum number of unique characters
+            # e.g. full_title_pattern = r"(1|I)\s*J"
+            full_title_pattern += full_title[0:min_chars]
 
-        # Allow for extra whitespace.
-        full_title_pattern = full_title_pattern.replace(" ",r"\s+")
+            # Add the rest of full title characters as optional matches.
+            # e.g. full_title_pattern = r"(1|I)\s*J(o(h(n)?)?)?"
+            for char in full_title[min_chars:]:
+                full_title_pattern += "(" + char
+            full_title_pattern += ")?" * (len(full_title)-min_chars)
 
-        # Collate the extra acceptable abbreviations, and combine everything into a final,
-        # single regex for the book
-        total_pattern = full_title_pattern
-        for abbrev in extra_abbrevs:
-            abbrev = abbrev.replace(" ",r"\s*") # Allow for variable whitespace
-            total_pattern += "|" + abbrev
-        book.regex = re.compile(total_pattern, re.IGNORECASE)
+            # Allow for extra whitespace.
+            full_title_pattern = full_title_pattern.replace(" ",r"\s+")
 
-def _add_order():
-    for i in range(len(data.order)):
-        data.order[i].order = i
+            # Collate the extra acceptable abbreviations, and combine everything into a final,
+            # single regex for the book
+            total_pattern = full_title_pattern
+            for abbrev in extra_abbrevs:
+                abbrev = abbrev.replace(" ",r"\s*") # Allow for variable whitespace
+                total_pattern += "|" + abbrev
+            book.regex = re.compile(total_pattern, re.IGNORECASE)
 
-def _add_max_verses():
-    for book, max_verse_list in data.max_verses.items():
+def set_book_order(book_order: list):
+    data.book_order = book_order
+    for i in range(len(book_order)):
+        book_order[i].order = i
+
+def set_max_verses(max_verses: dict):
+    for book, max_verse_list in max_verses.items():
         book._max_verses = max_verse_list
 
-def _add_verse_0s():
+def set_verse_0s(verse_0s: dict):
     for book in BibleBook:
-        if book in data.verse_0s:
-            book._verse_0s = data.verse_0s[book]
+        if book in verse_0s:
+            book._verse_0s = verse_0s[book]
         else:
             book._verse_0s = set()
 
 
-_add_abbrevs_and_titles()
-_add_regexes()
-_add_order()
-_add_max_verses()
-_add_verse_0s()
+set_name_data(data.default_name_data)
+set_book_order(data.default_book_order)
+set_max_verses(data.default_max_verses)
+set_verse_0s(data.default_verse_0s)

@@ -513,6 +513,10 @@ class TestBibleReference(unittest.TestCase):
     def test_bible_range_string_roundtrip(self):
         # For each Bible book, test that we can convert a range to a string and back again
         for book in BibleBook:
+            if book.abbrev is None or book.title is None or book.regex is None:
+                print(f"{book} lacks complete name data.")
+                continue
+
             orig_range = BibleRange(book, 1, 1, None, 1, 2)
 
             # Test abbreviated strings
