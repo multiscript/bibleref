@@ -15,7 +15,7 @@ minor_list_sep      = ","
 
 Separates Bible ranges in the same group. Usually separates ranges in the same chapter.'''
 
-verse_sep_standard  = ":"
+verse_sep_std  = ":"
 '''Standard verse separator character, used to separate chapter and verse numbers'''
 
 verse_sep_alt   = "."

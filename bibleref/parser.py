@@ -232,7 +232,7 @@ def create_parser():
         ?list_sep: MAJOR_LIST_SEP | MINOR_LIST_SEP
         MAJOR_LIST_SEP: "{data.major_list_sep}"
         MINOR_LIST_SEP: "{data.minor_list_sep}"
-        VERSE_SEP: "{data.verse_sep_standard}" | "{data.verse_sep_alt}"
+        VERSE_SEP: "{data.verse_sep_std}" | "{data.verse_sep_alt}"
 
         BOOK_NAME: /\w(\w|\s)*[^0-9\s:.;,\-]/   // Books match as follows:
                                                 // Can start with any 'word' (\w) character (incl. numbers)

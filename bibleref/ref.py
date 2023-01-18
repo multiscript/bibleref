@@ -483,7 +483,7 @@ class BibleVerse:
         verse_str = str(self.verse_num) if BibleVersePart.VERSE in verse_parts else ""
         
         if BibleVersePart.CHAP_VERSE in verse_parts:
-            verse_sep = data.verse_sep_alt if alt_sep else data.verse_sep_standard
+            verse_sep = data.verse_sep_alt if alt_sep else data.verse_sep_std
         else:
             verse_sep = ""
 
