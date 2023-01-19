@@ -2,25 +2,6 @@
 from . import ref
 
 
-range_sep           = "-"
-'''Range separator character used to separate start and end of a Bible range.'''
-
-major_list_sep      = ";"
-'''Major list separator character.
-
-Separates Bible ranges in different groups. Usually separates ranges in different chapters.'''
-
-minor_list_sep      = ","
-'''Minor list separator character.
-
-Separates Bible ranges in the same group. Usually separates ranges in the same chapter.'''
-
-verse_sep_std       = ":"
-'''Standard verse separator character, used to separate chapter and verse numbers'''
-
-verse_sep_alt       = "."
-'''Alternate verse separator character, used to separate chapter and verse numbers'''
-
 book_order          = []
 '''
 List of Bible books in their sort order.

@@ -5,7 +5,7 @@ from lark import Lark, UnexpectedInput
 from lark import Transformer, v_args
 from lark.visitors import VisitError
 
-from bibleref import ref, BibleRefException
+from bibleref import ref, BibleRefException, bible_data
 
 
 MAJOR_LIST_SEP_SENTINEL = object()
@@ -13,23 +13,33 @@ MINOR_LIST_SEP_SENTINEL = object()
 
 
 _parser = None
-_transformer = None
 
-def _parse(string, flags: ref.BibleFlag = None):
-    global _parser, _transformer
+def parser():
+    '''Return a Lark parser singleton.'''
+    global _parser
     if _parser is None:
         # from pathlib import Path
         # GRAMMAR_FILE_NAME = "bible-reference.lark"
         # grammar_path = Path(__file__, "..", GRAMMAR_FILE_NAME).resolve()
         # with open(grammar_path) as file:
         #     grammar_text = file.read()
-        _parser = create_parser()
+        recreate_parser()
+    return _parser
+
+_transformer = None
+
+def transformer():
+    '''Return a Lark Transformer singleton.'''
+    global _transformer
 
     if _transformer is None:
         _transformer = BibleRefTransformer()
+    return _transformer
 
+def parse(string, flags: ref.BibleFlag = None):
+    '''Parse `string` as a `bibleref.ref.BibleRefList` using `BibleRefTransformer`.'''
     try:
-        tree = _parser.parse(string)
+        tree = parser().parse(string)
     except UnexpectedInput as orig:
         start_pos=orig.pos_in_stream
         end_pos=orig.pos_in_stream + 1
@@ -39,8 +49,8 @@ def _parse(string, flags: ref.BibleFlag = None):
         raise new_error
     
     try:
-        _transformer.flags = flags
-        range_groups_list = _transformer.transform(tree)
+        transformer().flags = flags
+        range_groups_list = transformer().transform(tree)
     except VisitError as e:
         raise e.orig_exc
     return range_groups_list
@@ -203,9 +213,14 @@ class BibleRefTransformer(Transformer):
         return int(token)
 
 
-def create_parser():
-    from . import data
-    _grammar = rf'''
+def recreate_parser():
+    global _parser
+    range_sep = bible_data().range_sep
+    major_list_sep = bible_data().major_list_sep
+    minor_list_sep = bible_data().minor_list_sep
+    verse_sep_std = bible_data().verse_sep_std
+    verse_sep_alt = bible_data().verse_sep_alt
+    grammar = rf'''
         ?start: ref_list
 
         ref_list: bible_ref (list_sep bible_ref)* list_sep?
@@ -228,19 +243,20 @@ def create_parser():
 
         NUM: INT
 
-        RANGE_SEP: "{data.range_sep}"
+        RANGE_SEP: "{range_sep}"
         ?list_sep: MAJOR_LIST_SEP | MINOR_LIST_SEP
-        MAJOR_LIST_SEP: "{data.major_list_sep}"
-        MINOR_LIST_SEP: "{data.minor_list_sep}"
-        VERSE_SEP: "{data.verse_sep_std}" | "{data.verse_sep_alt}"
+        MAJOR_LIST_SEP: "{major_list_sep}"
+        MINOR_LIST_SEP: "{minor_list_sep}"
+        VERSE_SEP: "{verse_sep_std}" | "{verse_sep_alt}"
 
-        BOOK_NAME: /\w(\w|\s)*[^0-9\s:.;,\-]/   // Books match as follows:
-                                                // Can start with any 'word' (\w) character (incl. numbers)
-                                                // Can include any amount of word characters or whitespace
-                                                // Cannot end with a digit, or any of these symbols -> : . ; , -
+        BOOK_NAME: /\w(\w|\s)*[^0-9\s\{verse_sep_std}\{verse_sep_alt}\{major_list_sep}\{minor_list_sep}\{range_sep}]/  
+            // Books match as follows:
+            // Can start with any 'word' (\w) character (incl. numbers)
+            // Can include any amount of word characters or whitespace
+            // Cannot end with a digit, or any of these symbols -> : . ; , -
 
         %import common.WS
         %import common.INT
         %ignore WS
     '''
-    return Lark(_grammar, propagate_positions=True)
+    _parser = Lark(grammar, propagate_positions=True)

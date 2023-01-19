@@ -10,7 +10,7 @@ from enum import Enum, Flag, auto
 import re
 from typing import Union
 
-from bibleref import BibleRefException
+from bibleref import BibleRefException, bible_data
 
 #
 # Set-style operations in this module are derived from the python-ranges module
@@ -483,7 +483,7 @@ class BibleVerse:
         verse_str = str(self.verse_num) if BibleVersePart.VERSE in verse_parts else ""
         
         if BibleVersePart.CHAP_VERSE in verse_parts:
-            verse_sep = data.verse_sep_alt if alt_sep else data.verse_sep_std
+            verse_sep = bible_data().verse_sep_alt if alt_sep else bible_data().verse_sep_std
         else:
             verse_sep = ""
 
@@ -980,7 +980,7 @@ class BibleRange:
             end_str = ""
             range_sep = ""
         else: 
-            range_sep = data.range_sep
+            range_sep = bible_data().range_sep
             if self.end.book != self.start.book:
                 at_verse_level = False
             
@@ -1042,7 +1042,7 @@ class BibleRangeList(util.GroupedList):
 
         if len(args) == 1:
             if isinstance(args[0], str):
-                range_groups_list = parser._parse(args[0], flags)
+                range_groups_list = parser.parse(args[0], flags)
                 super().__init__()
                 for group in range_groups_list:
                     self.append_group(group)
@@ -1299,11 +1299,11 @@ class BibleRangeList(util.GroupedList):
                     if cur_book == bible_range.start.book: # Continuing same book
                         if at_verse_level: # We're in a list of verses
                             if not preserve_groups: # Use major list sep to return to chapters
-                                list_sep = data.major_list_sep
+                                list_sep = bible_data().major_list_sep
                                 start_parts = BibleVersePart.CHAP
                                 at_verse_level = False
                             else: # Preserving groups
-                                if list_sep == data.major_list_sep:
+                                if list_sep == bible_data().major_list_sep:
                                     # We're straight after a major list ref, so must return to chap level
                                     start_parts = BibleVersePart.CHAP
                                     at_verse_level = False
@@ -1314,11 +1314,11 @@ class BibleRangeList(util.GroupedList):
                                     force_dual_ref = True
                         else: # We're in a list of chapters
                             if not preserve_groups: # Use major list sep between chapters
-                                list_sep = data.major_list_sep
+                                list_sep = bible_data().major_list_sep
                                 start_parts = BibleVersePart.CHAP
                                 at_verse_level = False
                             else: # Preserving groups
-                                if list_sep == data.major_list_sep:
+                                if list_sep == bible_data().major_list_sep:
                                     # We're straight after a major list ref, so can return to chap level
                                     start_parts = BibleVersePart.CHAP
                                     at_verse_level = False
@@ -1335,7 +1335,7 @@ class BibleRangeList(util.GroupedList):
                                         force_dual_ref = True
                     else: # Start of a different book
                         if not preserve_groups: # Use major list sep between books
-                            list_sep = data.major_list_sep
+                            list_sep = bible_data().major_list_sep
                         start_parts = BibleVersePart.BOOK_CHAP
                         at_verse_level = False
                     cur_chap = bible_range.start.chap_num
@@ -1345,11 +1345,11 @@ class BibleRangeList(util.GroupedList):
                             start_parts = BibleVersePart.VERSE
                         else: # At chap level or verse level in a different chap
                             if not preserve_groups: # Use major list sep between chapters
-                                list_sep = data.major_list_sep
+                                list_sep = bible_data().major_list_sep
                             start_parts = BibleVersePart.CHAP_VERSE
                     else: # Different book
                         if not preserve_groups: # Use major list sep between books
-                            list_sep = data.major_list_sep
+                            list_sep = bible_data().major_list_sep
                         start_parts = BibleVersePart.FULL_REF
                     cur_chap = bible_range.start.chap_num
                     at_verse_level = True # All single verses move us to verse level
@@ -1363,7 +1363,7 @@ class BibleRangeList(util.GroupedList):
                     end_str = ""
                     range_sep = ""
                 else:
-                    range_sep = data.range_sep
+                    range_sep = bible_data().range_sep
                     if bible_range.end.book != bible_range.start.book:
                         at_verse_level = False
 
@@ -1401,11 +1401,11 @@ class BibleRangeList(util.GroupedList):
                 else:
                     result_str += range_str.strip()
 
-                list_sep = data.minor_list_sep # Minor list separator by default within groups
+                list_sep = bible_data().minor_list_sep # Minor list separator by default within groups
             
             # We've have completed the group
             if preserve_groups:
-                list_sep = data.major_list_sep # Major list separator between groups
+                list_sep = bible_data().major_list_sep # Major list separator between groups
                 at_verse_level=False
         
         # We've completed all groups

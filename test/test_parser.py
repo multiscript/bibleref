@@ -2,7 +2,7 @@ from pprint import pprint
 import unittest
 
 from bibleref.ref import BibleBook, BibleRange
-from bibleref.parser import BibleRefParsingError, _parse as parse
+from bibleref.parser import BibleRefParsingError, parse as parse
 
 class TestBibleParser(unittest.TestCase):
     def test_parse(self):
