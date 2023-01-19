@@ -91,7 +91,7 @@ class BibleData:
 
     @property
     def name_data(self):
-        '''Dictionary of Bible book name data in the format of `default_name_data`:
+        '''Dictionary of Bible book name data in the format of `default_name_data`.
         '''
         return self._name_data
 
@@ -166,6 +166,8 @@ class BibleData:
 
     @property
     def max_verses(self):
+        '''Dictionary of max verse numbers for each Bible book and chapter, in the format of `default_max_verses`.
+        '''
         return self._max_verses
 
     @max_verses.setter
@@ -177,6 +179,9 @@ class BibleData:
 
     @property
     def verse_0s(self):
+        '''Dictionary of verse 0 numbers for Bible books that have verse-0 chapters, in the format
+        of `default_verse_0s`.
+        '''
         return self._verse_0s
     
     @verse_0s.setter
@@ -261,6 +266,7 @@ default_book_order = [
 Default Bible book sort order.
 '''
 
+
 default_name_data = {
     ref.BibleBook.Gen:      ("Gen",     "Genesis",          2,   ["Gn"]),
     ref.BibleBook.Exod:     ("Exod",    "Exodus",           2,   []),
@@ -338,6 +344,7 @@ The min unique chars is the minimum number of characters in the full title (afte
 "2 " or "3 " has been stripped out) needed to uniquely identify the book.
 '''
 
+
 default_max_verses = {
     ref.BibleBook.Gen:      [31, 25, 24, 26, 32, 22, 24, 22, 29, 32, 32, 20, 18, 24, 21, 16, 27, 33, 38, 18, 34, 24, 20, 67, 34, 35, 46, 22, 35, 43, 55, 32, 20, 31, 29, 43, 36, 30, 23, 23, 57, 38, 34, 34, 28, 34, 31, 22, 33, 26],
     ref.BibleBook.Exod:     [22, 25, 22, 31, 23, 30, 25, 32, 35, 29, 10, 51, 22, 31, 27, 36, 16, 27, 25, 26, 36, 31, 33, 18, 40, 37, 21, 43, 46, 38, 18, 35, 23, 35, 35, 38, 29, 31, 43, 38],
@@ -412,6 +419,7 @@ default_max_verses = {
 - Values: List of max verse number for each chapter (ascending by chapter). Len of list is number of chapters.
 '''
 
+
 default_verse_0s = {
     ref.BibleBook.Psa:  set([3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27,
                         28, 29, 30, 31, 32, 34, 35, 36, 37, 38, 39, 40, 41, 42, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53,
@@ -425,6 +433,7 @@ default_verse_0s = {
 - Keys: Bible books
 - Values: Set of chapter numbers (1-indexed) that can begin with a verse 0.
 '''
+
 
 bibleref._bible_data = BibleData()
 bibleref._bible_data.book_order = default_book_order
