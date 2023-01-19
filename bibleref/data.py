@@ -4,7 +4,6 @@ import re
 import bibleref
 from bibleref import ref, parser
 
-book_order          = []
 
 class BibleData:
     '''A singleton of this class holds the Bible data for the package.
@@ -12,17 +11,15 @@ class BibleData:
     The singleton is returned by calling `bibleref.bible_data()`.
     '''
     def __init__(self):
-        self._range_sep           = "-"
-        self._major_list_sep      = ";"
-        self._minor_list_sep      = ","
-        self._verse_sep_std       = ":"
-        self._verse_sep_alt       = "."
-        self._book_order          = []
-
-        self.set_name_data(default_name_data)
-        self.book_order = default_book_order
-        self.set_max_verses(default_max_verses)
-        self.set_verse_0s(default_verse_0s)
+        self._range_sep         = "-"
+        self._major_list_sep    = ";"
+        self._minor_list_sep    = ","
+        self._verse_sep_std     = ":"
+        self._verse_sep_alt     = "."
+        self._book_order        = []
+        self._name_data         = {}
+        self._max_verses        = {}
+        self._verse_0s          = {}    
 
     @property
     def range_sep(self):
@@ -86,15 +83,23 @@ class BibleData:
         return self._book_order
 
     @book_order.setter
-    def book_order(self, value: list):
+    def book_order(self, book_order_list: list):
         # TODO: Handle books not in book_order
-        self._book_order = value
+        self._book_order = book_order_list
         for i in range(len(self._book_order)):
             self._book_order[i].order = i
 
-    def set_name_data(self, name_data_dict: dict):
-        self._set_abbrevs_and_titles(name_data_dict)
-        self._set_regexes(name_data_dict)
+    @property
+    def name_data(self):
+        '''Dictionary of Bible book name data in the format of `default_name_data`:
+        '''
+        return self._name_data
+
+    @name_data.setter
+    def name_data(self, name_data: dict):
+        self._name_data = name_data
+        self._set_abbrevs_and_titles(self._name_data)
+        self._set_regexes(self._name_data)
 
     def _set_abbrevs_and_titles(self, name_data_dict: dict):
         for book in ref.BibleBook:
@@ -107,7 +112,7 @@ class BibleData:
                 book.abbrev = name_data[0]
                 book.title = name_data[1]
 
-    def _set_regexes(self, name_data_dict: dict):
+    def _set_regexes(self, name_data: dict):
         '''Add a 'regex' attribute to each BibleBook for a regex matching acceptable names.
 
         For each book, several regex patterns are joined together.
@@ -116,16 +121,16 @@ class BibleData:
         Extra patterns are derived from the list of any extra recognised abbreviations.
         '''
         for book in ref.BibleBook:
-            if book not in name_data_dict:
+            if book not in name_data:
                 # print(f"No name data for {book}")
                 book.regex = None
             else:
-                name_data = name_data_dict[book]
+                book_name_data = name_data[book]
 
                 # For clarity, the comments show what happens for the example of "1 John"
-                full_title = name_data[1]    # e.g. "1 John"
-                min_chars = name_data[2]     # e.g. 1
-                extra_abbrevs = name_data[3] #
+                full_title = book_name_data[1]    # e.g. "1 John"
+                min_chars = book_name_data[2]     # e.g. 1
+                extra_abbrevs = book_name_data[3] #
                 full_title_pattern = ""
 
                 # Peel off any numeric prefix, and match variations on the prefix.
@@ -159,16 +164,27 @@ class BibleData:
                     total_pattern += "|" + abbrev
                 book.regex = re.compile(total_pattern, re.IGNORECASE)
 
+    @property
+    def max_verses(self):
+        return self._max_verses
 
-    def set_max_verses(self, max_verses: dict):
+    @max_verses.setter
+    def max_verses(self, max_verses: dict):
+        self._max_verses = max_verses
         # TODO: Handle books not in max_verses
-        for book, max_verse_list in max_verses.items():
+        for book, max_verse_list in self._max_verses.items():
             book._max_verses = max_verse_list
 
-    def set_verse_0s(self, verse_0s: dict):
+    @property
+    def verse_0s(self):
+        return self._verse_0s
+    
+    @verse_0s.setter
+    def verse_0s(self, verse_0s: dict):
+        self._verse_0s = verse_0s
         for book in ref.BibleBook:
             if book in verse_0s:
-                book._verse_0s = verse_0s[book]
+                book._verse_0s = self._verse_0s[book]
             else:
                 book._verse_0s = set()
 
@@ -244,7 +260,6 @@ default_book_order = [
 '''
 Default Bible book sort order.
 '''
-
 
 default_name_data = {
     ref.BibleBook.Gen:      ("Gen",     "Genesis",          2,   ["Gn"]),
@@ -323,7 +338,6 @@ The min unique chars is the minimum number of characters in the full title (afte
 "2 " or "3 " has been stripped out) needed to uniquely identify the book.
 '''
 
-
 default_max_verses = {
     ref.BibleBook.Gen:      [31, 25, 24, 26, 32, 22, 24, 22, 29, 32, 32, 20, 18, 24, 21, 16, 27, 33, 38, 18, 34, 24, 20, 67, 34, 35, 46, 22, 35, 43, 55, 32, 20, 31, 29, 43, 36, 30, 23, 23, 57, 38, 34, 34, 28, 34, 31, 22, 33, 26],
     ref.BibleBook.Exod:     [22, 25, 22, 31, 23, 30, 25, 32, 35, 29, 10, 51, 22, 31, 27, 36, 16, 27, 25, 26, 36, 31, 33, 18, 40, 37, 21, 43, 46, 38, 18, 35, 23, 35, 35, 38, 29, 31, 43, 38],
@@ -398,7 +412,6 @@ default_max_verses = {
 - Values: List of max verse number for each chapter (ascending by chapter). Len of list is number of chapters.
 '''
 
-
 default_verse_0s = {
     ref.BibleBook.Psa:  set([3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27,
                         28, 29, 30, 31, 32, 34, 35, 36, 37, 38, 39, 40, 41, 42, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53,
@@ -414,3 +427,7 @@ default_verse_0s = {
 '''
 
 bibleref._bible_data = BibleData()
+bibleref._bible_data.book_order = default_book_order
+bibleref._bible_data.name_data = default_name_data
+bibleref._bible_data.max_verses = default_max_verses
+bibleref._bible_data.verse_0s = default_verse_0s
