@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from enum import Enum, Flag, auto
 from typing import Union
 
-from bibleref import BibleRefException, bible_data
+from bibleref import BibleRefException, bible_data, flags
 
 #
 # Set-style operations in this module are derived from the python-ranges module
@@ -21,7 +21,7 @@ class BibleFlag(Flag):
     using the `bibleref.ref.flags` attribute, or per-method for methods that includes a `flags` keyword argument.
     '''
     NONE = 0
-    '''No `BibleFlag` flags are set.'''
+    '''No `BibleFlag` flags are set. Default value for `bibleref.flags`.'''
 
     MULTIBOOK = auto()
     '''When set, a `BibleRange` can be constructed that spans multiple Bible books. Existing multibook
@@ -37,8 +37,7 @@ class BibleFlag(Flag):
     ALL = MULTIBOOK | VERSE_0
     '''All `BibleFlag` flags are set.'''
 
-flags = BibleFlag.NONE
-'''Global package attribute for `BibleFlag` settings.'''
+flags = BibleFlag.NONE # Default setting for global flags attribute.
 
 
 class BibleBook(Enum):

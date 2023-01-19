@@ -41,26 +41,24 @@ Mark 5:7
 Mark 5:8
 ```
 
-# Data
-
-The Bible book, chapter and verse data is specified in the `bibleref.data` sub-module.
-
-# Global Flags
- 
-The global attribute `bibleref.ref.flags` is a `bibleref.ref.BibleFlag` enum whose elements control package-wide
-behaviour. Many methods take a `flags` keyword-argument that overrides the global `flags` attribute during the
-execution of that method.
 
 # Top-Level Objects
 '''
 
 def bible_data():
-    '''Returns the package `bibleref.data.BibleData` singleton, which can be used to modify the default Bible data.
+    '''Returns the package `bibleref.data.BibleData` singleton, containing the data for each Bible book.
+    The default Bible data is obtained from the `bibleref.data` submodule, but can be changed by setting properties
+    on this singleton.
     '''
     return _bible_data
 
 _bible_data = None  # Will be set by data submodule.
 
+flags = None # Will be set by ref submodule.
+'''Global package attribute that is a `bibleref.ref.BibleFlag` enum whose elements control package-wide behaviour.
+Many methods take a `flags` keyword-argument that overrides this global `flags` attribute during the
+execution of that method. The `biblref.ref` submodule sets the default value to `bibleref.ref.BibleFlag.NONE`.
+'''
 
 class BibleRefException(Exception):
     '''Parent class for all Exception types in this package.'''
