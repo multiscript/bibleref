@@ -286,6 +286,8 @@ class BibleVerse:
 
         1. From a single string: `BibleVerse("Mark 2:3")`
 
+           Raises a `BibleRefParsingError` if the string cannot be parsed.
+
         2. From a Bible book, chapter and verse numbers. The Bible book can be a string name, or a `BibleBook` enum:
            `BibleVerse("Mark", 2, 3)`, or `BibleVerse(BibleBook.Mark, 2, 3)`
             
@@ -536,6 +538,8 @@ class BibleRange:
         '''A `BibleRange` can be constructed in any of the following ways:
 
         1. From a single string: `BibleRange("Mark 3:1-4:2")`
+
+           Raises a `BibleRefParsingError` if the string cannot be parsed.
 
         2. From a start and end `BibleVerse`, which must be specified using the keyword arguments
            `start` and `end`: `BibleRange(start=BibleVerse("Mark 3:1"), end=BibleVerse("Mark 4:2"))`
@@ -997,8 +1001,12 @@ class BibleRange:
                 end_parts = BibleVersePart.BOOK_CHAP
             else:
                 end_parts = BibleVersePart.FULL_REF
+            
             if self.start.book == self.end.book:
                 end_parts &= ~BibleVersePart.BOOK # Omit book
+                if self.start.chap_num == self.end.chap_num:
+                    end_parts &= ~BibleVersePart.CHAP # Omit chapter
+            
             end_str = self.end.str(abbrev, alt_sep, nospace, end_parts) 
         
         result = f"{start_str}{range_sep}{end_str}"
@@ -1018,6 +1026,8 @@ class BibleRangeList(util.GroupedList):
         '''A BibleRange can be constructed in any of the following ways:
 
         1. From a single string: `BibleRangeList("Mark 3:1-4:2; 5:6-8, 10; Matt 4")`
+
+           Raises a `BibleRefParsingError` if the string cannot be parsed.
 
            When parsing a string, each major group-separator (`;` by default) places subsequent
            Bible ranges into a new group. Each minor group-separator (`,` by default) places subsequent
@@ -1049,7 +1059,7 @@ class BibleRangeList(util.GroupedList):
 
         if len(args) == 1:
             if isinstance(args[0], str):
-                range_groups_list = parser.parse(args[0], flags)
+                range_groups_list = parser._parse(args[0], flags)
                 super().__init__()
                 for group in range_groups_list:
                     self.append_group(group)
@@ -1475,4 +1485,18 @@ class MultibookRangeNotAllowedError(BibleRefException):
 class InvalidReferenceError(BibleRefException):
     '''Raided when trying to instantiate a BibleBook, BibleVerse or BibleRange that is not a valid
     Bible reference.'''
+
+
+class BibleRefParsingError(BibleRefException):
+    '''Raised when there is an error parsing a string into a Bible reference.
+    
+    Contains two extra attributes:
+    
+     - `start_pos`: index of the first unexpected character in the string for parsing.
+     - `end_pos`:   index of the last unexpected character in the string for parsing.
+    '''
+    def __init__(self, mesg, start_pos=None, end_pos=None, *args, **kwargs):
+        super().__init__(mesg, *args, **kwargs)
+        self.start_pos = start_pos
+        self.end_pos = end_pos
 

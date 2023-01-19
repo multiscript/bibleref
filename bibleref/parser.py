@@ -1,82 +1,67 @@
-'''Submodule for parsing strings into Bible references. Considered an implementation detail. Most of the
-contents of this submodule should not be relied upon.
+'''Submodule for parsing strings into Bible references. The contents of this submodule should be considered an
+implementation detail and not relied upon.
 '''
 from lark import Lark, UnexpectedInput
 from lark import Transformer, v_args
 from lark.visitors import VisitError
 
-from bibleref import ref, BibleRefException, bible_data
+from bibleref import ref, bible_data
 
 
 MAJOR_LIST_SEP_SENTINEL = object()
 MINOR_LIST_SEP_SENTINEL = object()
 
 
-_parser = None
+_parser_obj = None
 
-def parser():
+def _parser():
     '''Return a Lark parser singleton.'''
-    global _parser
-    if _parser is None:
+    global _parser_obj
+    if _parser_obj is None:
         # from pathlib import Path
         # GRAMMAR_FILE_NAME = "bible-reference.lark"
         # grammar_path = Path(__file__, "..", GRAMMAR_FILE_NAME).resolve()
         # with open(grammar_path) as file:
         #     grammar_text = file.read()
-        recreate_parser()
-    return _parser
+        _recreate_parser()
+    return _parser_obj
 
-_transformer = None
 
-def transformer():
+_transformer_obj = None
+
+def _transformer():
     '''Return a Lark Transformer singleton.'''
-    global _transformer
+    global _transformer_obj
 
-    if _transformer is None:
-        _transformer = BibleRefTransformer()
-    return _transformer
+    if _transformer_obj is None:
+        _transformer_obj = _BibleRefTransformer()
+    return _transformer_obj
 
-def parse(string, flags: ref.BibleFlag = None):
+
+def _parse(string, flags: ref.BibleFlag = None):
     '''Parse `string` as a `bibleref.ref.BibleRefList` using `BibleRefTransformer`.'''
     try:
-        tree = parser().parse(string)
+        tree = _parser().parse(string)
     except UnexpectedInput as orig:
         start_pos=orig.pos_in_stream
         end_pos=orig.pos_in_stream + 1
-        new_error = BibleRefParsingError(f"Unexpected text: {string[start_pos:end_pos]}",
-                                         None, start_pos, end_pos)
+        new_error = ref.BibleRefParsingError(f"Unexpected text: {string[start_pos:end_pos]}",
+                                         start_pos, end_pos)
         new_error.orig = orig
         raise new_error
     
     try:
-        transformer().flags = flags
-        range_groups_list = transformer().transform(tree)
+        _transformer().flags = flags
+        range_groups_list = _transformer().transform(tree)
     except VisitError as e:
         raise e.orig_exc
     return range_groups_list
 
-
-class BibleRefParsingError(BibleRefException):
-    '''Raised when there is an error parsing a string into Bible reference.
-    
-    Contains two extra attributes:
-    
-     - `start_pos`: index of the first unexpected character in the string for parsing.
-     - `end_pos`:   index of the last unexpected character in the string for parsing.
-    '''
-    def __init__(self, mesg, meta_info=None, start_pos=None, end_pos=None, *args, **kwargs):
-        super().__init__(mesg, *args, **kwargs)
-        if meta_info is not None:
-            self.start_pos = meta_info.start_pos
-            self.end_pos = meta_info.end_pos
-        if start_pos is not None:
-            self.start_pos = start_pos
-        if end_pos is not None:
-            self.end_pos = end_pos
-
+def _meta_info_to_pos(meta_info):
+    return (meta_info.start_pos, meta_info.end_pos)
 
 @v_args(meta=True)
-class BibleRefTransformer(Transformer):
+class _BibleRefTransformer(Transformer):
     '''Lark Transformer for parsing strings into Bible references.'''
     def __init__(self, *args, flags: ref.BibleFlag = None, **kwargs):
         super().__init__(*args, **kwargs)
@@ -113,7 +98,7 @@ class BibleRefTransformer(Transformer):
                                                second.end.book, second.end.chap_num, second.end.verse_num,
                                                flags=self.flags)
         except Exception as e:
-            raise BibleRefParsingError(str(e), meta)
+            raise ref.BibleRefParsingError(str(e), *_meta_info_to_pos(meta))
         return bible_range
 
     def book_only_ref(self, meta, children): # Children: BOOK_NAME
@@ -123,7 +108,7 @@ class BibleRefTransformer(Transformer):
         try:
             bible_range = ref.BibleRange(book, flags=self.flags)
         except Exception as e:
-            raise BibleRefParsingError(str(e), meta)
+            raise ref.BibleRefParsingError(str(e), *_meta_info_to_pos(meta))
         return bible_range
         
     def book_num_ref(self, meta, children): # Children: BOOK_NAME NUM
@@ -142,7 +127,7 @@ class BibleRefTransformer(Transformer):
                 self.cur_chap_num = num
                 bible_range = ref.BibleRange(book, num, flags=self.flags)
         except Exception as e:
-            raise BibleRefParsingError(str(e), meta)
+            raise ref.BibleRefParsingError(str(e), *_meta_info_to_pos(meta))
         return bible_range
 
     def book_chap_verse_ref(self, meta, children): # Children: BOOK_NAME NUM VERSE_SEP NUM
@@ -155,12 +140,12 @@ class BibleRefTransformer(Transformer):
         try:
             bible_range = ref.BibleRange(book, chap_num, verse_num, flags=self.flags)
         except Exception as e:
-            raise BibleRefParsingError(str(e), meta)
+            raise ref.BibleRefParsingError(str(e), *_meta_info_to_pos(meta))
         return bible_range
 
     def chap_verse_ref(self, meta, children): # Children: NUM VERSE_SEP NUM
         if self.cur_book is None:
-            raise BibleRefParsingError("No book specified", meta)
+            raise ref.BibleRefParsingError("No book specified", *_meta_info_to_pos(meta))
         book: ref.BibleBook = self.cur_book
         chap_num: int = children[0]
         verse_num: int = children [2]
@@ -169,12 +154,12 @@ class BibleRefTransformer(Transformer):
         try:
             bible_range = ref.BibleRange(book, chap_num, verse_num, flags=self.flags)
         except Exception as e:
-            raise BibleRefParsingError(str(e), meta)
+            raise ref.BibleRefParsingError(str(e), *_meta_info_to_pos(meta))
         return bible_range
 
     def num_only_ref(self, meta, children): # Children: NUM
         if self.cur_book is None:
-            raise BibleRefParsingError("No book specified", meta)
+            raise ref.BibleRefParsingError("No book specified", *_meta_info_to_pos(meta))
         book: ref.BibleBook = self.cur_book
         num: int = children[0]
         is_single_chap = (book.chap_count() == 1)
@@ -183,15 +168,15 @@ class BibleRefTransformer(Transformer):
                 if is_single_chap:
                     self.cur_chap_num = book.min_chap_num()
                 elif self.cur_chap_num is None:
-                    raise BibleRefParsingError("No chapter specified", meta)
+                    raise ref.BibleRefParsingError("No chapter specified", *_meta_info_to_pos(meta))
                 bible_range = ref.BibleRange(book, self.cur_chap_num, num, flags=self.flags)
             else: # Book, chapter ref
                 bible_range = ref.BibleRange(book, num, flags=self.flags)
         except Exception as e:
-            if isinstance(e, BibleRefParsingError):
+            if isinstance(e, ref.BibleRefParsingError):
                 raise e
             else:
-                raise BibleRefParsingError(str(e), meta)
+                raise ref.BibleRefParsingError(str(e), *_meta_info_to_pos(meta))
         return bible_range
 
     def MAJOR_LIST_SEP(self, token):
@@ -205,16 +190,15 @@ class BibleRefTransformer(Transformer):
     def BOOK_NAME(self, token):
         book = ref.BibleBook.from_str(str(token))
         if book is None:
-            raise BibleRefParsingError(f"{str(token)} is not a valid book name", None,
+            raise ref.BibleRefParsingError(f"{str(token)} is not a valid book name",
                                        token.start_pos, token.end_pos)
         return book
 
     def NUM(self, token):
         return int(token)
 
-
-def recreate_parser():
-    global _parser
+def _recreate_parser():
+    global _parser_obj
     range_sep = bible_data().range_sep
     major_list_sep = bible_data().major_list_sep
     minor_list_sep = bible_data().minor_list_sep
@@ -259,4 +243,4 @@ def recreate_parser():
         %import common.INT
         %ignore WS
     '''
-    _parser = Lark(grammar, propagate_positions=True)
+    _parser_obj = Lark(grammar, propagate_positions=True)

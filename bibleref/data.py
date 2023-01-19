@@ -29,7 +29,7 @@ class BibleData:
     @range_sep.setter
     def range_sep(self, value):
         self._range_sep = value
-        parser.recreate_parser()
+        parser._recreate_parser()
 
     @property
     def major_list_sep(self):
@@ -41,7 +41,7 @@ class BibleData:
     @major_list_sep.setter
     def major_list_sep(self, value):
         self._major_list_sep = value
-        parser.recreate_parser()
+        parser._recreate_parser()
 
     @property
     def minor_list_sep(self):
@@ -53,7 +53,7 @@ class BibleData:
     @minor_list_sep.setter
     def minor_list_sep(self, value):
         self._minor_list_sep = value
-        parser.recreate_parser()
+        parser._recreate_parser()
 
     @property
     def verse_sep_std(self):
@@ -63,7 +63,7 @@ class BibleData:
     @verse_sep_std.setter
     def verse_sep_std(self, value):
         self._verse_sep_std = value
-        parser.recreate_parser()
+        parser._recreate_parser()
 
     @property
     def verse_sep_alt(self):
@@ -73,7 +73,7 @@ class BibleData:
     @verse_sep_alt.setter
     def verse_sep_alt(self, value):
         self._verse_sep_alt = value
-        parser.recreate_parser()
+        parser._recreate_parser()
 
     @property
     def book_order(self):

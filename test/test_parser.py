@@ -1,13 +1,13 @@
 from pprint import pprint
 import unittest
 
-from bibleref.ref import BibleBook, BibleRange
-from bibleref.parser import BibleRefParsingError, parse as parse
+from bibleref.ref import BibleBook, BibleRange, BibleRefParsingError
+from bibleref.parser import _parse
 
 class TestBibleParser(unittest.TestCase):
     def test_parse(self):
         try:
-            range_groups_list = parse("Matthew; Mark 2; Jude 5; 8; Obadiah 2-3; John 3.16-18; 10-14:2;" + 
+            range_groups_list = _parse("Matthew; Mark 2; Jude 5; 8; Obadiah 2-3; John 3.16-18; 10-14:2;" + 
                                       "Romans 1:10-22; 2; 3:20-22, 24, 4:2-5:2, 10")
         except BibleRefParsingError as e:
             self.fail(str([str(e), e.start_pos, e.end_pos]))
