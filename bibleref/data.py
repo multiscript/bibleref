@@ -84,10 +84,15 @@ class BibleData:
 
     @book_order.setter
     def book_order(self, book_order_list: list):
-        # TODO: Handle books not in book_order
         self._book_order = book_order_list
+        book_set = set(ref.BibleBook)
         for i in range(len(self._book_order)):
             self._book_order[i].order = i
+            book_set.remove(self._book_order[i])
+        # Set remaining order of remaining books to None
+        for book in book_set:
+            # print(f"No order for {book}")
+            book.order = None
 
     @property
     def name_data(self):
@@ -101,16 +106,16 @@ class BibleData:
         self._set_abbrevs_and_titles(self._name_data)
         self._set_regexes(self._name_data)
 
-    def _set_abbrevs_and_titles(self, name_data_dict: dict):
+    def _set_abbrevs_and_titles(self, name_data: dict):
         for book in ref.BibleBook:
-            if book not in name_data_dict:
+            if book not in name_data:
                 # print(f"No name data for {book}")
                 book.abbrev = None
                 book.title = None
             else:
-                name_data = name_data_dict[book]
-                book.abbrev = name_data[0]
-                book.title = name_data[1]
+                book_name_data = name_data[book]
+                book.abbrev = book_name_data[0]
+                book.title = book_name_data[1]
 
     def _set_regexes(self, name_data: dict):
         '''Add a 'regex' attribute to each BibleBook for a regex matching acceptable names.
@@ -173,9 +178,12 @@ class BibleData:
     @max_verses.setter
     def max_verses(self, max_verses: dict):
         self._max_verses = max_verses
-        # TODO: Handle books not in max_verses
-        for book, max_verse_list in self._max_verses.items():
-            book._max_verses = max_verse_list
+        for book in ref.BibleBook:
+            if book not in self._max_verses:
+                # print(f"No max_verses for {book}")
+                book._max_verses = None
+            else:
+                book._max_verses = self._max_verses[book]
 
     @property
     def verse_0s(self):

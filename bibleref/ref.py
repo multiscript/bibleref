@@ -55,8 +55,9 @@ class BibleBook(Enum):
     '''
     # Extra private attributes:
     # _max_verses:  List of max verse number for each chapter (ascending by chapter).
-    #               Len of list is number of chapters. 
-    # _verse_0s:    If not None, set of chapter numbers (1-indexed) that can begin with a verse 0.
+    #                 Len of list is number of chapters. None if no max_verse data supplied.
+    # _verse_0s:    Set of chapter numbers (1-indexed) that can begin with a verse 0. Empty set
+    #                 if no chapters can begin with a verse 0.
     #
     Gen     = "Gen" 
     Exod    = "Exod"
@@ -150,12 +151,18 @@ class BibleBook(Enum):
     def min_chap_num(self) -> int:
         '''Return lowest chapter number (currently always 1) for this `BibleBook`.
         '''
-        return 1    # Currently always 1. Perhaps in future some books may have a chapter-0 prologue included?
+        if self._max_verses is None:
+            return 0
+        else:
+            return 1    # Currently always 1. Perhaps in future some books may have a chapter-0 prologue included?
 
     def max_chap_num(self) -> int:
         '''Return highest chapter number for this `BibleBook`.
         '''
-        return len(self._max_verses)
+        if self._max_verses is None:
+            return 0
+        else:
+            return len(self._max_verses)
     
     def chap_count(self):
         '''Returns the number of chapters in this `BibleBook`.
@@ -194,17 +201,19 @@ class BibleBook(Enum):
         return BibleVerse(self, chap_num, self.max_verse_num(chap_num))        
 
     def next(self) -> 'BibleBook':
-        '''Returns the next `BibleBook` in the book ordering, or `None` if this is the final book.
+        '''Returns the next `BibleBook` in the book ordering, or `None` if this is the final book,
+        or is not part of the ordering.
         '''
-        if self.order == len(bible_data().book_order)-1:
+        if self.order is None or self.order == len(bible_data().book_order)-1:
             return None
         else:
             return bible_data().book_order[self.order+1]
 
     def prev(self) -> 'BibleBook':
-        '''Returns the previous `BibleBook` in the book ordering, or `None` if this is the first book.
+        '''Returns the previous `BibleBook` in the book ordering, or `None` if this is the first book,
+        or is not part of the ordering.
         '''
-        if self.order == 0:
+        if self.order is None or self.order == 0:
             return None
         else:
             return bible_data().book_order[self.order-1]
