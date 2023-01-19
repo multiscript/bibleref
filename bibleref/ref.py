@@ -7,7 +7,6 @@
 
 from dataclasses import dataclass
 from enum import Enum, Flag, auto
-import re
 from typing import Union
 
 from bibleref import BibleRefException, bible_data
@@ -197,10 +196,10 @@ class BibleBook(Enum):
     def next(self) -> 'BibleBook':
         '''Returns the next `BibleBook` in the book ordering, or `None` if this is the final book.
         '''
-        if self.order == len(data.book_order)-1:
+        if self.order == len(bible_data().book_order)-1:
             return None
         else:
-            return data.book_order[self.order+1]
+            return bible_data().book_order[self.order+1]
 
     def prev(self) -> 'BibleBook':
         '''Returns the previous `BibleBook` in the book ordering, or `None` if this is the first book.
@@ -208,7 +207,7 @@ class BibleBook(Enum):
         if self.order == 0:
             return None
         else:
-            return data.book_order[self.order-1]
+            return bible_data().book_order[self.order-1]
 
     def __lt__(self, other):
         if not isinstance(other, BibleBook):
@@ -518,8 +517,8 @@ class BibleRange:
         flags = flags or globals()['flags'] or BibleFlag.NONE
         # By definition, we need to allow multibook to encompass whole Bible
         flags |= BibleFlag.MULTIBOOK
-        start_book = data.book_order[0]
-        end_book = data.book_order[len(data.book_order)-1]
+        start_book = bible_data().book_order[0]
+        end_book = bible_data().book_order[len(bible_data().book_order)-1]
         return BibleRange(start=start_book.first_verse(flags=flags),
                           end=end_book.last_verse(), flags=flags)
 
@@ -1469,94 +1468,3 @@ class InvalidReferenceError(BibleRefException):
     '''Raided when trying to instantiate a BibleBook, BibleVerse or BibleRange that is not a valid
     Bible reference.'''
 
-
-def set_name_data(name_data_dict: dict):
-    set_abbrevs_and_titles(name_data_dict)
-    set_regexes(name_data_dict)
-
-def set_abbrevs_and_titles(name_data_dict: dict):
-    for book in BibleBook:
-        if book not in name_data_dict:
-            print(f"No name data for {book}")
-            book.abbrev = None
-            book.title = None
-        else:
-            name_data = name_data_dict[book]
-            book.abbrev = name_data[0]
-            book.title = name_data[1]
-
-def set_regexes(name_data_dict: dict):
-    '''Add a 'regex' attribute to each BibleBook for a regex matching acceptable names.
-
-    For each book, several regex patterns are joined together.
-    The main pattern is derived from the book's full title, and requires the min number of unique characters.
-    Any characters beyond the minimum are optional, but must be correct.
-    Extra patterns are derived from the list of any extra recognised abbreviations.
-    '''
-    for book in BibleBook:
-        if book not in name_data_dict:
-            print(f"No name data for {book}")
-            book.regex = None
-        else:
-            name_data = name_data_dict[book]
-
-            # For clarity, the comments show what happens for the example of "1 John"
-            full_title = name_data[1]    # e.g. "1 John"
-            min_chars = name_data[2]     # e.g. 1
-            extra_abbrevs = name_data[3] #
-            full_title_pattern = ""
-
-            # Peel off any numeric prefix, and match variations on the prefix.
-            # e.g. full_title_pattern = r"(1|I)\s*"
-            #      full_title = "John"
-            if full_title[0:2] == "1 " or full_title[0:2] == "2 " or full_title[0:2] == "3 ":
-                full_title_pattern = full_title[0:2]
-                full_title_pattern = full_title_pattern.replace("1 ", r"(1\s*|I\s+)") 
-                full_title_pattern = full_title_pattern.replace("2 ", r"(2\s*|II\s+)")
-                full_title_pattern = full_title_pattern.replace("3 ", r"(3\s*|III\s+)")
-                full_title = full_title[2:]
-            
-            # Add the minimum number of unique characters
-            # e.g. full_title_pattern = r"(1|I)\s*J"
-            full_title_pattern += full_title[0:min_chars]
-
-            # Add the rest of full title characters as optional matches.
-            # e.g. full_title_pattern = r"(1|I)\s*J(o(h(n)?)?)?"
-            for char in full_title[min_chars:]:
-                full_title_pattern += "(" + char
-            full_title_pattern += ")?" * (len(full_title)-min_chars)
-
-            # Allow for extra whitespace.
-            full_title_pattern = full_title_pattern.replace(" ",r"\s+")
-
-            # Collate the extra acceptable abbreviations, and combine everything into a final,
-            # single regex for the book
-            total_pattern = full_title_pattern
-            for abbrev in extra_abbrevs:
-                abbrev = abbrev.replace(" ",r"\s*") # Allow for variable whitespace
-                total_pattern += "|" + abbrev
-            book.regex = re.compile(total_pattern, re.IGNORECASE)
-
-def set_book_order(book_order: list):
-    # TODO: Handle books not in book_order
-    data.book_order = book_order
-    for i in range(len(book_order)):
-        book_order[i].order = i
-
-def set_max_verses(max_verses: dict):
-    # TODO: Handle books not in max_verses
-    for book, max_verse_list in max_verses.items():
-        book._max_verses = max_verse_list
-
-def set_verse_0s(verse_0s: dict):
-    for book in BibleBook:
-        if book in verse_0s:
-            book._verse_0s = verse_0s[book]
-        else:
-            book._verse_0s = set()
-
-
-set_name_data(data.default_name_data)
-set_book_order(data.default_book_order)
-set_max_verses(data.default_max_verses)
-set_verse_0s(data.default_verse_0s)

@@ -1,11 +1,176 @@
 
-from . import ref
+import re
 
+import bibleref
+from bibleref import ref, parser
 
 book_order          = []
-'''
-List of Bible books in their sort order.
-'''
+
+class BibleData:
+    '''A singleton of this class holds the Bible data for the package.
+
+    The singleton is returned by calling `bibleref.bible_data()`.
+    '''
+    def __init__(self):
+        self._range_sep           = "-"
+        self._major_list_sep      = ";"
+        self._minor_list_sep      = ","
+        self._verse_sep_std       = ":"
+        self._verse_sep_alt       = "."
+        self._book_order          = []
+
+        self.set_name_data(default_name_data)
+        self.book_order = default_book_order
+        self.set_max_verses(default_max_verses)
+        self.set_verse_0s(default_verse_0s)
+
+    @property
+    def range_sep(self):
+        '''Range separator character used to separate start and end of a Bible range.'''
+        return self._range_sep
+    
+    @range_sep.setter
+    def range_sep(self, value):
+        self._range_sep = value
+        parser.recreate_parser()
+
+    @property
+    def major_list_sep(self):
+        '''Major list separator character.
+
+        Separates Bible ranges in different groups. Usually separates ranges in different chapters.'''
+        return self._major_list_sep
+    
+    @major_list_sep.setter
+    def major_list_sep(self, value):
+        self._major_list_sep = value
+        parser.recreate_parser()
+
+    @property
+    def minor_list_sep(self):
+        '''Minor list separator character.
+
+        Separates Bible ranges in the same group. Usually separates ranges in the same chapter.'''
+        return self._minor_list_sep
+    
+    @minor_list_sep.setter
+    def minor_list_sep(self, value):
+        self._minor_list_sep = value
+        parser.recreate_parser()
+
+    @property
+    def verse_sep_std(self):
+        '''Standard verse separator character, used to separate chapter and verse numbers'''
+        return self._verse_sep_std
+    
+    @verse_sep_std.setter
+    def verse_sep_std(self, value):
+        self._verse_sep_std = value
+        parser.recreate_parser()
+
+    @property
+    def verse_sep_alt(self):
+        '''Alternate verse separator character, used to separate chapter and verse numbers'''
+        return self._verse_sep_alt
+    
+    @verse_sep_alt.setter
+    def verse_sep_alt(self, value):
+        self._verse_sep_alt = value
+        parser.recreate_parser()
+
+    @property
+    def book_order(self):
+        '''
+        List of Bible books in their sort order.
+        '''
+        return self._book_order
+
+    @book_order.setter
+    def book_order(self, value: list):
+        # TODO: Handle books not in book_order
+        self._book_order = value
+        for i in range(len(self._book_order)):
+            self._book_order[i].order = i
+
+    def set_name_data(self, name_data_dict: dict):
+        self._set_abbrevs_and_titles(name_data_dict)
+        self._set_regexes(name_data_dict)
+
+    def _set_abbrevs_and_titles(self, name_data_dict: dict):
+        for book in ref.BibleBook:
+            if book not in name_data_dict:
+                # print(f"No name data for {book}")
+                book.abbrev = None
+                book.title = None
+            else:
+                name_data = name_data_dict[book]
+                book.abbrev = name_data[0]
+                book.title = name_data[1]
+
+    def _set_regexes(self, name_data_dict: dict):
+        '''Add a 'regex' attribute to each BibleBook for a regex matching acceptable names.
+
+        For each book, several regex patterns are joined together.
+        The main pattern is derived from the book's full title, and requires the min number of unique characters.
+        Any characters beyond the minimum are optional, but must be correct.
+        Extra patterns are derived from the list of any extra recognised abbreviations.
+        '''
+        for book in ref.BibleBook:
+            if book not in name_data_dict:
+                # print(f"No name data for {book}")
+                book.regex = None
+            else:
+                name_data = name_data_dict[book]
+
+                # For clarity, the comments show what happens for the example of "1 John"
+                full_title = name_data[1]    # e.g. "1 John"
+                min_chars = name_data[2]     # e.g. 1
+                extra_abbrevs = name_data[3] #
+                full_title_pattern = ""
+
+                # Peel off any numeric prefix, and match variations on the prefix.
+                # e.g. full_title_pattern = r"(1|I)\s*"
+                #      full_title = "John"
+                if full_title[0:2] == "1 " or full_title[0:2] == "2 " or full_title[0:2] == "3 ":
+                    full_title_pattern = full_title[0:2]
+                    full_title_pattern = full_title_pattern.replace("1 ", r"(1\s*|I\s+)") 
+                    full_title_pattern = full_title_pattern.replace("2 ", r"(2\s*|II\s+)")
+                    full_title_pattern = full_title_pattern.replace("3 ", r"(3\s*|III\s+)")
+                    full_title = full_title[2:]
+                
+                # Add the minimum number of unique characters
+                # e.g. full_title_pattern = r"(1|I)\s*J"
+                full_title_pattern += full_title[0:min_chars]
+
+                # Add the rest of full title characters as optional matches.
+                # e.g. full_title_pattern = r"(1|I)\s*J(o(h(n)?)?)?"
+                for char in full_title[min_chars:]:
+                    full_title_pattern += "(" + char
+                full_title_pattern += ")?" * (len(full_title)-min_chars)
+
+                # Allow for extra whitespace.
+                full_title_pattern = full_title_pattern.replace(" ",r"\s+")
+
+                # Collate the extra acceptable abbreviations, and combine everything into a final,
+                # single regex for the book
+                total_pattern = full_title_pattern
+                for abbrev in extra_abbrevs:
+                    abbrev = abbrev.replace(" ",r"\s*") # Allow for variable whitespace
+                    total_pattern += "|" + abbrev
+                book.regex = re.compile(total_pattern, re.IGNORECASE)
+
+
+    def set_max_verses(self, max_verses: dict):
+        # TODO: Handle books not in max_verses
+        for book, max_verse_list in max_verses.items():
+            book._max_verses = max_verse_list
+
+    def set_verse_0s(self, verse_0s: dict):
+        for book in ref.BibleBook:
+            if book in verse_0s:
+                book._verse_0s = verse_0s[book]
+            else:
+                book._verse_0s = set()
 
 
 default_book_order = [
@@ -77,7 +242,7 @@ default_book_order = [
     ref.BibleBook.Rev
 ]
 '''
-Default list of Bible books in their sort order.
+Default Bible book sort order.
 '''
 
 
@@ -149,7 +314,8 @@ default_name_data = {
     ref.BibleBook.Jude:     ("Jude",    "Jude",             4,   []),
     ref.BibleBook.Rev:      ("Rev",     "Revelation",       2,   ["The Revelation", "The Revelation to John"])
 }
-'''
+'''Default Bible book name data.
+
 - Keys: Bible Book
 - Values: (Abbrev title, Full title, Min unique chars (excl. numbers), List of extra recognised abbrevs)
 
@@ -226,7 +392,8 @@ default_max_verses = {
     ref.BibleBook.Jude:     [25],
     ref.BibleBook.Rev:      [20, 29, 22, 11, 14, 17, 17, 13, 21, 11, 19, 17, 18, 20, 8, 21, 18, 24, 21, 15, 27, 21]
 }
-'''
+'''Default max verse numbers for each Bible book and chapter
+
 - Keys: Bible books
 - Values: List of max verse number for each chapter (ascending by chapter). Len of list is number of chapters.
 '''
@@ -240,7 +407,10 @@ default_verse_0s = {
                         121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 138, 139, 140, 141, 142,
                         143, 144, 145])
 }
-'''
+'''Default verse 0 numbers for Bible books that have chapters than can begin with verse 0.
+
 - Keys: Bible books
 - Values: Set of chapter numbers (1-indexed) that can begin with a verse 0.
 '''
+
+bibleref._bible_data = BibleData()

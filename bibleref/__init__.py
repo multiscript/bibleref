@@ -53,84 +53,17 @@ execution of that method.
 
 # Top-Level Objects
 '''
-import bibleref
-
 
 def bible_data():
-    '''Returns the package-global `BibleData` instance, which can be used to modify the default Bible data
-    used by the package.
+    '''Returns the package `bibleref.data.BibleData` singleton, which can be used to modify the default Bible data.
     '''
     return _bible_data
 
-
-class BibleData:
-    def __init__(self):
-        self._range_sep           = "-"
-        self._major_list_sep      = ";"
-        self._minor_list_sep      = ","
-        self._verse_sep_std       = ":"
-        self._verse_sep_alt       = "."
-    
-    @property
-    def range_sep(self):
-        '''Range separator character used to separate start and end of a Bible range.'''
-        return self._range_sep
-    
-    @range_sep.setter
-    def range_sep(self, value):
-        self._range_sep = value
-        bibleref.parser.recreate_parser()
-
-    @property
-    def major_list_sep(self):
-        '''Major list separator character.
-
-        Separates Bible ranges in different groups. Usually separates ranges in different chapters.'''
-        return self._major_list_sep
-    
-    @major_list_sep.setter
-    def major_list_sep(self, value):
-        self._major_list_sep = value
-        bibleref.parser.recreate_parser()
-
-    @property
-    def minor_list_sep(self):
-        '''Minor list separator character.
-
-        Separates Bible ranges in the same group. Usually separates ranges in the same chapter.'''
-        return self._minor_list_sep
-    
-    @minor_list_sep.setter
-    def minor_list_sep(self, value):
-        self._minor_list_sep = value
-        bibleref.parser.recreate_parser()
-
-    @property
-    def verse_sep_std(self):
-        '''Standard verse separator character, used to separate chapter and verse numbers'''
-        return self._verse_sep_std
-    
-    @verse_sep_std.setter
-    def verse_sep_std(self, value):
-        self._verse_sep_std = value
-        bibleref.parser.recreate_parser()
-
-    @property
-    def verse_sep_alt(self):
-        '''Alternate verse separator character, used to separate chapter and verse numbers'''
-        return self._verse_sep_alt
-    
-    @verse_sep_alt.setter
-    def verse_sep_alt(self, value):
-        self._verse_sep_alt = value
-        bibleref.parser.recreate_parser()
-
-
-_bible_data = BibleData()
+_bible_data = None  # Will be set by data submodule.
 
 
 class BibleRefException(Exception):
     '''Parent class for all Exception types in this package.'''
 
 
-from .ref import BibleBook, BibleFlag, BibleRange, BibleRangeList, BibleRef, BibleVerse, BibleVersePart
+from .ref import BibleBook, BibleVerse, BibleRange, BibleRangeList, BibleRef, BibleFlag, BibleVersePart
