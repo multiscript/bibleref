@@ -77,10 +77,18 @@ BibleRangeList("Matthew 2, Mark 6-8, Luke 12, John 14-16")
 BibleRangeList("Matthew 2, 5, Mark 6-8, 12, Luke 9, 12-13, John 1-3, 14-16")
 ```
 
+# Attribution
+
+The set operations and underlying linked-list implementation in this package are derived from
+[python-ranges](https://github.com/Superbird11/ranges), under the MIT Licence.
+
+Other ideas in this package were developed from [python-scriptures](https://github.com/davisd/python-scriptures),
+under the BSD-3-Clause license.
+
 # Build Instructions
 
 Use these instructions if you’re building from the source. bibleref has been developed on Python 3.10, but should
-work on earlier versions as well.
+work on several earlier versions as well.
 
 1. `git clone https://github.com/multiscript/bibleref/`
 1. `cd bibleref`

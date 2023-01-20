@@ -74,6 +74,32 @@ BibleRangeList("Matthew 2, Mark 6-8, Luke 12, John 14-16")
 BibleRangeList("Matthew 2, 5, Mark 6-8, 12, Luke 9, 12-13, John 1-3, 14-16")
 ```
 
+# Attribution
+
+The set operations and underlying linked-list implementation in this package are derived from
+[python-ranges](https://github.com/Superbird11/ranges), under the MIT Licence.
+
+Other ideas in this package were developed from [python-scriptures](https://github.com/davisd/python-scriptures),
+under the BSD-3-Clause license.
+
+# Build Instructions
+
+Use these instructions if you’re building from the source. bibleref has been developed on Python 3.10, but should
+work on several earlier versions as well.
+
+1. `git clone https://github.com/multiscript/bibleref/`
+1. `cd bibleref`
+1. `python3 -m venv venv` (Create a virtual environment.)
+   - On Windows: `python -m venv venv`
+1. `source venv/bin/activate` (Activate the virtual environment.)
+   - In Windows cmd.exe: `venv\Scripts\\activate.bat`
+   - In Windows powershell: `.\\venv\Scripts\Activate.ps1` You may first need to run `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser`
+1. For development work...
+   - `pip install -e .` (Creates an editable local install)
+1. ...or to build the package:
+   - `pip install build`
+   - `python -m build`
+
 # Top-Level Objects
 '''
 
