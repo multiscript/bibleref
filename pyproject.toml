@@ -22,8 +22,9 @@ classifiers = [
 ]
 
 [project.urls]
-"Homepage" = "https://github.com/multiscript/bibleref"
-"Bug Tracker" = "https://github.com/multiscript/bibleref/issues"
+"Documentation" = "https://multiscript.app/bibleref"
+"Source" = "https://github.com/multiscript/bibleref"
+"Issue Tracker" = "https://github.com/multiscript/bibleref/issues"
 
 [tool.setuptools.packages.find]
 where = ["src"]  
