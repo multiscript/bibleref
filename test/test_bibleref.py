@@ -3,6 +3,7 @@ import unittest
 
 from bibleref import bible_data, BibleRangeList
 
+
 class TestBibleRef(unittest.TestCase):
     def test_bible_data(self):
         # Save existing characters

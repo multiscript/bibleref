@@ -18,29 +18,61 @@ For convenience these classes can be directly imported from `bibleref`. They can
 `BibleRange` and `BibleRangeList` implement common set operations (such as union, intersection, difference and 
 symmetric difference).
 
-# Example
+# Examples
 
 ```python
 >>> from bibleref import *
->>> range_list = BibleRangeList("Mark 3:1-4:2; 5:6-8, 10; Matt 4")
->>> print(range_list)
-Mark 3-4:2; 5:6-8, 10; Matthew 4
->>> range_list[1]
-BibleRange(Mark 5:6-5:8)
->>> range_list[1].start
-BibleVerse(Mark 5:6)
->>> range_list[1].end
-BibleVerse(Mark 5:8)
->>> range_list[1].end.book
-<BibleBook.Mark: 'Mark'>
->>> for verse in range_list[1]:
-...     print(verse)
+>>> # Parse a string of Bible ranges...
+>>> range_list = BibleRangeList("Mark 2-3:6; 4; 6:1-6, 30-44, 56; Luke 2")
+>>> print(range_list)               # Convert back to string
+Mark 2-3:6; 4; 6:1-6, 30-44, 56; Luke 2
+>>> len(range_list)
+6
+>>> range_list[0]                   # Indiv ranges from a list
+BibleRange(Mark 2-3:6)
+>>> range_list[5].start             # Start and...
+BibleVerse(Luke 2:1)
+>>> range_list[5].end               # ...end verses of a range.
+BibleVerse(Luke 2:52)
+>>> range_list[5].end.book          # Verse attributes
+<BibleBook.Luke: 'Luke'>
+>>> range_list[5].end.chap_num
+2
+>>> range_list[5].end.verse_num
+52
+>>> len(range_list.groups)
+4
+>>> range_list.groups[2]            # Range groups from a list
+GroupView([BibleRange(Mark 6:1-6), BibleRange(Mark 6:30-44), BibleRange(Mark 6:56)])
+>>> range_list.groups[2][0]         # Indiv ranges within the group
+BibleRange(Mark 6:1-6)
+>>> range_list.groups[2][1]        
+BibleRange(Mark 6:30-44)
+>>> range_list.groups[2][2]
+BibleRange(Mark 6:56)
+>>> BibleVerse('Mark 2:23') + 10    # Verse addition / subtraction
+BibleVerse(Mark 3:5)
+>>> BibleRange('1 John').split(by_chap=True, num_verses=10) # Range splits
+BibleRangeList("1 John 1, 2:1-10, 11-20, 21-29, 3:1-10, 11-20, 21-24, 4:1-10, 11-20, 21, 5:1-10, 11-20, 21")
+>>> for verse in BibleRange('Mark 6:1-3'): 
+...     print(verse)                # Range iteration
 ... 
-Mark 5:6
-Mark 5:7
-Mark 5:8
+Mark 6:1
+Mark 6:2
+Mark 6:3
+>>> BibleRange('Matt 2:3-John 4:5', flags=BibleFlag.MULTIBOOK) # Multibook ranges
+BibleRange(Matthew 2:3-John 4:5)
+>>> list_1 = BibleRangeList("Matt 2-4; Mark 6-8; Luke 10-12; John 14-16")
+>>> list_2 = BibleRangeList("John 1-3; Luke 9-11, 13; Matt 3-5; Mark 12")
+>>> list_1 | list_2                 # Union of range lists
+BibleRangeList("Matthew 2-5, Mark 6-8, 12, Luke 9-13, John 1-3, 14-16")
+>>> list_1 & list_2                 # Intersection range lists
+BibleRangeList("Matthew 3-4, Luke 10-11")
+>>> list_1 - list_2                 # Difference of range lists
+BibleRangeList("Matthew 2, Mark 6-8, Luke 12, John 14-16")
+>>> list_1 ^ list_2                 # Symmetric difference of range lists
+BibleRangeList("Matthew 2, 5, Mark 6-8, 12, Luke 9, 12-13, John 1-3, 14-16")
 ```
-
 
 # Top-Level Objects
 '''
