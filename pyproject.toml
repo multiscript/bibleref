@@ -10,7 +10,7 @@ description = "A package for manipulating references to Bible books, verses and 
 readme = "README.md"
 requires-python = ">=3.7"
 dependencies = [
-    "lark",
+    "lark>=1.1.5",
 ]
 classifiers = [
     "Programming Language :: Python :: 3",
