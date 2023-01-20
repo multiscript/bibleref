@@ -5,12 +5,13 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "bibleref"
 version = "0.9.0"
-authors = [
-  { name="James Brennan", email="" },
-]
+
 description = "A package for manipulating references to Bible books, verses and verse-ranges."
 readme = "README.md"
 requires-python = ">=3.7"
+dependencies = [
+    "lark",
+]
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
