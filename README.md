@@ -17,6 +17,10 @@ For convenience these classes can be directly imported from `bibleref`. They can
 `BibleRange` and `BibleRangeList` implement common set operations (such as union, intersection, difference and 
 symmetric difference).
 
+# Docs
+
+See [multiscript.app/bibleref](https://multiscript.app/bibleref)
+
 # Examples
 
 ```python
