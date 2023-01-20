@@ -3,7 +3,6 @@
 # TODO: Create context manager to temporarily set or unset particular flags
 # TODO: Implement add and subtract operators for BibleVerses
 # TODO: Implement count of chapters and verses in a BibleRange and BibleRangeList
-# TODO: Implement set operators as standard operators
 
 from dataclasses import dataclass
 from enum import Enum, Flag, auto
@@ -863,6 +862,8 @@ class BibleRange:
         If this range and `other_ref` overlap or are adjacent, the resulting `BibleRangeList` contains one element:
         a single `BibleRange` encompassing them both. Otherwise, the list contains two elements:
         this `BibleRange` and `other_ref` (converted to a `BibleRange` if necessary).
+
+        Using the `|` operator is equivalent to calling `union()` with `flags = None`.
         '''
         if isinstance(other_ref, BibleRangeList):
             # Use the BibleRangeList implementation
@@ -886,6 +887,8 @@ class BibleRange:
         
         If there are verses in common, the list contains a single `BibleRange` element.
         If there are no verses in common, the list is empty.
+
+        Using the `&` operator is equivalent to calling `intersection()` with `flags = None`.
         '''
         if isinstance(other_ref, BibleRangeList):
             # Use the BibleRangeList implementation
@@ -911,6 +914,8 @@ class BibleRange:
         If this range surrounds `other_ref`, the list contains two elements:
             a lower-section `BibleRange`, and an upper-section `BibleRange`.
         If `other_ref` contains this range, the list is empty.
+
+        Using the `-` operator is equivalent to calling `difference()` with `flags = None`.
         '''
         if isinstance(other_ref, BibleVerse):
             # Convert to BibleRange (and we don't enforce existing flags for conversions)
@@ -936,6 +941,8 @@ class BibleRange:
 
         Depending on this range and `other_ref`, the `BibleRangeList` contains either one or two
         `BibleRange` elements. If this range and `other_ref` are exactly equal, this list is empty.
+
+        Using the `^` operator is equivalent to calling `sym_difference()` with `flags = None`.
         '''
         if isinstance(other_ref, BibleVerse):
             # Convert to BibleRange (and we don't enforce existing flags for conversions)
@@ -961,6 +968,18 @@ class BibleRange:
         '''Returns True if item is a BibleRef that falls within this range, otherwise False.
         '''
         return self.contains(bible_ref)
+    
+    def __or__(self, other_ref: 'BibleRef') -> 'BibleRangeList':
+        return self.union(other_ref)
+
+    def __and__(self, other_ref: 'BibleRef') -> 'BibleRangeList':
+        return self.intersection(other_ref)
+
+    def __sub__(self, other_ref: 'BibleRef') -> 'BibleRangeList':
+        return self.difference(other_ref)
+
+    def __xor__(self, other_ref: 'BibleRef') -> 'BibleRangeList':
+        return self.sym_difference(other_ref)
 
     def __repr__(self):
         return f"BibleRange({self.str()})"
@@ -1146,6 +1165,8 @@ class BibleRangeList(util.GroupedList):
     def union(self, other_ref: 'BibleRef', flags: BibleFlag = None) -> 'BibleRangeList':
         '''Creates a new `BibleRangeList` that contains all the verses in this `BibleRangeList`
         and all the verses in `other_ref`, then consolidates the result and returns it.
+
+        Using the `|` operator is equivalent to calling `union()` with `flags = None`.
         '''
         new_list = BibleRangeList(self)
         new_list.union_update(other_ref, flags=flags)
@@ -1153,6 +1174,8 @@ class BibleRangeList(util.GroupedList):
 
     def union_update(self, other_ref: 'BibleRef', flags: BibleFlag = None) -> 'BibleRangeList':
         '''Updates this list to be the union of its existing elements and `other_ref`, then consolidates this list.
+
+        Using the `|=` operator is equivalent to calling `union_update()` with `flags = None`.
         '''
         if isinstance(other_ref, BibleVerse):
             # Convert to BibleRangeList (and we don't enforce existing flags for conversions)
@@ -1168,6 +1191,8 @@ class BibleRangeList(util.GroupedList):
     def intersection(self, other_ref: 'BibleRef', flags: BibleFlag = None) -> 'BibleRangeList':
         '''Creates a new `BibleRangeList` of verses that are common to both this `BibleRangeList` and `other_ref`,
         then consolidates the result and returns it. If there are no verses in common, the returned list is empty.
+
+        Using the `&` operator is equivalent to calling `intersection()` with `flags = None`.
         '''
         if isinstance(other_ref, BibleVerse):
             # Convert to BibleRangeList (and we don't enforce existing flags for conversions)
@@ -1194,6 +1219,8 @@ class BibleRangeList(util.GroupedList):
     def intersection_update(self, other_ref: 'BibleRef', flags: BibleFlag = None) -> 'BibleRangeList':
         '''Updates this list to be the intersection of its existing elements and `other_ref`, then consolidates
         this list.
+
+        Using the `&=` operator is equivalent to calling `intersection_update()` with `flags = None`.
         '''
         intersection_list = self.intersection(other_ref, flags=flags)
         self.clear()
@@ -1201,6 +1228,8 @@ class BibleRangeList(util.GroupedList):
 
     def difference(self, other_ref: 'BibleRef', flags: BibleFlag = None) -> 'BibleRangeList':
         '''Returns a new `BibleRangeList` of verses that are in this `BibleRangeList`, but not in `other_ref`.
+
+        Using the `-` operator is equivalent to calling `difference()` with `flags = None`.
         '''
         new_list = BibleRangeList(self)
         new_list.difference_update(other_ref, flags=flags)
@@ -1209,6 +1238,8 @@ class BibleRangeList(util.GroupedList):
     def difference_update(self, other_ref: 'BibleRef', flags: BibleFlag = None) -> 'BibleRangeList':
         '''Updates this list to be the difference of its existing elements and `other_ref`, then consolidates
         this list.
+
+        Using the `-=` operator is equivalent to calling `difference_update()` with `flags = None`.
         '''
         if isinstance(other_ref, BibleVerse):
             # Convert to BibleRangeList (and we don't enforce existing flags for conversions)
@@ -1249,6 +1280,8 @@ class BibleRangeList(util.GroupedList):
     def sym_difference(self, other_ref: 'BibleRef', flags: BibleFlag = None) -> 'BibleRangeList':
         '''Returns a new `BibleRangeList` of verses that are either in this `BibleRangeList`, or in `other_ref`,
         but not both.
+
+        Using the `^` operator is equivalent to calling `sym_difference()` with `flags = None`.
         '''
         if isinstance(other_ref, BibleVerse):
             # Convert to BibleRangeList (and we don't enforce existing flags for conversions)
@@ -1265,6 +1298,8 @@ class BibleRangeList(util.GroupedList):
     def sym_difference_update(self, other_ref: 'BibleRef', flags: BibleFlag = None) -> 'BibleRangeList':
         '''Updates this list to be the symmetric difference of its existing elements and `other_ref`, then
         consolidates this list.
+
+        Using the `^=` operator is equivalent to calling `sym_difference_update()` with `flags = None`.
         '''
         sym_difference_list = self.sym_difference(other_ref, flags=flags)
         self.clear()
@@ -1274,6 +1309,30 @@ class BibleRangeList(util.GroupedList):
         '''Returns True if item is a BibleRef that falls within this range, otherwise False.
         '''
         return self.contains(bible_ref)
+
+    def __or__(self, other_ref: 'BibleRef') -> 'BibleRangeList':
+        return self.union(other_ref)
+    
+    def __and__(self, other_ref: 'BibleRef') -> 'BibleRangeList':
+        return self.intersection(other_ref)
+
+    def __sub__(self, other_ref: 'BibleRef') -> 'BibleRangeList':
+        return self.difference(other_ref)
+
+    def __xor__(self, other_ref: 'BibleRef') -> 'BibleRangeList':
+        return self.sym_difference(other_ref)
+
+    def __ior__(self, other_ref: 'BibleRef') -> 'BibleRangeList':
+        return self.union_update(other_ref)    
+
+    def __iand__(self, other_ref: 'BibleRef') -> 'BibleRangeList':
+        return self.intersection_update(other_ref)
+
+    def __isub__(self, other_ref: 'BibleRef') -> 'BibleRangeList':
+        return self.difference_update(other_ref)
+
+    def __ixor__(self, other_ref: 'BibleRef') -> 'BibleRangeList':
+        return self.sym_difference_update(other_ref)
 
     def __repr__(self):
         return f'BibleRangeList("{self.str()}")'
