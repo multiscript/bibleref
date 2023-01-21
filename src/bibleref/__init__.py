@@ -76,11 +76,15 @@ BibleRangeList("Matthew 2, 5, Mark 6-8, 12, Luke 9, 12-13, John 1-3, 14-16")
 
 # Attribution
 
-The set operations and underlying linked-list implementation in this package are derived from
+The set operations and linked-list implementation in this package are derived from
 [python-ranges](https://github.com/Superbird11/ranges), under the MIT Licence.
 
 Other ideas in this package were developed from [python-scriptures](https://github.com/davisd/python-scriptures),
 under the BSD-3-Clause license.
+
+# Installation
+
+   `pip install bibleref`
 
 # Build Instructions
 
