@@ -741,6 +741,44 @@ class BibleRange:
         '''Returns `True` if the `BibleRange` exactly contains a single verse, else `False`.'''
         return  (self.start == self.end)
 
+    def verse_count(self, flags: BibleFlag = None):
+        '''Returns the number of verses in this range.'''
+        # We split the range into chapters, which is not the most efficient approach, but makes the counting simple.
+        bible_ranges = self.split(by_chap=True) # Each range will thus be within its own chapter
+        count = 0
+        for bible_range in bible_ranges:
+            count += (bible_range.end.verse_num - bible_range.start.verse_num + 1)
+        return count
+
+    def chap_count(self, *, whole: bool = False, flags: BibleFlag = None):
+        '''Returns the number of chapters in this range.
+        
+        If `whole` is True, only whole chapters are counted. Otherwise partial chapters are also included in the
+        count.'''
+        # We split the range into chapters, which is not the most efficient approach, but makes the counting simple.
+        bible_ranges = self.split(by_chap=True)
+        count = len(bible_ranges)
+        if whole:
+            if not bible_ranges[0].is_whole_chap():
+                count -= 1
+            if len(bible_ranges) > 1 and not bible_ranges[-1].is_whole_chap():
+                count -= 1
+        return count
+
+    def book_count(self, *, whole: bool = False, flags: BibleFlag = None):
+        '''Returns the number of Bible books in this range.
+        
+        If `whole` is True, only whole books are counted. Otherwise, partial books are also included in the count.'''
+        # We split the range into books, which is not the most efficient approach, but makes the counting simple.
+        bible_ranges = self.split(by_book=True)
+        count = len(bible_ranges)
+        if whole:
+            if not bible_ranges[0].is_whole_book():
+                count -= 1
+            if len(bible_ranges) > 1 and not bible_ranges[-1].is_whole_book():
+                count -= 1
+        return count
+
     def split(self, *, by_book: bool = False, by_chap: bool = False, num_verses: bool = None,
               flags: BibleFlag = None):
         '''Split this `BibleRange` into a `BibleRangeList` of smaller consecutive ranges, as follows:
@@ -748,7 +786,7 @@ class BibleRange:
         - If `by_book` is `True`, splits are made at the end of each book.
         - If `by_chap` is `True`, splits are made end of each chapter.
         - If `num_verses` is specified, splits are made after (no more than) the specified number of verses.
-        - `by_book`, `by_chap` and `num_verses` can be set in any combination, but one of them must be `True`,
+        - `by_book`, `by_chap` and `num_verses` can be set in any combination, but one of them must be not `None`,
           otherwise a `ValueError` will be raised.
         '''
         if not (by_book or by_chap or num_verses):

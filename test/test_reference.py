@@ -217,6 +217,39 @@ class TestBibleReference(unittest.TestCase):
         ]
         self.assertEqual(list(bible_range), expected_list)       
 
+    def test_range_counts(self):
+        # Multi-book range
+        bible_range = BibleRange("1 John 1:5-3 John 8", flags=BibleFlag.MULTIBOOK)
+        self.assertEqual(bible_range.verse_count(), 122)
+        self.assertEqual(bible_range.chap_count(), 7)
+        self.assertEqual(bible_range.chap_count(whole=True), 5)
+        self.assertEqual(bible_range.book_count(), 3)
+        self.assertEqual(bible_range.book_count(whole=True), 1)
+
+        # Range across 3 chapters
+        bible_range = BibleRange("1 John 1:5-3:10", flags=BibleFlag.MULTIBOOK)
+        self.assertEqual(bible_range.verse_count(), 45)
+        self.assertEqual(bible_range.chap_count(), 3)
+        self.assertEqual(bible_range.chap_count(whole=True), 1)
+        self.assertEqual(bible_range.book_count(), 1)
+        self.assertEqual(bible_range.book_count(whole=True), 0)
+
+        # Range across 2 chapters
+        bible_range = BibleRange("1 John 1:5-2:11", flags=BibleFlag.MULTIBOOK)
+        self.assertEqual(bible_range.verse_count(), 17)
+        self.assertEqual(bible_range.chap_count(), 2)
+        self.assertEqual(bible_range.chap_count(whole=True), 0)
+        self.assertEqual(bible_range.book_count(), 1)
+        self.assertEqual(bible_range.book_count(whole=True), 0)
+
+        # Range across 1 chapter
+        bible_range = BibleRange("3 John 5-10")
+        self.assertEqual(bible_range.verse_count(), 6)
+        self.assertEqual(bible_range.chap_count(), 1)
+        self.assertEqual(bible_range.chap_count(whole=True), 0)
+        self.assertEqual(bible_range.book_count(), 1)
+        self.assertEqual(bible_range.book_count(whole=True), 0)
+
     def test_range_split(self):
         ref = BibleRange("Matt 1:5-John 10:11", flags=BibleFlag.MULTIBOOK)
         self.assertRaises(ValueError, lambda: ref.split())
