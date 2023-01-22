@@ -416,6 +416,8 @@ class BibleVerse:
 
         Using the `+` operator is equivalent to calling `add()` with `flags = None`.
         '''
+        if not isinstance(num_verses, int):
+            raise TypeError(f"Cannot add a {type(num_verses)} to a BibleVerse")
         flags = flags or globals()['flags'] or BibleFlag.NONE
         book = self.book
         chap_num = self.chap_num
@@ -439,48 +441,59 @@ class BibleVerse:
 
         return BibleVerse(book, chap_num, verse_num, flags=flags)
 
-    def subtract(self, num_verses: int, flags: BibleFlag = None) -> 'BibleVerse':
-        '''Return a new `BibleVerse` that is `num_verses` before this `BibleVerse`.
+    def subtract(self, other: Union[int, 'BibleVerse'], flags: BibleFlag = None) -> 'BibleVerse':
+        '''If `other` is an `int`, returns a new `BibleVerse` that is `other` verses before this `BibleVerse`.
         
         If `BibleFlag.MULTIBOOK` is set (either set by the `flags` argument or, if `None`, the global attribute), and
         the result would be before the current book, a verse in the previous book is returned. Otherwise, if the
         verse does not exist, None is returned. If the `verse_num` of this `BibleVerse` is already 0,
         `BibleFlag.VERSE_0` is force set on the `flags` argument for this call.
 
+        If `other` is another `BibleVerse`, returns the integer number of verses between this BibleVerse and `other`.
+        The number is positive if this verse > `other`, or negative if this verse < `other`.
+
         Using the `-` operator is equivalent to calling `subtract()` with `flags = None`.
         '''
         flags = flags or globals()['flags'] or BibleFlag.NONE
-        book = self.book
-        chap_num = self.chap_num
-        if self.verse_num == 0:
-            flags = flags | BibleFlag.VERSE_0 # Honour existing verse 0s
-        verse_num = self.verse_num - num_verses
-        min_verse_num = book.min_verse_num(chap_num, flags)
-        while verse_num < min_verse_num:
-            chap_num -= 1
-            if chap_num < book.min_chap_num():
-                if BibleFlag.MULTIBOOK not in flags:
-                    return None
-                else:
-                    book = book.prev()
-                    if book is None:
+        if isinstance(other, int):
+            book = self.book
+            chap_num = self.chap_num
+            if self.verse_num == 0:
+                flags = flags | BibleFlag.VERSE_0 # Honour existing verse 0s
+            verse_num = self.verse_num - other
+            min_verse_num = book.min_verse_num(chap_num, flags)
+            while verse_num < min_verse_num:
+                chap_num -= 1
+                if chap_num < book.min_chap_num():
+                    if BibleFlag.MULTIBOOK not in flags:
                         return None
-                    chap_num = book.max_chap_num()
-             
-            verse_num = verse_num + book.max_verse_num(chap_num) - min_verse_num + 1 
-            min_verse_num = book.min_verse_num(chap_num)
-
-        return BibleVerse(book, chap_num, verse_num, flags=flags)
+                    else:
+                        book = book.prev()
+                        if book is None:
+                            return None
+                        chap_num = book.max_chap_num()
+                
+                verse_num = verse_num + book.max_verse_num(chap_num) - min_verse_num + 1 
+                min_verse_num = book.min_verse_num(chap_num)
+            return BibleVerse(book, chap_num, verse_num, flags=flags)
+        elif isinstance(other, BibleVerse):
+            bible_range = BibleRange(start=self, end=other) # Bible will swap start and end as necessary
+            difference = bible_range.verse_count() - 1
+            if self < other:
+                difference *= -1
+            return difference
+        else:
+            raise TypeError(f"Cannot subtract a {type(other)} from a BibleVerse")
 
     def __add__(self, num_verses: int) -> 'BibleVerse':
         if not isinstance(num_verses, int):
             return NotImplemented
         return self.add(num_verses)
     
-    def __sub__(self, num_verses: int) -> 'BibleVerse':
-        if not isinstance(num_verses, int):
+    def __sub__(self, other: Union[int, 'BibleVerse']) -> 'BibleVerse':
+        if not isinstance(other, int) and not isinstance(other, BibleVerse):
             return NotImplemented
-        return self.subtract(num_verses)
+        return self.subtract(other)
 
     def __repr__(self):
         return f"BibleVerse({self.str(abbrev=True)})"
