@@ -591,7 +591,16 @@ class TestBibleReference(unittest.TestCase):
         no_verse_0.verse_1_to_0()
         self.assertEqual(no_verse_0, BibleRangeList("Matt 2:3-4:5; Mark 6:7-8:9"))
 
-    def test_bible_range_list_compress(self):
+    def test_range_list_counts(self):
+        range_list = BibleRangeList("1 John 1:5-3 John 8; 1 John 1:5-3:10; 1 John 1:5-2:11; 3 John 5-10",
+                                    flags=BibleFlag.MULTIBOOK)
+        self.assertEqual(range_list.verse_count(), 190)
+        self.assertEqual(range_list.chap_count(), 13)
+        self.assertEqual(range_list.chap_count(whole=True), 6)
+        self.assertEqual(range_list.book_count(), 6)
+        self.assertEqual(range_list.book_count(whole=True), 1)
+
+    def test_bible_range_list_consolidate(self):
         range = BibleRangeList("John; Luke; Matt 1:17-20, 12-15, 9-11, 5-7, 4-6", flags=BibleFlag.MULTIBOOK)
         range.sort()
         range.consolidate(flags=BibleFlag.NONE)
