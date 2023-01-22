@@ -160,8 +160,15 @@ class BibleBook(Enum):
             return 0
         else:
             return len(self._max_verses)
-    
-    def chap_count(self):
+
+    def verse_count(self, flags: BibleFlag = None) -> int:
+        '''Returns the number of verses in thie `BibleBook`.'''
+        count = 0
+        for i in range(self.chap_count()):
+            count += (self.max_verse_num(i+1) - self.min_verse_num(i+1, flags=flags) + 1)
+        return count
+
+    def chap_count(self) -> int:
         '''Returns the number of chapters in this `BibleBook`.
         '''
         return (self.max_chap_num() - self.min_chap_num() + 1)

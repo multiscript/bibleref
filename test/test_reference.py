@@ -10,6 +10,12 @@ class TestBibleReference(unittest.TestCase):
         self.assertEqual(BibleBook.from_str("Mt"), BibleBook.Matt)
         self.assertEqual(BibleBook.from_str("Rev"), BibleBook.Rev)
 
+    def test_bible_book_counts(self):
+        self.assertEqual(BibleBook.Phil.verse_count(), 104) # Check one book manually
+        for book in BibleBook:
+            self.assertEqual(book.verse_count(), BibleRange(book.title).verse_count())
+            self.assertEqual(book.chap_count(), BibleRange(book.title).chap_count())
+
     def test_bible_verses(self):
         self.assertRaises(ValueError, lambda: BibleVerse(BibleBook.Matt, 2, 3, 4))
         self.assertRaises(ValueError, lambda: BibleVerse(BibleBook.Matt, 2))
