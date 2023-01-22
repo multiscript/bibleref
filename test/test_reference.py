@@ -74,7 +74,7 @@ class TestBibleReference(unittest.TestCase):
     def test_verse_arithmetic(self):
         self.assertEqual(BibleVerse("Ps 3:8") + 1, BibleVerse("Ps 4:1"))
         self.assertEqual(BibleVerse("Ps 4:1") - 1, BibleVerse("Ps 3:8"))
-        self.assertEqual(BibleVerse("Ps 3:8").add_num_verses(1, flags=BibleFlag.VERSE_0),
+        self.assertEqual(BibleVerse("Ps 3:8").add(1, flags=BibleFlag.VERSE_0),
                         BibleVerse("Ps 4:0", flags=BibleFlag.VERSE_0))
         self.assertEqual(BibleVerse("Ps 4:0", flags=BibleFlag.VERSE_0) - 1, BibleVerse("Ps 3:8"))
         self.assertEqual(BibleVerse("John 1:50") + 11, BibleVerse("John 2:10"))

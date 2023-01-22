@@ -406,7 +406,7 @@ class BibleVerse:
         else:
             return self
 
-    def add_num_verses(self, num_verses: int, flags: BibleFlag = None) -> 'BibleVerse':
+    def add(self, num_verses: int, flags: BibleFlag = None) -> 'BibleVerse':
         '''Returns a new `BibleVerse` that is `num_verses` after this `BibleVerse`.
         
         If `BibleFlag.MULTIBOOK` is set (either by the `flags` argument or, if `None`, by the global attribute), and
@@ -414,7 +414,7 @@ class BibleVerse:
         does not exist, `None` is returned. If the `verse_num` of this `BibleVerse` is already 0,
         `BibleFlag.VERSE_0` is force set on the `flags` argument for this call.
 
-        Using the `+` operator is equivalent to calling `add_num_verses()` with `flags = None`.
+        Using the `+` operator is equivalent to calling `add()` with `flags = None`.
         '''
         flags = flags or globals()['flags'] or BibleFlag.NONE
         book = self.book
@@ -439,7 +439,7 @@ class BibleVerse:
 
         return BibleVerse(book, chap_num, verse_num, flags=flags)
 
-    def sub_num_verses(self, num_verses: int, flags: BibleFlag = None) -> 'BibleVerse':
+    def subtract(self, num_verses: int, flags: BibleFlag = None) -> 'BibleVerse':
         '''Return a new `BibleVerse` that is `num_verses` before this `BibleVerse`.
         
         If `BibleFlag.MULTIBOOK` is set (either set by the `flags` argument or, if `None`, the global attribute), and
@@ -447,7 +447,7 @@ class BibleVerse:
         verse does not exist, None is returned. If the `verse_num` of this `BibleVerse` is already 0,
         `BibleFlag.VERSE_0` is force set on the `flags` argument for this call.
 
-        Using the `-` operator is equivalent to calling `add_num_verses()` with `flags = None`.
+        Using the `-` operator is equivalent to calling `subtract()` with `flags = None`.
         '''
         flags = flags or globals()['flags'] or BibleFlag.NONE
         book = self.book
@@ -475,12 +475,12 @@ class BibleVerse:
     def __add__(self, num_verses: int) -> 'BibleVerse':
         if not isinstance(num_verses, int):
             return NotImplemented
-        return self.add_num_verses(num_verses)
+        return self.add(num_verses)
     
     def __sub__(self, num_verses: int) -> 'BibleVerse':
         if not isinstance(num_verses, int):
             return NotImplemented
-        return self.sub_num_verses(num_verses)
+        return self.subtract(num_verses)
 
     def __repr__(self):
         return f"BibleVerse({self.str(abbrev=True)})"
@@ -815,7 +815,7 @@ class BibleRange:
                 range_end = range_start.book.last_verse()
                 while range_end < range_to_split.end:
                     new_split.append(BibleRange(start=range_start, end=range_end, flags=flags))
-                    range_start = range_end.add_num_verses(1, flags=flags)
+                    range_start = range_end.add(1, flags=flags)
                     range_end = range_start.book.last_verse()
                 new_split.append(BibleRange(start=range_start, end=range_to_split.end, flags=flags))
             split_result = new_split
@@ -827,7 +827,7 @@ class BibleRange:
                 range_end = range_start.last_verse()
                 while range_end < range_to_split.end:
                     new_split.append(BibleRange(start=range_start, end=range_end, flags=flags))
-                    range_start = range_end.add_num_verses(1, flags=flags)
+                    range_start = range_end.add(1, flags=flags)
                     range_end = range_start.last_verse()
                 new_split.append(BibleRange(start=range_start, end=range_to_split.end, flags=flags))
             split_result = new_split
@@ -836,11 +836,11 @@ class BibleRange:
             new_split = []
             for range_to_split in split_result:
                 range_start = BibleVerse(range_to_split.start, flags=flags)
-                range_end = range_start.add_num_verses(num_verses - 1, flags)
+                range_end = range_start.add(num_verses - 1, flags)
                 while range_end is not None and range_end < range_to_split.end:
                     new_split.append(BibleRange(start=range_start, end=range_end, flags=flags))
-                    range_start = range_end.add_num_verses(1, flags)
-                    range_end = range_end.add_num_verses(num_verses, flags)
+                    range_start = range_end.add(1, flags)
+                    range_end = range_end.add(num_verses, flags)
                 new_split.append(BibleRange(start=range_start, end=range_to_split.end, flags=flags))
             split_result = new_split
         
@@ -876,7 +876,7 @@ class BibleRange:
             other_ref = BibleRange(start=other_ref, end=other_ref, flags=BibleFlag.ALL)
         if isinstance(other_ref, BibleRange):        
             lower, higher = (self, other_ref) if self < other_ref else (other_ref, self)
-            return (lower.end.add_num_verses(1, flags=flags) == higher.start)
+            return (lower.end.add(1, flags=flags) == higher.start)
         else:
             raise ValueError(f"{other_ref} is not a valid BibleRef")
 
@@ -983,8 +983,8 @@ class BibleRange:
         if other_ref.contains(self):
             return BibleRangeList()
 
-        lower_range = BibleRange(start=self.start, end=other_ref.start.sub_num_verses(1, flags=flags))
-        upper_range = BibleRange(start=other_ref.end.add_num_verses(1, flags=flags), end=self.end)
+        lower_range = BibleRange(start=self.start, end=other_ref.start.subtract(1, flags=flags))
+        upper_range = BibleRange(start=other_ref.end.add(1, flags=flags), end=self.end)
         if self.surrounds(other_ref):
             return BibleRangeList([lower_range, upper_range], flags=BibleFlag.ALL)
         if self < other_ref:
@@ -1020,7 +1020,7 @@ class BibleRange:
         verse = self.start
         while verse <= self.end:
             yield verse
-            verse = verse.add_num_verses(1, BibleFlag.MULTIBOOK)
+            verse = verse.add(1, BibleFlag.MULTIBOOK)
 
     def __contains__(self, bible_ref) -> bool:
         '''Returns True if item is a BibleRef that falls within this range, otherwise False.
