@@ -1,7 +1,8 @@
 
-# TODO: Create module method to make it easier to keep existing flags but set/unset particular flags
+# TODO: Implement chapter difference between two verses?s
+# TODO: All groups in range lists to be cleared, or set to group by chapter
 # TODO: Create context manager to temporarily set or unset particular flags
-# TODO: Implement count of chapters and verses in a BibleRange and BibleRangeList
+# TODO: Create module method to make it easier to keep existing flags but set/unset particular flags
 
 from dataclasses import dataclass
 from enum import Enum, Flag, auto
