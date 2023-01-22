@@ -757,7 +757,7 @@ class BibleRange:
             count += (bible_range.end.verse_num - bible_range.start.verse_num + 1)
         return count
 
-    def chap_count(self, *, whole: bool = False, flags: BibleFlag = None):
+    def chap_count(self, whole: bool = False, flags: BibleFlag = None):
         '''Returns the number of chapters in this range.
         
         If `whole` is True, only whole chapters are counted. Otherwise partial chapters are also included in the
@@ -772,7 +772,7 @@ class BibleRange:
                 count -= 1
         return count
 
-    def book_count(self, *, whole: bool = False, flags: BibleFlag = None):
+    def book_count(self, whole: bool = False, flags: BibleFlag = None):
         '''Returns the number of Bible books in this range.
         
         If `whole` is True, only whole books are counted. Otherwise, partial books are also included in the count.'''
@@ -1177,14 +1177,14 @@ class BibleRangeList(util.GroupedList):
         '''Returns the total number of verses in the ranges in the list.'''
         return sum([bible_range.verse_count(flags=flags) for bible_range in self])
 
-    def chap_count(self, *, whole: bool = False, flags: BibleFlag = None):
+    def chap_count(self, whole: bool = False, flags: BibleFlag = None):
         '''Returns the total number of chapters in the ranges in the list.
         
         If `whole` is True, only whole chapters are counted. Otherwise partial chapters are also included in the
         count.'''
         return sum([bible_range.chap_count(whole=whole, flags=flags) for bible_range in self])
 
-    def book_count(self, *, whole: bool = False, flags: BibleFlag = None):
+    def book_count(self, whole: bool = False, flags: BibleFlag = None):
         '''Returns the total number of Bible books in the ranges in the list.
         
         If `whole` is True, only whole books are counted. Otherwise, partial books are also included in the count.'''
