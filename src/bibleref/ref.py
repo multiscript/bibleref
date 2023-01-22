@@ -443,15 +443,16 @@ class BibleVerse:
         return BibleVerse(book, chap_num, verse_num, flags=flags)
 
     def subtract(self, other: Union[int, 'BibleVerse'], flags: BibleFlag = None) -> 'BibleVerse':
-        '''If `other` is an `int`, returns a new `BibleVerse` that is `other` verses before this `BibleVerse`.
+        '''
+        - If `other` is an `int`, returns a new `BibleVerse` that is `other` verses before this `BibleVerse`.
         
-        If `BibleFlag.MULTIBOOK` is set (either set by the `flags` argument or, if `None`, the global attribute), and
-        the result would be before the current book, a verse in the previous book is returned. Otherwise, if the
-        verse does not exist, None is returned. If the `verse_num` of this `BibleVerse` is already 0,
-        `BibleFlag.VERSE_0` is force set on the `flags` argument for this call.
+          If `BibleFlag.MULTIBOOK` is set (either set by the `flags` argument or, if `None`, the global attribute),
+          and the result would be before the current book, a verse in the previous book is returned. Otherwise, if
+          the verse does not exist, None is returned. If the `verse_num` of this `BibleVerse` is already 0,
+          `BibleFlag.VERSE_0` is force set on the `flags` argument for this call.
 
-        If `other` is another `BibleVerse`, returns the integer number of verses between this BibleVerse and `other`.
-        The number is positive if this verse > `other`, or negative if this verse < `other`.
+        - If `other` is another `BibleVerse`, returns the integer number of verses between this BibleVerse and `other`.
+          The number is positive if this verse > `other`, or negative if this verse < `other`.
 
         Using the `-` operator is equivalent to calling `subtract()` with `flags = None`.
         '''
