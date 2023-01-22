@@ -442,7 +442,7 @@ class BibleVerse:
 
         return BibleVerse(book, chap_num, verse_num, flags=flags)
 
-    def subtract(self, other: Union[int, 'BibleVerse'], flags: BibleFlag = None) -> 'BibleVerse':
+    def subtract(self, other: Union[int, 'BibleVerse'], flags: BibleFlag = None) -> Union[int, 'BibleVerse']:
         '''
         - If `other` is an `int`, returns a new `BibleVerse` that is `other` verses before this `BibleVerse`.
         
@@ -492,7 +492,7 @@ class BibleVerse:
             return NotImplemented
         return self.add(num_verses)
     
-    def __sub__(self, other: Union[int, 'BibleVerse']) -> 'BibleVerse':
+    def __sub__(self, other: Union[int, 'BibleVerse']) -> Union[int, 'BibleVerse']:
         if not isinstance(other, int) and not isinstance(other, BibleVerse):
             return NotImplemented
         return self.subtract(other)
