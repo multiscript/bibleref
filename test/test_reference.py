@@ -539,7 +539,8 @@ class TestBibleReference(unittest.TestCase):
         self.assertEqual(str(rng), "Exodus 7:4-8")
 
         rng = BibleRange(BibleBook.Exod, 7, 1, None, 10, 12)
-        self.assertEqual(str(rng), "Exodus 7-10:12")
+        self.assertEqual(rng.str(force_start_verses=False), "Exodus 7-10:12")
+        self.assertEqual(rng.str(force_start_verses=True), "Exodus 7:1-10:12")
 
         rng = BibleRange(BibleBook.ICor, 15, 1, BibleBook.IICor, 1, 24, flags=BibleFlag.MULTIBOOK)
         self.assertEqual(str(rng), "1 Corinthians 15-2 Corinthians 1")

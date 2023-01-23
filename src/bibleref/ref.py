@@ -1059,20 +1059,27 @@ class BibleRange:
     def __str__(self):
         return self.str()
 
-    def str(self, abbrev=False, alt_sep=False, nospace=False, flags: BibleFlag = None):
+    def str(self, abbrev=False, alt_sep=False, nospace=False, force_start_verses: bool = False,
+            flags: BibleFlag = None):
         '''Returns a configurable string representation of this `BibleRange`, as follows:
 
         - If `abbrev` is `True`, the abbreviated name of the book is used (instead of the full name).
         - If `alt_sep` is `True`, chapter and verse numbers are separated by the alternate
           separator (defaults to `.`) instead of the standard separator (defaults to `:`).
         - If `nospace` is `True`, no spaces are included in the string.
+        - If `force_start_verses` is `True`, the start verse of a range is made explicit if the end
+          verse of the range is also being shown. Otherwise, the start verse is omitted where possible.
         '''
         if self.spans_start_book():
             start_parts = BibleVersePart.BOOK
             at_verse_level = False
         elif self.spans_start_chap():
-            start_parts = BibleVersePart.BOOK_CHAP
-            at_verse_level = False
+            if force_start_verses and not self.spans_end_chap():
+                start_parts = BibleVersePart.FULL_REF
+                at_verse_level = True
+            else:
+                start_parts = BibleVersePart.BOOK_CHAP
+                at_verse_level = False
         else:
             start_parts = BibleVersePart.FULL_REF
             at_verse_level = True
@@ -1430,7 +1437,7 @@ class BibleRangeList(util.GroupedList):
         return self.str()
 
     def str(self, abbrev: bool = False, alt_sep: bool = False, nospace: bool = False,
-               preserve_groups: bool = True, force_start_verses: bool = True, flags: BibleFlag = None):
+               preserve_groups: bool = True, force_start_verses: bool = False, flags: BibleFlag = None):
         '''Returns a configuratble string representation of this BibleRangeList, as follows:
 
         - If `abbrev` is `True`, the abbreviated name of the book is used (instead of the full name).
