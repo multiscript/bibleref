@@ -718,9 +718,15 @@ class TestBibleReference(unittest.TestCase):
             "Matthew 2:3, Mark 3-4:5")
   
         # Start range is just a verse from same book
-        self.assertEqual(BibleRangeList(  # Same chap at verse level
+        self.assertEqual(BibleRangeList(  # Same chap at verse level. End verse within same chap
+            "Matthew 2:3, Matthew 2:6-10").str(),
+            "Matthew 2:3, 6-10")
+        self.assertEqual(BibleRangeList(  # Same chap at verse level. End verse in a different chap
             "Matthew 2:3, Matthew 2:6-5:7").str(),
-            "Matthew 2:3, 6-5:7")
+            "Matthew 2:3, 2:6-5:7")
+        self.assertEqual(BibleRangeList(  # Same chap at verse level. End verse in a different book
+            "Matthew 2:3, Matthew 2:6-John 5:7", flags=BibleFlag.MULTIBOOK).str(),
+            "Matthew 2:3, 2:6-John 5:7")
         self.assertEqual(BibleRangeList(  # Same chap at chap level, don't preserve groups
             "Matthew 2, Matthew 2:6-5:7").str(preserve_groups=False),
             "Matthew 2; 2:6-5:7")

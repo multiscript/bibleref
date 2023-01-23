@@ -1507,7 +1507,14 @@ class BibleRangeList(util.GroupedList):
                 else: # Range start is just a particular verse
                     if cur_book == bible_range.start.book: # Continuing same book
                         if at_verse_level and cur_chap == bible_range.start.chap_num: # Continuing same chap
-                            start_parts = BibleVersePart.VERSE
+                            if (bible_range.end.book != bible_range.start.book) or \
+                               (bible_range.end.chap_num != bible_range.start.chap_num):
+                                # This ref crosses chap/book boundaries in a verse list, so it's clearer to repeat
+                                # the starting chap num
+                                start_parts = BibleVersePart.CHAP_VERSE
+                            else:
+                                # This ref stays within the same chap num
+                                start_parts = BibleVersePart.VERSE
                         else: # At chap level or verse level in a different chap
                             if not preserve_groups: # Use major list sep between chapters
                                 list_sep = bible_data().major_list_sep
