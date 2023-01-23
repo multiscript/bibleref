@@ -1,5 +1,4 @@
 
-# TODO: Implement chapter difference between two verses?s
 # TODO: All groups in range lists to be cleared, or set to group by chapter
 # TODO: Create context manager to temporarily set or unset particular flags
 # TODO: Create module method to make it easier to keep existing flags but set/unset particular flags
