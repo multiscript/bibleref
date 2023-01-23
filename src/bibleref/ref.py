@@ -1430,7 +1430,7 @@ class BibleRangeList(util.GroupedList):
         return self.str()
 
     def str(self, abbrev: bool = False, alt_sep: bool = False, nospace: bool = False,
-               preserve_groups: bool = True, flags: BibleFlag = None):
+               preserve_groups: bool = True, force_start_verses: bool = True, flags: BibleFlag = None):
         '''Returns a configuratble string representation of this BibleRangeList, as follows:
 
         - If `abbrev` is `True`, the abbreviated name of the book is used (instead of the full name).
@@ -1443,6 +1443,8 @@ class BibleRangeList(util.GroupedList):
         - If `preserve_groups` is `False`, major and minor group separators are used as necessary
           to create the most conventional resulting string, which may result in different
           passage groupings.
+        - If `force_start_verses` is `True`, the start verse of a range is made explicit if the end
+          verse of the range is also being shown. Otherwise, the start verse is omitted where possible.
         '''
         cur_book = None
         cur_chap = None
@@ -1453,8 +1455,8 @@ class BibleRangeList(util.GroupedList):
         force_dual_ref = False # True if we require a single reference to display as a dual_reference_range
 
         for group in self.groups:
-            for br in group:
-                bible_range: BibleRange = br # Typecast                
+            for bible_range in group:
+                bible_range: BibleRange = bible_range # Typecast                
                 if bible_range.spans_start_book(flags): # Range start includes an entire book
                     # Even if already in same book, whole book references repeat the whole book name.
                     start_parts = BibleVersePart.BOOK
@@ -1525,7 +1527,14 @@ class BibleRangeList(util.GroupedList):
                         start_parts = BibleVersePart.FULL_REF
                     cur_chap = bible_range.start.chap_num
                     at_verse_level = True # All single verses move us to verse level
+
                 cur_book = bible_range.start.book
+                if force_start_verses and (BibleVersePart.VERSE not in start_parts) and \
+                   (not bible_range.spans_end_chap()):
+                    # End verse will show verse num, and we've been asked to show start verse num in such cases
+                    start_parts |= BibleVersePart.VERSE
+                    at_verse_level = True
+
                 start_str = bible_range.start.str(abbrev, alt_sep, nospace, start_parts) 
 
                 if not force_dual_ref and (bible_range.is_whole_book(flags) or
