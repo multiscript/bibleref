@@ -1,7 +1,7 @@
 
-# TODO: Create module method to make it easier to keep existing flags but set/unset particular flags
+# TODO: All groups in range lists to be cleared, or set to group by chapter
 # TODO: Create context manager to temporarily set or unset particular flags
-# TODO: Implement count of chapters and verses in a BibleRange and BibleRangeList
+# TODO: Create module method to make it easier to keep existing flags but set/unset particular flags
 
 from dataclasses import dataclass
 from enum import Enum, Flag, auto
@@ -145,6 +145,18 @@ class BibleBook(Enum):
             else:
                 return None
 
+    def verse_count(self, flags: BibleFlag = None) -> int:
+        '''Returns the number of verses in this `BibleBook`.'''
+        count = 0
+        for i in range(self.chap_count()):
+            count += (self.max_verse_num(i+1) - self.min_verse_num(i+1, flags=flags) + 1)
+        return count
+
+    def chap_count(self) -> int:
+        '''Returns the number of chapters in this `BibleBook`.
+        '''
+        return (self.max_chap_num() - self.min_chap_num() + 1)
+
     def min_chap_num(self) -> int:
         '''Return lowest chapter number (currently always 1) for this `BibleBook`.
         '''
@@ -160,11 +172,6 @@ class BibleBook(Enum):
             return 0
         else:
             return len(self._max_verses)
-    
-    def chap_count(self):
-        '''Returns the number of chapters in this `BibleBook`.
-        '''
-        return (self.max_chap_num() - self.min_chap_num() + 1)
 
     def min_verse_num(self, chap_num: int, flags: BibleFlag = None) -> int:
         '''Return the lowest verse number (0 or 1) for the specified chapter number of this `BibleBook`.
@@ -399,7 +406,7 @@ class BibleVerse:
         else:
             return self
 
-    def add_num_verses(self, num_verses: int, flags: BibleFlag = None) -> 'BibleVerse':
+    def add(self, num_verses: int, flags: BibleFlag = None) -> 'BibleVerse':
         '''Returns a new `BibleVerse` that is `num_verses` after this `BibleVerse`.
         
         If `BibleFlag.MULTIBOOK` is set (either by the `flags` argument or, if `None`, by the global attribute), and
@@ -407,8 +414,10 @@ class BibleVerse:
         does not exist, `None` is returned. If the `verse_num` of this `BibleVerse` is already 0,
         `BibleFlag.VERSE_0` is force set on the `flags` argument for this call.
 
-        Using the `+` operator is equivalent to calling `add_num_verses()` with `flags = None`.
+        Using the `+` operator is equivalent to calling `add()` with `flags = None`.
         '''
+        if not isinstance(num_verses, int):
+            raise TypeError(f"Cannot add a {type(num_verses)} to a BibleVerse")
         flags = flags or globals()['flags'] or BibleFlag.NONE
         book = self.book
         chap_num = self.chap_num
@@ -432,48 +441,60 @@ class BibleVerse:
 
         return BibleVerse(book, chap_num, verse_num, flags=flags)
 
-    def sub_num_verses(self, num_verses: int, flags: BibleFlag = None) -> 'BibleVerse':
-        '''Return a new `BibleVerse` that is `num_verses` before this `BibleVerse`.
+    def subtract(self, other: Union[int, 'BibleVerse'], flags: BibleFlag = None) -> Union[int, 'BibleVerse']:
+        '''
+        - If `other` is an `int`, returns a new `BibleVerse` that is `other` verses before this `BibleVerse`.
         
-        If `BibleFlag.MULTIBOOK` is set (either set by the `flags` argument or, if `None`, the global attribute), and
-        the result would be before the current book, a verse in the previous book is returned. Otherwise, if the
-        verse does not exist, None is returned. If the `verse_num` of this `BibleVerse` is already 0,
-        `BibleFlag.VERSE_0` is force set on the `flags` argument for this call.
+          If `BibleFlag.MULTIBOOK` is set (either set by the `flags` argument or, if `None`, the global attribute),
+          and the result would be before the current book, a verse in the previous book is returned. Otherwise, if
+          the verse does not exist, None is returned. If the `verse_num` of this `BibleVerse` is already 0,
+          `BibleFlag.VERSE_0` is force set on the `flags` argument for this call.
 
-        Using the `-` operator is equivalent to calling `add_num_verses()` with `flags = None`.
+        - If `other` is another `BibleVerse`, returns the integer number of verses between this BibleVerse and `other`.
+          The number is positive if this verse > `other`, or negative if this verse < `other`.
+
+        Using the `-` operator is equivalent to calling `subtract()` with `flags = None`.
         '''
         flags = flags or globals()['flags'] or BibleFlag.NONE
-        book = self.book
-        chap_num = self.chap_num
-        if self.verse_num == 0:
-            flags = flags | BibleFlag.VERSE_0 # Honour existing verse 0s
-        verse_num = self.verse_num - num_verses
-        min_verse_num = book.min_verse_num(chap_num, flags)
-        while verse_num < min_verse_num:
-            chap_num -= 1
-            if chap_num < book.min_chap_num():
-                if BibleFlag.MULTIBOOK not in flags:
-                    return None
-                else:
-                    book = book.prev()
-                    if book is None:
+        if isinstance(other, int):
+            book = self.book
+            chap_num = self.chap_num
+            if self.verse_num == 0:
+                flags = flags | BibleFlag.VERSE_0 # Honour existing verse 0s
+            verse_num = self.verse_num - other
+            min_verse_num = book.min_verse_num(chap_num, flags)
+            while verse_num < min_verse_num:
+                chap_num -= 1
+                if chap_num < book.min_chap_num():
+                    if BibleFlag.MULTIBOOK not in flags:
                         return None
-                    chap_num = book.max_chap_num()
-             
-            verse_num = verse_num + book.max_verse_num(chap_num) - min_verse_num + 1 
-            min_verse_num = book.min_verse_num(chap_num)
-
-        return BibleVerse(book, chap_num, verse_num, flags=flags)
+                    else:
+                        book = book.prev()
+                        if book is None:
+                            return None
+                        chap_num = book.max_chap_num()
+                
+                verse_num = verse_num + book.max_verse_num(chap_num) - min_verse_num + 1 
+                min_verse_num = book.min_verse_num(chap_num)
+            return BibleVerse(book, chap_num, verse_num, flags=flags)
+        elif isinstance(other, BibleVerse):
+            bible_range = BibleRange(start=self, end=other) # Bible will swap start and end as necessary
+            difference = bible_range.verse_count() - 1
+            if self < other:
+                difference *= -1
+            return difference
+        else:
+            raise TypeError(f"Cannot subtract a {type(other)} from a BibleVerse")
 
     def __add__(self, num_verses: int) -> 'BibleVerse':
         if not isinstance(num_verses, int):
             return NotImplemented
-        return self.add_num_verses(num_verses)
+        return self.add(num_verses)
     
-    def __sub__(self, num_verses: int) -> 'BibleVerse':
-        if not isinstance(num_verses, int):
+    def __sub__(self, other: Union[int, 'BibleVerse']) -> Union[int, 'BibleVerse']:
+        if not isinstance(other, int) and not isinstance(other, BibleVerse):
             return NotImplemented
-        return self.sub_num_verses(num_verses)
+        return self.subtract(other)
 
     def __repr__(self):
         return f"BibleVerse({self.str(abbrev=True)})"
@@ -741,6 +762,44 @@ class BibleRange:
         '''Returns `True` if the `BibleRange` exactly contains a single verse, else `False`.'''
         return  (self.start == self.end)
 
+    def verse_count(self, flags: BibleFlag = None):
+        '''Returns the number of verses in this range.'''
+        # We split the range into chapters, which is not the most efficient approach, but makes the counting simple.
+        bible_ranges = self.split(by_chap=True) # Each range will thus be within its own chapter
+        count = 0
+        for bible_range in bible_ranges:
+            count += (bible_range.end.verse_num - bible_range.start.verse_num + 1)
+        return count
+
+    def chap_count(self, whole: bool = False, flags: BibleFlag = None):
+        '''Returns the number of chapters in this range.
+        
+        If `whole` is True, only whole chapters are counted. Otherwise partial chapters are also included in the
+        count.'''
+        # We split the range into chapters, which is not the most efficient approach, but makes the counting simple.
+        bible_ranges = self.split(by_chap=True)
+        count = len(bible_ranges)
+        if whole:
+            if not bible_ranges[0].is_whole_chap():
+                count -= 1
+            if len(bible_ranges) > 1 and not bible_ranges[-1].is_whole_chap():
+                count -= 1
+        return count
+
+    def book_count(self, whole: bool = False, flags: BibleFlag = None):
+        '''Returns the number of Bible books in this range.
+        
+        If `whole` is True, only whole books are counted. Otherwise, partial books are also included in the count.'''
+        # We split the range into books, which is not the most efficient approach, but makes the counting simple.
+        bible_ranges = self.split(by_book=True)
+        count = len(bible_ranges)
+        if whole:
+            if not bible_ranges[0].is_whole_book():
+                count -= 1
+            if len(bible_ranges) > 1 and not bible_ranges[-1].is_whole_book():
+                count -= 1
+        return count
+
     def split(self, *, by_book: bool = False, by_chap: bool = False, num_verses: bool = None,
               flags: BibleFlag = None):
         '''Split this `BibleRange` into a `BibleRangeList` of smaller consecutive ranges, as follows:
@@ -748,7 +807,7 @@ class BibleRange:
         - If `by_book` is `True`, splits are made at the end of each book.
         - If `by_chap` is `True`, splits are made end of each chapter.
         - If `num_verses` is specified, splits are made after (no more than) the specified number of verses.
-        - `by_book`, `by_chap` and `num_verses` can be set in any combination, but one of them must be `True`,
+        - `by_book`, `by_chap` and `num_verses` can be set in any combination, but one of them must be not `None`,
           otherwise a `ValueError` will be raised.
         '''
         if not (by_book or by_chap or num_verses):
@@ -770,7 +829,7 @@ class BibleRange:
                 range_end = range_start.book.last_verse()
                 while range_end < range_to_split.end:
                     new_split.append(BibleRange(start=range_start, end=range_end, flags=flags))
-                    range_start = range_end.add_num_verses(1, flags=flags)
+                    range_start = range_end.add(1, flags=flags)
                     range_end = range_start.book.last_verse()
                 new_split.append(BibleRange(start=range_start, end=range_to_split.end, flags=flags))
             split_result = new_split
@@ -782,7 +841,7 @@ class BibleRange:
                 range_end = range_start.last_verse()
                 while range_end < range_to_split.end:
                     new_split.append(BibleRange(start=range_start, end=range_end, flags=flags))
-                    range_start = range_end.add_num_verses(1, flags=flags)
+                    range_start = range_end.add(1, flags=flags)
                     range_end = range_start.last_verse()
                 new_split.append(BibleRange(start=range_start, end=range_to_split.end, flags=flags))
             split_result = new_split
@@ -791,11 +850,11 @@ class BibleRange:
             new_split = []
             for range_to_split in split_result:
                 range_start = BibleVerse(range_to_split.start, flags=flags)
-                range_end = range_start.add_num_verses(num_verses - 1, flags)
+                range_end = range_start.add(num_verses - 1, flags)
                 while range_end is not None and range_end < range_to_split.end:
                     new_split.append(BibleRange(start=range_start, end=range_end, flags=flags))
-                    range_start = range_end.add_num_verses(1, flags)
-                    range_end = range_end.add_num_verses(num_verses, flags)
+                    range_start = range_end.add(1, flags)
+                    range_end = range_end.add(num_verses, flags)
                 new_split.append(BibleRange(start=range_start, end=range_to_split.end, flags=flags))
             split_result = new_split
         
@@ -831,7 +890,7 @@ class BibleRange:
             other_ref = BibleRange(start=other_ref, end=other_ref, flags=BibleFlag.ALL)
         if isinstance(other_ref, BibleRange):        
             lower, higher = (self, other_ref) if self < other_ref else (other_ref, self)
-            return (lower.end.add_num_verses(1, flags=flags) == higher.start)
+            return (lower.end.add(1, flags=flags) == higher.start)
         else:
             raise ValueError(f"{other_ref} is not a valid BibleRef")
 
@@ -938,8 +997,8 @@ class BibleRange:
         if other_ref.contains(self):
             return BibleRangeList()
 
-        lower_range = BibleRange(start=self.start, end=other_ref.start.sub_num_verses(1, flags=flags))
-        upper_range = BibleRange(start=other_ref.end.add_num_verses(1, flags=flags), end=self.end)
+        lower_range = BibleRange(start=self.start, end=other_ref.start.subtract(1, flags=flags))
+        upper_range = BibleRange(start=other_ref.end.add(1, flags=flags), end=self.end)
         if self.surrounds(other_ref):
             return BibleRangeList([lower_range, upper_range], flags=BibleFlag.ALL)
         if self < other_ref:
@@ -975,7 +1034,7 @@ class BibleRange:
         verse = self.start
         while verse <= self.end:
             yield verse
-            verse = verse.add_num_verses(1, BibleFlag.MULTIBOOK)
+            verse = verse.add(1, BibleFlag.MULTIBOOK)
 
     def __contains__(self, bible_ref) -> bool:
         '''Returns True if item is a BibleRef that falls within this range, otherwise False.
@@ -1127,6 +1186,23 @@ class BibleRangeList(util.GroupedList):
         for node in self._node_iter():
             node.value = node.value.verse_1_to_0()
         return None
+
+    def verse_count(self, flags: BibleFlag = None):
+        '''Returns the total number of verses in the ranges in the list.'''
+        return sum([bible_range.verse_count(flags=flags) for bible_range in self])
+
+    def chap_count(self, whole: bool = False, flags: BibleFlag = None):
+        '''Returns the total number of chapters in the ranges in the list.
+        
+        If `whole` is True, only whole chapters are counted. Otherwise partial chapters are also included in the
+        count.'''
+        return sum([bible_range.chap_count(whole=whole, flags=flags) for bible_range in self])
+
+    def book_count(self, whole: bool = False, flags: BibleFlag = None):
+        '''Returns the total number of Bible books in the ranges in the list.
+        
+        If `whole` is True, only whole books are counted. Otherwise, partial books are also included in the count.'''
+        return sum([bible_range.book_count(whole=whole, flags=flags) for bible_range in self])
 
     def consolidate(self, flags: BibleFlag = None):
         '''Sorts this list in-place and merges ranges wherever possible. The result is the smallest
