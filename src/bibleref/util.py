@@ -317,6 +317,9 @@ class GroupedList(MutableSequence):
             self._first_head = node
 
     def _insert_new_group_at_node(self, node: 'GroupedList._Node'):
+        if node is self._first:
+            # First node is always already a group.
+            return
         node.is_group_head = True
         prev_group_head = self._find_group_head(node.prev)
         node.prev_head = prev_group_head
@@ -330,7 +333,7 @@ class GroupedList(MutableSequence):
 
     def _find_group_head(self, node: 'GroupedList._Node') -> 'GroupedList._Node':
         '''Search for the next group head, beginning at `node`, and returning the group head node.'''
-        while not node.is_group_head:
+        while node is not None and not node.is_group_head:
             node = node.prev
         return node
 
@@ -496,6 +499,10 @@ class GroupedList(MutableSequence):
             self.append(value)
         else:
             self._insert_before(self._node_at(index), value)
+
+    def insert_group_at(self, index: int = None):
+        index = self._conform_index(index)
+        self._insert_new_group_at_node(self._node_at(index))
 
     def pop(self, index: int = None):
         '''Removes the item at the given `index`, and returns its value.'''

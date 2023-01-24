@@ -1216,14 +1216,12 @@ class BibleRangeList(util.GroupedList):
         If `whole` is True, only whole books are counted. Otherwise, partial books are also included in the count.'''
         return sum([bible_range.book_count(whole=whole, flags=flags) for bible_range in self])
 
-    def consolidate(self, flags: BibleFlag = None):
-        '''Sorts this list in-place and merges ranges wherever possible. The result is the smallest
+    def consolidate(self, regroup: bool = True, flags: BibleFlag = None):
+        '''Sorts this list in-place and merges ranges wherever possible, then regroups. The result is the smallest
         list of disjoint, non-adjacent `BibleRange` elements spanning the same verses as in the original
         list.
-
-        All groups are removed and replaced with a single group.
         '''
-        self.sort()
+        self.sort(regroup=False)
         node = self._first
         while node is not None and node.next is not None:
             union = node.value.union(node.next.value, flags=flags)
@@ -1235,6 +1233,7 @@ class BibleRangeList(util.GroupedList):
             else:
                 # The two ranges can't be merged, so move on
                 node = node.next
+        self.regroup()
 
     def is_disjoint(self, other_ref: 'BibleRef') -> bool:
         '''Returns `True` if every `BibleRange` is disjoint with all the verses in `other_ref`, otherwise `False`.
@@ -1441,6 +1440,66 @@ class BibleRangeList(util.GroupedList):
     def __str__(self):
         return self.str()
 
+    def regroup(self, flags: BibleFlag = None):
+        '''Removes the existing groups in the list, and places the list items into groups that would most naturally
+        match the best string representation of the list. (For example, this typically places ranges in different
+        chapters into different groups.)
+        '''
+        # This method is based on the str() method below, and is best read after that method.
+        self.clear_groups()
+
+        cur_book = None
+        cur_chap = None
+        at_verse_level = False
+        show_start_verse = False
+        
+        for node in self._node_iter():
+            bible_range: BibleRange = node.value                
+            if bible_range.spans_start_book(flags): # Range start includes an entire book
+                # Even if already in same book, whole book references repeat the whole book name.
+                self._insert_new_group_at_node(node)
+                cur_book = bible_range.start.book
+                cur_chap = None
+                at_verse_level = False
+                show_start_verse = False
+            elif bible_range.spans_start_chap(flags): # Range start includes an entire chap
+                self._insert_new_group_at_node(node)
+                cur_chap = bible_range.start.chap_num
+                at_verse_level = False
+                show_start_verse = False
+            else: # Range start is just a particular verse
+                if cur_book == bible_range.start.book: # Continuing same book
+                    if (not at_verse_level) or (cur_chap != bible_range.start.chap_num):
+                        # At chap level or verse level in a different chap
+                        self._insert_new_group_at_node(node)
+                else: # Different book
+                    self._insert_new_group_at_node(node)
+                cur_chap = bible_range.start.chap_num
+                at_verse_level = True # All single verses move us to verse level
+                show_start_verse = True
+
+            cur_book = bible_range.start.book
+            if (not show_start_verse) and (not bible_range.spans_end_chap()):
+                # End verse will show verse num, and we've been asked to show start verse num in such cases
+                show_start_verse = True
+                at_verse_level = True
+
+            if (not bible_range.is_whole_book(flags)) and (not bible_range.is_whole_chap(flags)) and \
+               (not bible_range.is_single_verse()):
+                if bible_range.end.book != bible_range.start.book:
+                    at_verse_level = False
+
+                if bible_range.spans_end_book(flags): # Range end includes an entire book
+                    cur_chap = None
+                    at_verse_level = False
+                elif not at_verse_level and bible_range.spans_end_chap(flags): # Range end includes an entire chap
+                    cur_chap = bible_range.end.chap_num
+                    at_verse_level = False
+                else: # Range end is a whole chap after a particular verse, or a particular verse
+                    cur_chap = bible_range.end.chap_num
+                    at_verse_level = True
+                cur_book = bible_range.end.book
+
     def str(self, abbrev: bool = False, alt_sep: bool = False, nospace: bool = False,
                preserve_groups: bool = True, force_start_verses: bool = False, flags: BibleFlag = None):
         '''Returns a configuratble string representation of this BibleRangeList, as follows:
@@ -1455,8 +1514,8 @@ class BibleRangeList(util.GroupedList):
         - If `preserve_groups` is `False`, major and minor group separators are used as necessary
           to create the most conventional resulting string, which may result in different
           passage groupings.
-        - If `force_start_verses` is `True`, the start verse of a range is made explicit if the end
-          verse of the range is also being shown. Otherwise, the start verse is omitted where possible.
+        - If `force_start_verses` is `True`, the start verse number of a range is made explicit if the end
+          verse of the range is also being shown. Otherwise, the start verse number is omitted wherever possible.
         '''
         cur_book = None
         cur_chap = None
@@ -1472,8 +1531,11 @@ class BibleRangeList(util.GroupedList):
                 if bible_range.spans_start_book(flags): # Range start includes an entire book
                     # Even if already in same book, whole book references repeat the whole book name.
                     start_parts = BibleVersePart.BOOK
+                    cur_book = bible_range.start.book
                     cur_chap = None
                     at_verse_level = False
+                    if not preserve_groups:
+                        list_sep = bible_data().major_list_sep
                 elif bible_range.spans_start_chap(flags): # Range start includes an entire chap
                     if cur_book == bible_range.start.book: # Continuing same book
                         if at_verse_level: # We're in a list of verses
@@ -1645,8 +1707,12 @@ class BibleRangeList(util.GroupedList):
     def reverse(self):
         return super().reverse()
     
-    def sort(self):
-        return super().sort()
+    def sort(self, regroup: bool = True):
+        '''Sorts this list in-place. All existing groups are cleared and replaced with a single
+        new group. Then regroups if `regroup` is True.'''
+        super().sort()
+        if regroup:
+            self.regroup()
 
     def equals(self, other_iterable, compare_groups=True) -> bool:
         return super().equals(other_iterable, compare_groups)

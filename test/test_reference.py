@@ -441,10 +441,14 @@ class TestBibleReference(unittest.TestCase):
         self.assertEqual(test_range | BibleRange("Matt 1:16-20"), BibleRangeList("Matt 1:10-20"))
         self.assertEqual(test_range | BibleRange("Matt 1:17-20"), BibleRangeList("Matt 1:10-15, 17-20"))
 
-        self.assertEqual(test_range | BibleRangeList("Matt 1:5-8; Mark 1-3"), BibleRangeList("Matt 1:5-8, 10-15, Mark 1-3"))
-        self.assertEqual(test_range | BibleRangeList("Matt 1:5-9; Mark 1-3"), BibleRangeList("Matt 1:5-15, Mark 1-3"))
-        self.assertEqual(test_range | BibleRangeList("Matt 1:5-10; Mark 1-3"), BibleRangeList("Matt 1:5-15, Mark 1-3"))
-        self.assertEqual(test_range | BibleRangeList("Mark 4-6; Matt 1:5-9, 16-20"), BibleRangeList("Matt 1:5-20, Mark 4-6"))
+        self.assertEqual(test_range | BibleRangeList("Matt 1:5-8; Mark 1-3"),
+                         BibleRangeList("Matt 1:5-8, 10-15; Mark 1-3"))
+        self.assertEqual(test_range | BibleRangeList("Matt 1:5-9; Mark 1-3"),
+                         BibleRangeList("Matt 1:5-15; Mark 1-3"))
+        self.assertEqual(test_range | BibleRangeList("Matt 1:5-10; Mark 1-3"),
+                         BibleRangeList("Matt 1:5-15; Mark 1-3"))
+        self.assertEqual(test_range | BibleRangeList("Mark 4-6; Matt 1:5-9, 16-20"),
+                         BibleRangeList("Matt 1:5-20; Mark 4-6"))
 
     def test_range_intersection(self):
         test_range = BibleRange("Matt 1:10-15")
@@ -622,22 +626,31 @@ class TestBibleReference(unittest.TestCase):
         self.assertEqual(range_list.book_count(), 6)
         self.assertEqual(range_list.book_count(whole=True), 1)
 
+    def test_regroup(self):
+        range_list = BibleRangeList("Matt 1:4-7, 9-15, 17-20, Luke, John")
+        range_list.regroup()
+        self.assertEqual(range_list, BibleRangeList("Matt 1:4-7, 9-15, 17-20; Luke; John"))
+
+        range_list = BibleRangeList("Matt 1:4-7, 9-15, 17-20, John 2, 3, Luke 2:1-5, 6-10, 11-15")
+        range_list.regroup()
+        self.assertEqual(range_list, BibleRangeList("Matt 1:4-7, 9-15, 17-20; John 2; 3; Luke 2:1-5, 6-10, 11-15"))
+
     def test_bible_range_list_consolidate(self):
-        bible_range = BibleRangeList("John; Luke; Matt 1:17-20, 12-15, 9-11, 5-7, 4-6", flags=BibleFlag.MULTIBOOK)
-        bible_range.sort()
-        bible_range.consolidate(flags=BibleFlag.NONE)
-        self.assertEqual(bible_range, BibleRangeList("Matt 1:4-7, 9-15, 17-20, Luke, John"))
-        bible_range.consolidate(flags=BibleFlag.MULTIBOOK)
-        self.assertEqual(bible_range, BibleRangeList("Matt 1:4-7, 9-15, 17-20, Luke-John", flags=BibleFlag.MULTIBOOK))
+        range_list = BibleRangeList("John; Luke; Matt 1:17-20, 12-15, 9-11, 5-7, 4-6", flags=BibleFlag.MULTIBOOK)
+        range_list.sort()
+        range_list.consolidate(flags=BibleFlag.NONE)
+        self.assertEqual(range_list, BibleRangeList("Matt 1:4-7, 9-15, 17-20; Luke; John"))
+        range_list.consolidate(flags=BibleFlag.MULTIBOOK)
+        self.assertEqual(range_list, BibleRangeList("Matt 1:4-7, 9-15, 17-20; Luke-John", flags=BibleFlag.MULTIBOOK))
 
         # Test groups
-        bible_range = BibleRangeList([[BibleRange("Mark 3:1-4:2"), BibleRange("Mark 5:6-8")],
+        range_list = BibleRangeList([[BibleRange("Mark 3:1-4:2"), BibleRange("Mark 5:6-8")],
                                       [BibleRange("Mark 5:10"), BibleRange("Matt 4")]])
-        self.assertEqual(len(bible_range.groups), 2)
-        self.assertEqual(bible_range.groups[0][0], BibleRange("Mark 3:1-4:2"))
-        self.assertEqual(bible_range.groups[0][1], BibleRange("Mark 5:6-8"))
-        self.assertEqual(bible_range.groups[1][0], BibleRange("Mark 5:10"))
-        self.assertEqual(bible_range.groups[1][1], BibleRange("Matt 4"))
+        self.assertEqual(len(range_list.groups), 2)
+        self.assertEqual(range_list.groups[0][0], BibleRange("Mark 3:1-4:2"))
+        self.assertEqual(range_list.groups[0][1], BibleRange("Mark 5:6-8"))
+        self.assertEqual(range_list.groups[1][0], BibleRange("Mark 5:10"))
+        self.assertEqual(range_list.groups[1][1], BibleRange("Matt 4"))
 
     def test_bible_range_list_is_disjoint(self):
         test_list = BibleRangeList("Matt 2-4; Mark 6-8; Luke 10-12; John 14-16")
@@ -659,38 +672,38 @@ class TestBibleReference(unittest.TestCase):
         list_1 = BibleRangeList("Matt 2-4; Mark 6-8; Luke 10-12; John 14-16")
         
         list_2 = BibleRangeList("John 1-3; Luke 9; Matt 3-5; Mark 12")
-        self.assertEqual(list_1 | list_2, BibleRangeList("Matt 2-5, Mark 6-8, 12, Luke 9-12, John 1-3, 14-16"))
+        self.assertEqual(list_1 | list_2, BibleRangeList("Matt 2-5; Mark 6-8; 12; Luke 9-12; John 1-3; 14-16"))
 
         list_2 = BibleRangeList("John 12-13; Luke 13-15; Mark 1-3; Matt 15-16")
-        self.assertEqual(list_1 | list_2, BibleRangeList("Matt 2-4, 15-16, Mark 1-3, 6-8, Luke 10-15, John 12-16"))
+        self.assertEqual(list_1 | list_2, BibleRangeList("Matt 2-4; 15-16; Mark 1-3; 6-8; Luke 10-15; John 12-16"))
 
     def test_bible_range_list_intersection(self):
         list_1 = BibleRangeList("Matt 2-4; Mark 6-8; Luke 10-12; John 14-16")
         
         list_2 = BibleRangeList("John 1-3; Luke 9-10; Matt 3-5; Mark 12")
-        self.assertEqual(list_1 & list_2, BibleRangeList("Matt 3-4, Luke 10"))
+        self.assertEqual(list_1 & list_2, BibleRangeList("Matt 3-4; Luke 10"))
 
         list_2 = BibleRangeList("John 12-15; Luke 12-15; Mark 1-3; Matt 15-16")
-        self.assertEqual(list_1 & list_2, BibleRangeList("Luke 12, John 14-15"))
+        self.assertEqual(list_1 & list_2, BibleRangeList("Luke 12; John 14-15"))
 
     def test_bible_range_list_difference(self):
         list_1 = BibleRangeList("Matt 2-4; Mark 6-8; Luke 10-12; John 14-18")
         
         list_2 = BibleRangeList("John 1-3; Luke 9-10; Matt 3-5; Mark 12")
-        self.assertEqual(list_1 - list_2, BibleRangeList("Matt 2, Mark 6-8, Luke 11-12, John 14-18"))
+        self.assertEqual(list_1 - list_2, BibleRangeList("Matt 2; Mark 6-8; Luke 11-12; John 14-18"))
 
         list_2 = BibleRangeList("John 16; Luke 11; Mark 1-3; Matt 15-16")
-        self.assertEqual(list_1 - list_2, BibleRangeList("Matt 2-4, Mark 6-8, Luke 10, 12, John 14-15, 17-18"))
+        self.assertEqual(list_1 - list_2, BibleRangeList("Matt 2-4; Mark 6-8; Luke 10; 12; John 14-15; 17-18"))
 
     def test_bible_range_list_sym_difference(self):
         list_1 = BibleRangeList("Matt 2-4; Mark 6-8; Luke 10-12; John 14-18")
         
         list_2 = BibleRangeList("John 1-3; Luke 9-10; Matt 3-5; Mark 12")
-        self.assertEqual(list_1 ^ list_2, BibleRangeList("Matt 2, 5, Mark 6-8, 12, Luke 9, 11-12, John 1-3, 14-18"))
+        self.assertEqual(list_1 ^ list_2, BibleRangeList("Matt 2; 5; Mark 6-8; 12; Luke 9; 11-12; John 1-3; 14-18"))
 
         list_2 = BibleRangeList("John 16; Luke 11; Mark 1-3; Matt 15-16")
         self.assertEqual(list_1 ^ list_2,
-                         BibleRangeList("Matt 2-4, 15-16, Mark 1-3, 6-8, Luke 10, 12, John 14-15, 17-18"))
+                         BibleRangeList("Matt 2-4; 15-16; Mark 1-3; 6-8; Luke 10; 12; John 14-15; 17-18"))
 
     def test_bible_range_list_to_string(self):
         # Start range spans a book, after a ref from same book

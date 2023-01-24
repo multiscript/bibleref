@@ -310,7 +310,13 @@ class TestGroupedList(unittest.TestCase):
         list_3 = GroupedList([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
         list_4 = GroupedList([1, 2, 3, 4, 5, 6, 7, 8, 9, 11])
         self.assertFalse(list_3 == list_4)
-    
+
+    def test_group_insert_at_index(self):
+        test_list = GroupedList([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+        test_list.insert_group_at(3)
+        test_list.insert_group_at(7)
+        self.assertEquals(test_list, GroupedList([[1, 2, 3], [4, 5, 6, 7], [8, 9, 10]]))
+
     def test_clear(self):
         list_1 = GroupedList([[1, 2, 3], [4, 5, 6], [7, 8], [9, 10]])
         list_1.clear()
