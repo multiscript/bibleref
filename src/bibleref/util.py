@@ -188,7 +188,8 @@ class GroupedList(MutableSequence):
     def __init__(self, iterable: Iterable = None):
         '''Creates a new `GroupedList` and adds the items in `iterable` to this list.
         
-        If `iterable` contains Python lists or tuples, each element of `iterable` is added as a separate group.'''
+        If the items of `iterable` are Python lists or tuples, each element of `iterable` is added as a
+        separate group.'''
         self.clear()
         if iterable is None:
             return

@@ -1151,7 +1151,7 @@ class BibleRangeList(util.GroupedList):
            `BibleRangeList([BibleRange("Mark 3:1-4:2"), BibleRange("Mark 5:6-8"),
                             BibleRange("Mark 5:10"), BibleRange("Matt 4")])`
         
-           If the iterable contains Python lists or tuples, each element of the iterable is added as a
+           If the iterable items are Python lists or tuples, each item of the iterable is added as a
            separate group:
            `BibleRangeList([[BibleRange("Mark 3:1-4:2"), BibleRange("Mark 5:6-8")],
                             [BibleRange("Mark 5:10"), BibleRange("Matt 4")]])`
@@ -1215,6 +1215,13 @@ class BibleRangeList(util.GroupedList):
         
         If `whole` is True, only whole books are counted. Otherwise, partial books are also included in the count.'''
         return sum([bible_range.book_count(whole=whole, flags=flags) for bible_range in self])
+
+    def sort(self, regroup: bool = True):
+        '''Sorts this list in-place. All existing groups are cleared and replaced with a single
+        new group. Then regroups if `regroup` is True.'''
+        super().sort()
+        if regroup:
+            self.regroup()
 
     def consolidate(self, regroup: bool = True, flags: BibleFlag = None):
         '''Sorts this list in-place and merges ranges wherever possible, then regroups. The result is the smallest
@@ -1441,11 +1448,13 @@ class BibleRangeList(util.GroupedList):
         return self.str()
 
     def regroup(self, flags: BibleFlag = None):
-        '''Removes the existing groups in the list, and places the list items into groups that would most naturally
-        match the best string representation of the list. (For example, this typically places ranges in different
-        chapters into different groups.)
+        '''Removes the existing groups in the list, and places the list items into new groups that would most
+        naturally match the most conventional string representation of the list. (For example, this typically
+        places ranges in different chapters into different groups.)
         '''
-        # This method is based on the str() method below, and is best read after that method.
+        # This method is derived from the str() method below, and is best read after that method.
+        # Changes to the internal logic of str() likely require corresponding changes to the internal logic of
+        # this method.
         self.clear_groups()
 
         cur_book = None
@@ -1517,6 +1526,9 @@ class BibleRangeList(util.GroupedList):
         - If `force_start_verses` is `True`, the start verse number of a range is made explicit if the end
           verse of the range is also being shown. Otherwise, the start verse number is omitted wherever possible.
         '''
+        # The regroup() method is derived from this str() method. Changes to the internal logic of this method
+        # likely require corresponding changes to the internal logic of regroup().
+
         cur_book = None
         cur_chap = None
         at_verse_level = False
@@ -1707,13 +1719,6 @@ class BibleRangeList(util.GroupedList):
     def reverse(self):
         return super().reverse()
     
-    def sort(self, regroup: bool = True):
-        '''Sorts this list in-place. All existing groups are cleared and replaced with a single
-        new group. Then regroups if `regroup` is True.'''
-        super().sort()
-        if regroup:
-            self.regroup()
-
     def equals(self, other_iterable, compare_groups=True) -> bool:
         return super().equals(other_iterable, compare_groups)
 
