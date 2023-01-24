@@ -1634,6 +1634,9 @@ class BibleRangeList(util.GroupedList):
     def clear(self):
         return super().clear()
     
+    def clear_groups(self):
+        return super().clear_groups()
+
     def reverse(self):
         return super().reverse()
     

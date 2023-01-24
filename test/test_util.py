@@ -340,6 +340,24 @@ class TestGroupedList(unittest.TestCase):
         list_4 = GroupedList([1, 2, 3, 4, 5, 6, 7, 8, 9, 11])
         self.assertFalse(list_3 == list_4)
     
+    def test_clear(self):
+        list_1 = GroupedList()
+        list_1.append_group([1, 2, 3])
+        list_1.append_group([4, 5, 6])
+        list_1.append_group([7, 8])
+        list_1.append_group([9, 10])
+        list_1.clear()
+        self.assertTrue(list_1.equals(GroupedList()))
+
+    def test_clear_groups(self):
+        list_1 = GroupedList()
+        list_1.append_group([1, 2, 3])
+        list_1.append_group([4, 5, 6])
+        list_1.append_group([7, 8])
+        list_1.append_group([9, 10])
+        list_1.clear_groups()
+        self.assertTrue(list_1.equals(GroupedList([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]), compare_groups=True))
+
     def test_basic_sort(self):
         values = [10, 1, 9, 2, 8, 3, 7, 4, 6, 5]
         test_list = GroupedList(values)

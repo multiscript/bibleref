@@ -226,7 +226,7 @@ class GroupedList(MutableSequence):
             return node
 
     def _insert_first(self, value):
-        '''Inserts `value` as the first element of the list.'''
+        '''Inserts `value` as the first item of the list.'''
         self._first = self._Node(value, parent=self)
         self._last = self._first
         self._node_count += 1
@@ -466,16 +466,16 @@ class GroupedList(MutableSequence):
             self._insert_after(self._last, value, new_group)
                
     def append_group(self, iterable):
-        '''Appends each element of `iterable` to the end of this list.
+        '''Appends each item of `iterable` to the end of this list.
         
-        The new elements all form a single new group.'''
+        The new items all form a single new group.'''
         is_first_item = True
         for item in iterable:
             self.append(item, new_group=is_first_item)
             is_first_item = False
 
     def extend(self, iterable):
-        '''Appends each element of `iterable` to the end of this list.'''
+        '''Appends each item of `iterable` to the end of this list.'''
         for item in iterable:
             self.append(item)
 
@@ -517,11 +517,17 @@ class GroupedList(MutableSequence):
         self._last_head: GroupedList._Node = None      # Last node that is a group head
         self._group_count: int = 0                   # Count of groups
 
+    def clear_groups(self):
+        '''Clears all existing groups and replaces them with a single new group containing all the items
+        in the list.'''
+        for node in self._node_iter():
+            node.clear_group_head()
+        self._setup_single_group()
+
     def reverse(self):
-        '''Reverses the elements of this list in-place.
+        '''Reverses the items of this list in-place.
         
-        For simplicity, this also clears all existing groups and places all elements
-        in one new group.
+        For simplicity, this also clears all existing groups and places all list items in one new group.
         '''
         if self._node_count == 0:
             return
@@ -623,7 +629,7 @@ class GroupedList(MutableSequence):
         return self.equals(other)
 
     def equals(self, other_iterable, compare_groups=True) -> bool:
-        '''Returns `True` if each element of this list equals the corresponding element in `other_iterable`,
+        '''Returns `True` if each item in this list equals the corresponding item in `other_iterable`,
         otherwise `False`.
         
         If `compare_groups` is `True`, `other_iterable` must also be a `GroupedList` and the groups of the
