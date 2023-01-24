@@ -623,12 +623,21 @@ class TestBibleReference(unittest.TestCase):
         self.assertEqual(range_list.book_count(whole=True), 1)
 
     def test_bible_range_list_consolidate(self):
-        range = BibleRangeList("John; Luke; Matt 1:17-20, 12-15, 9-11, 5-7, 4-6", flags=BibleFlag.MULTIBOOK)
-        range.sort()
-        range.consolidate(flags=BibleFlag.NONE)
-        self.assertEqual(range, BibleRangeList("Matt 1:4-7, 9-15, 17-20, Luke, John"))
-        range.consolidate(flags=BibleFlag.MULTIBOOK)
-        self.assertEqual(range, BibleRangeList("Matt 1:4-7, 9-15, 17-20, Luke-John", flags=BibleFlag.MULTIBOOK))
+        bible_range = BibleRangeList("John; Luke; Matt 1:17-20, 12-15, 9-11, 5-7, 4-6", flags=BibleFlag.MULTIBOOK)
+        bible_range.sort()
+        bible_range.consolidate(flags=BibleFlag.NONE)
+        self.assertEqual(bible_range, BibleRangeList("Matt 1:4-7, 9-15, 17-20, Luke, John"))
+        bible_range.consolidate(flags=BibleFlag.MULTIBOOK)
+        self.assertEqual(bible_range, BibleRangeList("Matt 1:4-7, 9-15, 17-20, Luke-John", flags=BibleFlag.MULTIBOOK))
+
+        # Test groups
+        bible_range = BibleRangeList([[BibleRange("Mark 3:1-4:2"), BibleRange("Mark 5:6-8")],
+                                      [BibleRange("Mark 5:10"), BibleRange("Matt 4")]])
+        self.assertEqual(len(bible_range.groups), 2)
+        self.assertEqual(bible_range.groups[0][0], BibleRange("Mark 3:1-4:2"))
+        self.assertEqual(bible_range.groups[0][1], BibleRange("Mark 5:6-8"))
+        self.assertEqual(bible_range.groups[1][0], BibleRange("Mark 5:10"))
+        self.assertEqual(bible_range.groups[1][1], BibleRange("Matt 4"))
 
     def test_bible_range_list_is_disjoint(self):
         test_list = BibleRangeList("Matt 2-4; Mark 6-8; Luke 10-12; John 14-16")

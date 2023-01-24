@@ -186,9 +186,17 @@ class GroupedList(MutableSequence):
             return str(list(self))
 
     def __init__(self, iterable: Iterable = None):
+        '''Creates a new `GroupedList` and adds the items in `iterable` to this list.
+        
+        If `iterable` contains Python lists or tuples, each element of `iterable` is added as a separate group.'''
         self.clear()
-        if iterable is not None:
-            self.extend(iterable)
+        if iterable is None:
+            return
+        for item in iterable:
+            if isinstance(item, list) or isinstance(item, tuple):
+                self.append_group(item)
+            else:
+                self.append(item)
 
     def _check_type(self, value):
         '''Subclasses can override to raise an exception if the provided

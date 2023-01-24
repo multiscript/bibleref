@@ -1150,6 +1150,11 @@ class BibleRangeList(util.GroupedList):
         2. From any iterable containing BibleRanges:
            `BibleRangeList([BibleRange("Mark 3:1-4:2"), BibleRange("Mark 5:6-8"),
                             BibleRange("Mark 5:10"), BibleRange("Matt 4")])`
+        
+           If the iterable contains Python lists or tuples, each element of the iterable is added as a
+           separate group:
+           `BibleRangeList([[BibleRange("Mark 3:1-4:2"), BibleRange("Mark 5:6-8")],
+                            [BibleRange("Mark 5:10"), BibleRange("Matt 4")]])`
             
         3. As a copy of an existing BibleRangeList: `BibleRangeList(existing_bible_range_list)`
         '''
