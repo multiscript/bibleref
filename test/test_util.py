@@ -185,17 +185,11 @@ class TestGroupedList(unittest.TestCase):
         self.assertListEqual(list(test_list), [5, 8, 2, 7, 3, 10, 12, 9, 20])
 
     def test_group_construction(self):
-        test_list = GroupedList()
-        test_list.append_group([2, 8, 4])
-        test_list.append_group([1, 9, 6])
-        test_list.append_group([3, 7, 5])
+        test_list = GroupedList([[2, 8, 4], [1, 9, 6], [3, 7, 5]])
         self.assertEqual(test_list.to_nested_lists(), [[2, 8, 4], [1, 9, 6], [3, 7, 5]])
 
     def test_groups_view(self):
-        test_list = GroupedList()
-        test_list.append_group([2, 8, 4])
-        test_list.append_group([1, 9, 6])
-        test_list.append_group([3, 7, 5])
+        test_list = GroupedList([[2, 8, 4], [1, 9, 6], [3, 7, 5]])
         self.assertEqual(len(test_list.groups), 3)
         self.assertEqual(test_list.groups[2].group_head.value, 3)
         group_list = list(test_list.groups)
@@ -204,10 +198,7 @@ class TestGroupedList(unittest.TestCase):
         self.assertEqual(group_list[2].group_head.value, 3)
 
     def test_group_view(self):
-        test_list = GroupedList()
-        test_list.append_group([2, 8, 4])
-        test_list.append_group([1, 9, 6])
-        test_list.append_group([3, 7, 5])
+        test_list = GroupedList([[2, 8, 4], [1, 9, 6], [3, 7, 5]])
         group_0 = test_list.groups[0]
         self.assertEqual(group_0[0], 2)
         self.assertEqual(group_0[1], 8)
@@ -218,10 +209,7 @@ class TestGroupedList(unittest.TestCase):
         self.assertEqual(test_list.groups[2][2], 5)
 
     def test_group_head_deletion(self):
-        test_list = GroupedList()
-        test_list.append_group([2, 8, 4])
-        test_list.append_group([1, 9, 6])
-        test_list.append_group([3, 7, 5])
+        test_list = GroupedList([[2, 8, 4], [1, 9, 6], [3, 7, 5]])
         group_1 = test_list.groups[1]
         group_2 = test_list.groups[2]
         self.assertEqual(test_list.to_nested_lists(), [[2, 8, 4], [1, 9, 6], [3, 7, 5]])
@@ -254,9 +242,7 @@ class TestGroupedList(unittest.TestCase):
         self.assertEqual(test_list.to_nested_lists(), [[2, 8, 4]])
 
     def test_group_prepend(self):
-        test_list = GroupedList()
-        test_list.append_group([2, 8, 4])
-        test_list.append_group([1, 9, 6])
+        test_list = GroupedList([[2, 8, 4], [1, 9, 6]])
         self.assertEqual(test_list.to_nested_lists(), [[2, 8, 4], [1, 9, 6]])
         test_list.prepend(3, new_group=False)
         self.assertEqual(test_list.to_nested_lists(), [[3, 2, 8, 4], [1, 9, 6]])
@@ -264,9 +250,7 @@ class TestGroupedList(unittest.TestCase):
         self.assertEqual(test_list.to_nested_lists(), [[7], [3, 2, 8, 4], [1, 9, 6]])
 
     def test_group_insert_before(self):
-        test_list = GroupedList()
-        test_list.append_group([2, 8, 4])
-        test_list.append_group([1, 9, 6])
+        test_list = GroupedList([[2, 8, 4], [1, 9, 6]])
         self.assertEqual(test_list.to_nested_lists(), [[2, 8, 4], [1, 9, 6]])
         self.assertIs(test_list._first_head, test_list._node_at(0))
         self.assertIs(test_list._last_head, test_list._node_at(3))
@@ -298,9 +282,7 @@ class TestGroupedList(unittest.TestCase):
         self.assertIs(test_list._last_head, test_list._node_at(0))
 
     def test_group_pop_node(self):
-        test_list = GroupedList()
-        test_list.append_group([2, 8, 4])
-        test_list.append_group([1, 9, 6])
+        test_list = GroupedList([[2, 8, 4], [1, 9, 6]])
         self.assertEqual(test_list.to_nested_lists(), [[2, 8, 4], [1, 9, 6]])
         self.assertIs(test_list._first_head, test_list._node_at(0))
         self.assertIs(test_list._last_head, test_list._node_at(3))
@@ -310,10 +292,7 @@ class TestGroupedList(unittest.TestCase):
         self.assertIs(test_list._last_head, test_list._node_at(2))
 
     def test_group_item_modify(self):
-        test_list = GroupedList()
-        test_list.append_group([2, 8, 4])
-        test_list.append_group([1, 9, 6])
-        test_list.append_group([3, 7, 5])
+        test_list = GroupedList([[2, 8, 4], [1, 9, 6], [3, 7, 5]])
         self.assertEqual(test_list.to_nested_lists(), [[2, 8, 4], [1, 9, 6], [3, 7, 5]])
         test_list.groups[1][2] = 20
         self.assertEqual(test_list.to_nested_lists(), [[2, 8, 4], [1, 9, 20], [3, 7, 5]])
@@ -322,16 +301,8 @@ class TestGroupedList(unittest.TestCase):
         self.assertEqual(test_list.to_nested_lists(), [[2, 8, 4], [1, 9], [3, 7, 5]])
 
     def test_group_equals(self):
-        list_1 = GroupedList()
-        list_1.append_group([1, 2, 3])
-        list_1.append_group([4, 5, 6])
-        list_1.append_group([7, 8])
-        list_1.append_group([9, 10])
-        list_2 = GroupedList()
-        list_2.append_group([1, 2, 3])
-        list_2.append_group([4, 5, 6])
-        list_2.append_group([7, 8, 9])
-        list_2.append_group([10])
+        list_1 = GroupedList([[1, 2, 3], [4, 5, 6], [7, 8], [9, 10]])
+        list_2 = GroupedList([[1, 2, 3], [4, 5, 6], [7, 8, 9], [10]])
         self.assertFalse(list_1.equals(list_2, compare_groups=True))
         self.assertTrue(list_1.equals(list_2, compare_groups=False))
         self.assertTrue(list_1.equals([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], compare_groups=False))
@@ -339,7 +310,23 @@ class TestGroupedList(unittest.TestCase):
         list_3 = GroupedList([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
         list_4 = GroupedList([1, 2, 3, 4, 5, 6, 7, 8, 9, 11])
         self.assertFalse(list_3 == list_4)
-    
+
+    def test_group_insert_at_index(self):
+        test_list = GroupedList([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+        test_list.insert_group_at(3)
+        test_list.insert_group_at(7)
+        self.assertEquals(test_list, GroupedList([[1, 2, 3], [4, 5, 6, 7], [8, 9, 10]]))
+
+    def test_clear(self):
+        list_1 = GroupedList([[1, 2, 3], [4, 5, 6], [7, 8], [9, 10]])
+        list_1.clear()
+        self.assertTrue(list_1.equals(GroupedList()))
+
+    def test_clear_groups(self):
+        list_1 = GroupedList([[1, 2, 3], [4, 5, 6], [7, 8], [9, 10]])
+        list_1.clear_groups()
+        self.assertTrue(list_1.equals(GroupedList([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]), compare_groups=True))
+
     def test_basic_sort(self):
         values = [10, 1, 9, 2, 8, 3, 7, 4, 6, 5]
         test_list = GroupedList(values)
@@ -350,12 +337,7 @@ class TestGroupedList(unittest.TestCase):
         self.assertTrue(self.verify_is_single_group(test_list))
 
     def test_sort_of_groups(self):
-        test_list = GroupedList()
-        test_list.append_group([12, 3, 20])
-        test_list.append_group([18, 5, 11])
-        test_list.append_group([1, 8])
-        test_list.append_group([15])
-        test_list.append_group([2, 6, 14])
+        test_list = GroupedList([[12, 3, 20], [18, 5, 11], [1, 8], [15], [2, 6, 14]])
         test_list.sort()
         self.assertEqual(test_list, GroupedList([1, 2, 3, 5, 6, 8, 11, 12, 14, 15, 18, 20]))
         self.assertEqual(test_list._first.value, 1)
