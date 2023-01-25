@@ -5,6 +5,7 @@ from lark import Lark, UnexpectedInput
 from lark import Transformer, v_args
 from lark.visitors import VisitError
 
+import bibleref
 from bibleref import ref, bible_data
 
 
@@ -51,6 +52,7 @@ def _parse(string, flags: ref.BibleFlag = None):
         raise new_error
     
     try:
+        flags = flags or bibleref.flags or ref.BibleFlag.NONE
         _transformer().flags = flags
         range_groups_list = _transformer().transform(tree)
     except VisitError as e:

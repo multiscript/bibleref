@@ -1,5 +1,4 @@
 
-# TODO: All groups in range lists to be cleared, or set to group by chapter
 # TODO: Create context manager to temporarily set or unset particular flags
 # TODO: Create module method to make it easier to keep existing flags but set/unset particular flags
 
@@ -7,7 +6,8 @@ from dataclasses import dataclass
 from enum import Enum, Flag, auto
 from typing import Union
 
-from bibleref import BibleRefException, bible_data, flags
+import bibleref
+from bibleref import BibleRefException, bible_data
 
 #
 # Set-style operations in this module are derived from the python-ranges module
@@ -35,7 +35,7 @@ class BibleFlag(Flag):
     ALL = MULTIBOOK | VERSE_0
     '''All `BibleFlag` flags are set.'''
 
-flags = BibleFlag.NONE # Default setting for global flags attribute.
+bibleref.flags = BibleFlag.NONE # Default setting for global flags attribute.
 
 
 class BibleBook(Enum):
@@ -176,7 +176,7 @@ class BibleBook(Enum):
     def min_verse_num(self, chap_num: int, flags: BibleFlag = None) -> int:
         '''Return the lowest verse number (0 or 1) for the specified chapter number of this `BibleBook`.
         '''
-        flags = flags or globals()['flags'] or BibleFlag.NONE
+        flags = flags or bibleref.flags or BibleFlag.NONE
         if chap_num < self.min_chap_num() or chap_num > self.max_chap_num():
             raise InvalidReferenceError(f"No chapter {chap_num} in {self.title}")
         return 0 if (BibleFlag.VERSE_0 in flags and chap_num in self._verse_0s) else 1
@@ -418,7 +418,7 @@ class BibleVerse:
         '''
         if not isinstance(num_verses, int):
             raise TypeError(f"Cannot add a {type(num_verses)} to a BibleVerse")
-        flags = flags or globals()['flags'] or BibleFlag.NONE
+        flags = flags or bibleref.flags or BibleFlag.NONE
         book = self.book
         chap_num = self.chap_num
         if self.verse_num == 0:
@@ -455,7 +455,7 @@ class BibleVerse:
 
         Using the `-` operator is equivalent to calling `subtract()` with `flags = None`.
         '''
-        flags = flags or globals()['flags'] or BibleFlag.NONE
+        flags = flags or bibleref.flags or BibleFlag.NONE
         if isinstance(other, int):
             book = self.book
             chap_num = self.chap_num
@@ -557,7 +557,7 @@ class BibleRange:
     def whole_bible(cls, flags: BibleFlag = None) -> 'BibleRange':
         '''Returns a `BibleRange` representing the whole Bible.
         '''
-        flags = flags or globals()['flags'] or BibleFlag.NONE
+        flags = flags or bibleref.flags or BibleFlag.NONE
         # By definition, we need to allow multibook to encompass whole Bible
         flags |= BibleFlag.MULTIBOOK
         start_book = bible_data().book_order[0]
@@ -609,7 +609,7 @@ class BibleRange:
         or using the `flags` argument, a `MultibookRangeNotAllowedError` is raised. If the arguments are of an
         incorrect number or type, a `ValueError` is raised.     
         '''
-        flags = flags or globals()['flags'] or BibleFlag.NONE
+        flags = flags or bibleref.flags or BibleFlag.NONE
         if len(args) == 0:
             if BibleFlag.MULTIBOOK not in flags and start.book != end.book:
                 raise MultibookRangeNotAllowedError(f"Multi-book ranges not allowed " + 
@@ -813,7 +813,7 @@ class BibleRange:
         if not (by_book or by_chap or num_verses):
             raise ValueError("Must split by at least one of book, chapter, or number of verses")
 
-        flags = (flags or globals()['flags'] or BibleFlag.NONE)
+        flags = flags or bibleref.flags or BibleFlag.NONE
         # Set flags if our attributes imply they should be set
         if self.start.book != self.end.book:
             flags |= BibleFlag.MULTIBOOK
@@ -1059,20 +1059,27 @@ class BibleRange:
     def __str__(self):
         return self.str()
 
-    def str(self, abbrev=False, alt_sep=False, nospace=False, flags: BibleFlag = None):
+    def str(self, abbrev=False, alt_sep=False, nospace=False, force_start_verses: bool = False,
+            flags: BibleFlag = None):
         '''Returns a configurable string representation of this `BibleRange`, as follows:
 
         - If `abbrev` is `True`, the abbreviated name of the book is used (instead of the full name).
         - If `alt_sep` is `True`, chapter and verse numbers are separated by the alternate
           separator (defaults to `.`) instead of the standard separator (defaults to `:`).
         - If `nospace` is `True`, no spaces are included in the string.
+        - If `force_start_verses` is `True`, the start verse of a range is made explicit if the end
+          verse of the range is also being shown. Otherwise, the start verse is omitted where possible.
         '''
         if self.spans_start_book():
             start_parts = BibleVersePart.BOOK
             at_verse_level = False
         elif self.spans_start_chap():
-            start_parts = BibleVersePart.BOOK_CHAP
-            at_verse_level = False
+            if force_start_verses and not self.spans_end_chap():
+                start_parts = BibleVersePart.FULL_REF
+                at_verse_level = True
+            else:
+                start_parts = BibleVersePart.BOOK_CHAP
+                at_verse_level = False
         else:
             start_parts = BibleVersePart.FULL_REF
             at_verse_level = True
@@ -1143,10 +1150,15 @@ class BibleRangeList(util.GroupedList):
         2. From any iterable containing BibleRanges:
            `BibleRangeList([BibleRange("Mark 3:1-4:2"), BibleRange("Mark 5:6-8"),
                             BibleRange("Mark 5:10"), BibleRange("Matt 4")])`
+        
+           If the iterable items are Python lists or tuples, each item of the iterable is added as a
+           separate group:
+           `BibleRangeList([[BibleRange("Mark 3:1-4:2"), BibleRange("Mark 5:6-8")],
+                            [BibleRange("Mark 5:10"), BibleRange("Matt 4")]])`
             
         3. As a copy of an existing BibleRangeList: `BibleRangeList(existing_bible_range_list)`
         '''
-        flags = flags or globals()['flags']
+        flags = flags or bibleref.flags or BibleFlag.NONE
 
         if len(args) == 1:
             if isinstance(args[0], str):
@@ -1204,14 +1216,19 @@ class BibleRangeList(util.GroupedList):
         If `whole` is True, only whole books are counted. Otherwise, partial books are also included in the count.'''
         return sum([bible_range.book_count(whole=whole, flags=flags) for bible_range in self])
 
-    def consolidate(self, flags: BibleFlag = None):
-        '''Sorts this list in-place and merges ranges wherever possible. The result is the smallest
+    def sort(self, regroup: bool = True):
+        '''Sorts this list in-place. All existing groups are cleared and replaced with a single
+        new group. Then regroups if `regroup` is True.'''
+        super().sort()
+        if regroup:
+            self.regroup()
+
+    def consolidate(self, regroup: bool = True, flags: BibleFlag = None):
+        '''Sorts this list in-place and merges ranges wherever possible, then regroups. The result is the smallest
         list of disjoint, non-adjacent `BibleRange` elements spanning the same verses as in the original
         list.
-
-        All groups are removed and replaced with a single group.
         '''
-        self.sort()
+        self.sort(regroup=False)
         node = self._first
         while node is not None and node.next is not None:
             union = node.value.union(node.next.value, flags=flags)
@@ -1223,6 +1240,7 @@ class BibleRangeList(util.GroupedList):
             else:
                 # The two ranges can't be merged, so move on
                 node = node.next
+        self.regroup()
 
     def is_disjoint(self, other_ref: 'BibleRef') -> bool:
         '''Returns `True` if every `BibleRange` is disjoint with all the verses in `other_ref`, otherwise `False`.
@@ -1429,8 +1447,70 @@ class BibleRangeList(util.GroupedList):
     def __str__(self):
         return self.str()
 
+    def regroup(self, flags: BibleFlag = None):
+        '''Removes the existing groups in the list, and places the list items into new groups that would most
+        naturally match the most conventional string representation of the list. (For example, this typically
+        places ranges in different chapters into different groups.)
+        '''
+        # This method is derived from the str() method below, and is best read after that method.
+        # Changes to the internal logic of str() likely require corresponding changes to the internal logic of
+        # this method.
+        self.clear_groups()
+
+        cur_book = None
+        cur_chap = None
+        at_verse_level = False
+        show_start_verse = False
+        
+        for node in self._node_iter():
+            bible_range: BibleRange = node.value                
+            if bible_range.spans_start_book(flags): # Range start includes an entire book
+                # Even if already in same book, whole book references repeat the whole book name.
+                self._insert_new_group_at_node(node)
+                cur_book = bible_range.start.book
+                cur_chap = None
+                at_verse_level = False
+                show_start_verse = False
+            elif bible_range.spans_start_chap(flags): # Range start includes an entire chap
+                self._insert_new_group_at_node(node)
+                cur_chap = bible_range.start.chap_num
+                at_verse_level = False
+                show_start_verse = False
+            else: # Range start is just a particular verse
+                if cur_book == bible_range.start.book: # Continuing same book
+                    if (not at_verse_level) or (cur_chap != bible_range.start.chap_num):
+                        # At chap level or verse level in a different chap
+                        self._insert_new_group_at_node(node)
+                else: # Different book
+                    self._insert_new_group_at_node(node)
+                cur_chap = bible_range.start.chap_num
+                at_verse_level = True # All single verses move us to verse level
+                show_start_verse = True
+
+            cur_book = bible_range.start.book
+            if (not show_start_verse) and (not bible_range.spans_end_chap()):
+                # End verse will show verse num, and we've been asked to show start verse num in such cases
+                show_start_verse = True
+                at_verse_level = True
+
+            if (not bible_range.is_whole_book(flags)) and (not bible_range.is_whole_chap(flags)) and \
+               (not bible_range.is_single_verse()):
+                if bible_range.end.book != bible_range.start.book:
+                    at_verse_level = False
+
+                if bible_range.spans_end_book(flags): # Range end includes an entire book
+                    cur_chap = None
+                    at_verse_level = False
+                elif not at_verse_level and bible_range.spans_end_chap(flags): # Range end includes an entire chap
+                    cur_chap = bible_range.end.chap_num
+                    at_verse_level = False
+                else: # Range end is a whole chap after a particular verse, or a particular verse
+                    cur_chap = bible_range.end.chap_num
+                    at_verse_level = True
+                cur_book = bible_range.end.book
+
     def str(self, abbrev: bool = False, alt_sep: bool = False, nospace: bool = False,
-               preserve_groups: bool = True, flags: BibleFlag = None):
+               preserve_groups: bool = True, force_start_verses: bool = False, flags: BibleFlag = None):
         '''Returns a configuratble string representation of this BibleRangeList, as follows:
 
         - If `abbrev` is `True`, the abbreviated name of the book is used (instead of the full name).
@@ -1443,7 +1523,12 @@ class BibleRangeList(util.GroupedList):
         - If `preserve_groups` is `False`, major and minor group separators are used as necessary
           to create the most conventional resulting string, which may result in different
           passage groupings.
+        - If `force_start_verses` is `True`, the start verse number of a range is made explicit if the end
+          verse of the range is also being shown. Otherwise, the start verse number is omitted wherever possible.
         '''
+        # The regroup() method is derived from this str() method. Changes to the internal logic of this method
+        # likely require corresponding changes to the internal logic of regroup().
+
         cur_book = None
         cur_chap = None
         at_verse_level = False
@@ -1453,13 +1538,16 @@ class BibleRangeList(util.GroupedList):
         force_dual_ref = False # True if we require a single reference to display as a dual_reference_range
 
         for group in self.groups:
-            for br in group:
-                bible_range: BibleRange = br # Typecast                
+            for bible_range in group:
+                bible_range: BibleRange = bible_range # Typecast                
                 if bible_range.spans_start_book(flags): # Range start includes an entire book
                     # Even if already in same book, whole book references repeat the whole book name.
                     start_parts = BibleVersePart.BOOK
+                    cur_book = bible_range.start.book
                     cur_chap = None
                     at_verse_level = False
+                    if not preserve_groups:
+                        list_sep = bible_data().major_list_sep
                 elif bible_range.spans_start_chap(flags): # Range start includes an entire chap
                     if cur_book == bible_range.start.book: # Continuing same book
                         if at_verse_level: # We're in a list of verses
@@ -1507,7 +1595,14 @@ class BibleRangeList(util.GroupedList):
                 else: # Range start is just a particular verse
                     if cur_book == bible_range.start.book: # Continuing same book
                         if at_verse_level and cur_chap == bible_range.start.chap_num: # Continuing same chap
-                            start_parts = BibleVersePart.VERSE
+                            if (bible_range.end.book != bible_range.start.book) or \
+                               (bible_range.end.chap_num != bible_range.start.chap_num):
+                                # This ref crosses chap/book boundaries in a verse list, so it's clearer to repeat
+                                # the starting chap num
+                                start_parts = BibleVersePart.CHAP_VERSE
+                            else:
+                                # This ref stays within the same chap num
+                                start_parts = BibleVersePart.VERSE
                         else: # At chap level or verse level in a different chap
                             if not preserve_groups: # Use major list sep between chapters
                                 list_sep = bible_data().major_list_sep
@@ -1518,7 +1613,14 @@ class BibleRangeList(util.GroupedList):
                         start_parts = BibleVersePart.FULL_REF
                     cur_chap = bible_range.start.chap_num
                     at_verse_level = True # All single verses move us to verse level
+
                 cur_book = bible_range.start.book
+                if force_start_verses and (BibleVersePart.VERSE not in start_parts) and \
+                   (not bible_range.spans_end_chap()):
+                    # End verse will show verse num, and we've been asked to show start verse num in such cases
+                    start_parts |= BibleVersePart.VERSE
+                    at_verse_level = True
+
                 start_str = bible_range.start.str(abbrev, alt_sep, nospace, start_parts) 
 
                 if not force_dual_ref and (bible_range.is_whole_book(flags) or
@@ -1611,12 +1713,12 @@ class BibleRangeList(util.GroupedList):
     def clear(self):
         return super().clear()
     
+    def clear_groups(self):
+        return super().clear_groups()
+
     def reverse(self):
         return super().reverse()
     
-    def sort(self):
-        return super().sort()
-
     def equals(self, other_iterable, compare_groups=True) -> bool:
         return super().equals(other_iterable, compare_groups)
 
