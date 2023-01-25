@@ -1,5 +1,4 @@
 
-# TODO: All groups in range lists to be cleared, or set to group by chapter
 # TODO: Create context manager to temporarily set or unset particular flags
 # TODO: Create module method to make it easier to keep existing flags but set/unset particular flags
 
@@ -7,7 +6,8 @@ from dataclasses import dataclass
 from enum import Enum, Flag, auto
 from typing import Union
 
-from bibleref import BibleRefException, bible_data, flags
+import bibleref
+from bibleref import BibleRefException, bible_data
 
 #
 # Set-style operations in this module are derived from the python-ranges module
@@ -35,7 +35,7 @@ class BibleFlag(Flag):
     ALL = MULTIBOOK | VERSE_0
     '''All `BibleFlag` flags are set.'''
 
-flags = BibleFlag.NONE # Default setting for global flags attribute.
+bibleref.flags = BibleFlag.NONE # Default setting for global flags attribute.
 
 
 class BibleBook(Enum):
@@ -176,7 +176,7 @@ class BibleBook(Enum):
     def min_verse_num(self, chap_num: int, flags: BibleFlag = None) -> int:
         '''Return the lowest verse number (0 or 1) for the specified chapter number of this `BibleBook`.
         '''
-        flags = flags or globals()['flags'] or BibleFlag.NONE
+        flags = flags or bibleref.flags or BibleFlag.NONE
         if chap_num < self.min_chap_num() or chap_num > self.max_chap_num():
             raise InvalidReferenceError(f"No chapter {chap_num} in {self.title}")
         return 0 if (BibleFlag.VERSE_0 in flags and chap_num in self._verse_0s) else 1
@@ -418,7 +418,7 @@ class BibleVerse:
         '''
         if not isinstance(num_verses, int):
             raise TypeError(f"Cannot add a {type(num_verses)} to a BibleVerse")
-        flags = flags or globals()['flags'] or BibleFlag.NONE
+        flags = flags or bibleref.flags or BibleFlag.NONE
         book = self.book
         chap_num = self.chap_num
         if self.verse_num == 0:
@@ -455,7 +455,7 @@ class BibleVerse:
 
         Using the `-` operator is equivalent to calling `subtract()` with `flags = None`.
         '''
-        flags = flags or globals()['flags'] or BibleFlag.NONE
+        flags = flags or bibleref.flags or BibleFlag.NONE
         if isinstance(other, int):
             book = self.book
             chap_num = self.chap_num
@@ -557,7 +557,7 @@ class BibleRange:
     def whole_bible(cls, flags: BibleFlag = None) -> 'BibleRange':
         '''Returns a `BibleRange` representing the whole Bible.
         '''
-        flags = flags or globals()['flags'] or BibleFlag.NONE
+        flags = flags or bibleref.flags or BibleFlag.NONE
         # By definition, we need to allow multibook to encompass whole Bible
         flags |= BibleFlag.MULTIBOOK
         start_book = bible_data().book_order[0]
@@ -609,7 +609,7 @@ class BibleRange:
         or using the `flags` argument, a `MultibookRangeNotAllowedError` is raised. If the arguments are of an
         incorrect number or type, a `ValueError` is raised.     
         '''
-        flags = flags or globals()['flags'] or BibleFlag.NONE
+        flags = flags or bibleref.flags or BibleFlag.NONE
         if len(args) == 0:
             if BibleFlag.MULTIBOOK not in flags and start.book != end.book:
                 raise MultibookRangeNotAllowedError(f"Multi-book ranges not allowed " + 
@@ -813,7 +813,7 @@ class BibleRange:
         if not (by_book or by_chap or num_verses):
             raise ValueError("Must split by at least one of book, chapter, or number of verses")
 
-        flags = (flags or globals()['flags'] or BibleFlag.NONE)
+        flags = flags or bibleref.flags or BibleFlag.NONE
         # Set flags if our attributes imply they should be set
         if self.start.book != self.end.book:
             flags |= BibleFlag.MULTIBOOK
@@ -1158,7 +1158,7 @@ class BibleRangeList(util.GroupedList):
             
         3. As a copy of an existing BibleRangeList: `BibleRangeList(existing_bible_range_list)`
         '''
-        flags = flags or globals()['flags']
+        flags = flags or bibleref.flags or BibleFlag.NONE
 
         if len(args) == 1:
             if isinstance(args[0], str):
