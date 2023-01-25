@@ -1,4 +1,6 @@
 import unittest
+
+import bibleref
 from bibleref.ref import BibleBook, BibleVerse, BibleRange, BibleRangeList, \
                             BibleFlag, BibleVersePart as BVP, InvalidReferenceError, \
                             MultibookRangeNotAllowedError
@@ -180,6 +182,18 @@ class TestBibleReference(unittest.TestCase):
         self.assertEqual(BibleRange(BibleBook.John,    8,   10, BibleBook.Matt, None, None, flags=BibleFlag.MULTIBOOK), BibleRange("Matt-John 8:10", flags=BibleFlag.MULTIBOOK))
         self.assertEqual(BibleRange(BibleBook.John,    8,   10, BibleBook.Matt,    2, None, flags=BibleFlag.MULTIBOOK), BibleRange("Matt 2-John 8:10", flags=BibleFlag.MULTIBOOK))
         self.assertEqual(BibleRange(BibleBook.John,    8,   10, BibleBook.Matt,    2,    3, flags=BibleFlag.MULTIBOOK), BibleRange("Matt 2:3-John 8:10", flags=BibleFlag.MULTIBOOK))
+
+    def test_bibleref_flags(self):
+        orig_flags = bibleref.flags
+        bibleref.flags = BibleFlag.NONE
+        self.assertRaises(bibleref.ref.MultibookRangeNotAllowedError, lambda: BibleRange(BibleBook.Matt, None, None, BibleBook.John))
+        self.assertRaises(bibleref.ref.InvalidReferenceError, lambda: BibleVerse(BibleBook.Psa, 3, 0))
+        
+        bibleref.flags = BibleFlag.ALL
+        bible_range = BibleRange(BibleBook.Matt, None, None, BibleBook.John)
+        bible_verse = BibleVerse(BibleBook.Psa, 3, 0)
+        
+        bibleref.flags = orig_flags
 
     def test_whole_bible(self):
         self.assertEqual(BibleRange.whole_bible(), BibleRange("Gen-Rev", flags=BibleFlag.MULTIBOOK))
