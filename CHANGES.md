@@ -1,3 +1,5 @@
+Next version:
+  - Documentation fixes.
 v0.10.0:
   - Add counts to BibleBook, BibleRange, BibleRangeList
   - Add BibleRangeList.regroup(), and call it from consolidate()

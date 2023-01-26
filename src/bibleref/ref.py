@@ -16,7 +16,7 @@ from bibleref import BibleRefException, bible_data
 
 class BibleFlag(Flag):
     '''Flags used for controlling various behaviours throughout the package. These can be set globally for the package
-    using the `bibleref.ref.flags` attribute, or per-method for methods that includes a `flags` keyword argument.
+    using the `bibleref.flags` attribute, or per-method for methods that includes a `flags` keyword argument.
     '''
     NONE = 0
     '''No `BibleFlag` flags are set. Default value for `bibleref.flags`.'''
@@ -1151,7 +1151,7 @@ class BibleRangeList(util.GroupedList):
            `BibleRangeList([BibleRange("Mark 3:1-4:2"), BibleRange("Mark 5:6-8"),
                             BibleRange("Mark 5:10"), BibleRange("Matt 4")])`
         
-           If the iterable items are Python lists or tuples, each item of the iterable is added as a
+           If the iterable's items are Python lists or tuples, each item of the iterable is added as a
            separate group:
            `BibleRangeList([[BibleRange("Mark 3:1-4:2"), BibleRange("Mark 5:6-8")],
                             [BibleRange("Mark 5:10"), BibleRange("Matt 4")]])`
