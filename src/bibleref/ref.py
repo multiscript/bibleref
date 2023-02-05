@@ -1223,7 +1223,7 @@ class BibleRangeList(util.GroupedList):
         if regroup:
             self.regroup()
 
-    def consolidate(self, regroup: bool = True, flags: BibleFlag = None):
+    def consolidate(self, flags: BibleFlag = None):
         '''Sorts this list in-place and merges ranges wherever possible, then regroups. The result is the smallest
         list of disjoint, non-adjacent `BibleRange` elements spanning the same verses as in the original
         list.
