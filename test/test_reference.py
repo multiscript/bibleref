@@ -12,8 +12,8 @@ class TestBibleReference(unittest.TestCase):
         self.assertEqual(BibleBook.from_str("Mt"), BibleBook.Matt)
         self.assertEqual(BibleBook.from_str("Rev"), BibleBook.Rev)
 
-        self.assertEqual(BibleBook.Matt.whole_chap(2), BibleRange("Matt 2:1-23"))
-        self.assertEqual(BibleBook.Matt.whole_book(), BibleRange("Matt 1:1-28:20"))
+        self.assertEqual(BibleBook.Matt.chap_span(2), BibleRange("Matt 2:1-23"))
+        self.assertEqual(BibleBook.Matt.book_span(), BibleRange("Matt 1:1-28:20"))
 
     def test_bible_book_counts(self):
         self.assertEqual(BibleBook.Phil.verse_count(), 104) # Check one book manually
@@ -643,6 +643,11 @@ class TestBibleReference(unittest.TestCase):
         self.assertEqual(no_verse_0, BibleRangeList("Matt 2:3-4:5; Mark 6:7-8:9"))
         no_verse_0.verse_1_to_0()
         self.assertEqual(no_verse_0, BibleRangeList("Matt 2:3-4:5; Mark 6:7-8:9"))
+
+    def test_range_list_span(self):
+        bible_range = BibleRangeList("John 4:9; Luke 1:12; Mark 7:3; Matt 3:8")
+        self.assertEqual(bible_range.chap_span(), BibleRange("Matt 3-John 4", flags=BibleFlag.MULTIBOOK))
+        self.assertEqual(bible_range.book_span(), BibleRange("Matt-John", flags=BibleFlag.MULTIBOOK))
 
     def test_range_list_counts(self):
         range_list = BibleRangeList("1 John 1:5-3 John 8; 1 John 1:5-3:10; 1 John 1:5-2:11; 3 John 5-10",

@@ -1,7 +1,6 @@
 - Next version:
   - Small fix to BibleRangeList.consolidate()
-  - Add BibleBook.whole_chap() and BibleBook.whole_book()
-  - Add chap_span() and book_span() to BibleVerse and BibleRange.
+  - Add chap_span() and book_span() to BibleBook, BibleVerse, BibleRange and BibleRangeList
   - Remove BibleVerse.chap_count()
   - Documentation fixes
 - v0.10.0:
