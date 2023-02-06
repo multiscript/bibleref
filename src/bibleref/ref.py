@@ -834,7 +834,7 @@ class BibleRange:
         return BibleRange(start=self.start.book.first_verse(flags=flags), end=self.end.book.last_verse(), flags=flags)
 
     def split(self, *, by_book: bool = False, by_chap: bool = False, num_verses: bool = None,
-              flags: BibleFlag = None):
+              regroup: bool = True, flags: BibleFlag = None):
         '''Split this `BibleRange` into a `BibleRangeList` of smaller consecutive ranges, as follows:
         
         - If `by_book` is `True`, splits are made at the end of each book.
@@ -842,6 +842,7 @@ class BibleRange:
         - If `num_verses` is specified, splits are made after (no more than) the specified number of verses.
         - `by_book`, `by_chap` and `num_verses` can be set in any combination, but one of them must be not `None`,
           otherwise a `ValueError` will be raised.
+        - If `regroup` is `True`, regroup() is called on the resulting `BibleRangeList`.
         '''
         if not (by_book or by_chap or num_verses):
             raise ValueError("Must split by at least one of book, chapter, or number of verses")
@@ -891,7 +892,10 @@ class BibleRange:
                 new_split.append(BibleRange(start=range_start, end=range_to_split.end, flags=flags))
             split_result = new_split
         
-        return BibleRangeList(split_result, flags=flags)
+        range_list = BibleRangeList(split_result, flags=flags)
+        if regroup:
+            range_list.regroup()
+        return range_list
 
     def is_disjoint(self, other_ref: 'BibleRef') -> bool:
         '''Returns `True` if this range doesn't overlap with any verses in `other_ref`, otherwise `False`.
