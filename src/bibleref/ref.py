@@ -349,6 +349,23 @@ class BibleVerse:
             object.__setattr__(self, "chap_num", chap_num)
             object.__setattr__(self, "verse_num", verse_num)
 
+    def verse_0_to_1(self) -> 'BibleVerse':
+        '''If the `verse_num` of this `BibleVerse` is 0, returns an identical BibleVerse except with `verse_num`
+        set to 1. Otherwise, returns the original `BibleVerse`.'''
+        if self.verse_num == 0:
+            return BibleVerse(self.book, self.chap_num, 1)
+        else:
+            return self
+    
+    def verse_1_to_0(self) -> 'BibleVerse':
+        '''If the `verse_num` of this `BibleVerse` is 1, and a verse 0 is possible for the
+        same chapter, returns an identical `BibleVerse` except with `verse_num` set to 0. Otherwise, returns the
+        original `BibleVerse`. **Note**: The value of the global attribute `bibleref.ref.flags` is *ignored*.'''
+        if self.verse_num == 1 and self.min_verse_num(self.chap_num, flags=BibleFlag.VERSE_0) == 0:
+            return BibleVerse(self.book, self.chap_num, 0, flags=BibleFlag.VERSE_0)
+        else:
+            return self
+
     def min_chap_num(self) -> int:
         '''Return lowest chapter number (indexed from 1) of the `BibleBook` containing this verse.
         '''
@@ -399,22 +416,15 @@ class BibleVerse:
             chap_num = self.chap_num
         return self.book.last_verse(chap_num)
 
-    def verse_0_to_1(self) -> 'BibleVerse':
-        '''If the `verse_num` of this `BibleVerse` is 0, returns an identical BibleVerse except with `verse_num`
-        set to 1. Otherwise, returns the original `BibleVerse`.'''
-        if self.verse_num == 0:
-            return BibleVerse(self.book, self.chap_num, 1)
-        else:
-            return self
-    
-    def verse_1_to_0(self) -> 'BibleVerse':
-        '''If the `verse_num` of this `BibleVerse` is 1, and a verse 0 is possible for the
-        same chapter, returns an identical `BibleVerse` except with `verse_num` set to 0. Otherwise, returns the
-        original `BibleVerse`. **Note**: The value of the global attribute `bibleref.ref.flags` is *ignored*.'''
-        if self.verse_num == 1 and self.min_verse_num(self.chap_num, flags=BibleFlag.VERSE_0) == 0:
-            return BibleVerse(self.book, self.chap_num, 0, flags=BibleFlag.VERSE_0)
-        else:
-            return self
+    def enclose_to_book(self, flags: BibleFlag = None) -> 'BibleRange':
+        '''Returns the `BibleRange` spanning the whole of the book containing this verse.        
+        '''
+        return self.book.whole_book(flags=flags)
+
+    def enclose_to_chap(self, flags: BibleFlag = None) -> 'BibleRange':
+        '''Returns the `BibleRange` spanning the whole of the chapter containing this verse.                
+        '''
+        return BibleRange(start=self.first_verse(flags=flags), end=self.last_verse(), flags=flags)
 
     def add(self, num_verses: int, flags: BibleFlag = None) -> 'BibleVerse':
         '''Returns a new `BibleVerse` that is `num_verses` after this `BibleVerse`.
@@ -771,6 +781,24 @@ class BibleRange:
     def is_single_verse(self) -> bool:
         '''Returns `True` if the `BibleRange` exactly contains a single verse, else `False`.'''
         return  (self.start == self.end)
+
+    def enclose_to_book(self, flags: BibleFlag = None) -> 'BibleRange':
+        '''Returns the new minimum `BibleRange` that includes this range and begins and ends at book boundaries.
+        
+        BibleFlag.MULTIBOOK is always set for this method, regardless of the value of `flags`.
+        '''
+        flags = flags or bibleref.flags or BibleFlag.NONE
+        flags |= BibleFlag.MULTIBOOK
+        return BibleRange(start=self.start.book.first_verse(flags=flags), end=self.end.book.last_verse(), flags=flags)
+
+    def enclose_to_chap(self, flags: BibleFlag = None) -> 'BibleRange':
+        '''Returns the new minimum `BibleRange` that includes this range and begins and ends at chapter boundaries.
+        
+        BibleFlag.MULTIBOOK is always set for this method, regardless of the value of `flags`.
+        '''
+        flags = flags or bibleref.flags or BibleFlag.NONE
+        flags |= BibleFlag.MULTIBOOK
+        return BibleRange(start=self.start.first_verse(flags=flags), end=self.end.last_verse(), flags=flags)
 
     def verse_count(self, flags: BibleFlag = None):
         '''Returns the number of verses in this range.'''

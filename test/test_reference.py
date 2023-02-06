@@ -76,6 +76,11 @@ class TestBibleReference(unittest.TestCase):
         self.assertEqual(no_verse_0.verse_0_to_1(), no_verse_0)
         self.assertEqual(no_verse_0.verse_1_to_0(), no_verse_0)
 
+    def test_verse_enclosure(self):
+        bible_verse = BibleVerse("Matt 3:8")
+        self.assertEqual(bible_verse.enclose_to_book(), BibleRange("Matt"))
+        self.assertEqual(bible_verse.enclose_to_chap(), BibleRange("Matt 3"))
+
     def test_verse_arithmetic(self):
         self.assertEqual(BibleVerse("Ps 3:8") + 1, BibleVerse("Ps 4:1"))
         self.assertEqual(BibleVerse("Ps 4:1") - 1, BibleVerse("Ps 3:8"))
@@ -252,6 +257,11 @@ class TestBibleReference(unittest.TestCase):
             BibleVerse(BibleBook.Mark, 1, 3),                         
         ]
         self.assertEqual(list(bible_range), expected_list)       
+
+    def test_range_enclosure(self):
+        bible_range = BibleRange("Matt 3:8-John 4:9", flags=BibleFlag.MULTIBOOK)
+        self.assertEqual(bible_range.enclose_to_book(), BibleRange("Matt-John", flags=BibleFlag.MULTIBOOK))
+        self.assertEqual(bible_range.enclose_to_chap(), BibleRange("Matt 3-John 4", flags=BibleFlag.MULTIBOOK))
 
     def test_range_counts(self):
         # Multi-book range
