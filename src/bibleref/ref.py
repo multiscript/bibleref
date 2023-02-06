@@ -777,24 +777,6 @@ class BibleRange:
         return  (self.end == self.end.book.last_verse()) and \
                 (self.start <= self.end.book.first_verse(None, flags))
 
-    def chap_span(self, flags: BibleFlag = None) -> 'BibleRange':
-        '''Returns a new minimum `BibleRange` that includes this range and begins and ends at chapter boundaries.
-        
-        BibleFlag.MULTIBOOK is always set for this method, regardless of the value of `flags`.
-        '''
-        flags = flags or bibleref.flags or BibleFlag.NONE
-        flags |= BibleFlag.MULTIBOOK
-        return BibleRange(start=self.start.first_verse(flags=flags), end=self.end.last_verse(), flags=flags)
-
-    def book_span(self, flags: BibleFlag = None) -> 'BibleRange':
-        '''Returns a new minimum `BibleRange` that includes this range and begins and ends at book boundaries.
-        
-        BibleFlag.MULTIBOOK is always set for this method, regardless of the value of `flags`.
-        '''
-        flags = flags or bibleref.flags or BibleFlag.NONE
-        flags |= BibleFlag.MULTIBOOK
-        return BibleRange(start=self.start.book.first_verse(flags=flags), end=self.end.book.last_verse(), flags=flags)
-
     def verse_count(self, flags: BibleFlag = None):
         '''Returns the number of verses in this range.'''
         # We split the range into chapters, which is not the most efficient approach, but makes the counting simple.
@@ -832,6 +814,24 @@ class BibleRange:
             if len(bible_ranges) > 1 and not bible_ranges[-1].is_whole_book():
                 count -= 1
         return count
+
+    def chap_span(self, flags: BibleFlag = None) -> 'BibleRange':
+        '''Returns a new minimum `BibleRange` that includes this range and begins and ends at chapter boundaries.
+        
+        BibleFlag.MULTIBOOK is always set for this method, regardless of the value of `flags`.
+        '''
+        flags = flags or bibleref.flags or BibleFlag.NONE
+        flags |= BibleFlag.MULTIBOOK
+        return BibleRange(start=self.start.first_verse(flags=flags), end=self.end.last_verse(), flags=flags)
+
+    def book_span(self, flags: BibleFlag = None) -> 'BibleRange':
+        '''Returns a new minimum `BibleRange` that includes this range and begins and ends at book boundaries.
+        
+        BibleFlag.MULTIBOOK is always set for this method, regardless of the value of `flags`.
+        '''
+        flags = flags or bibleref.flags or BibleFlag.NONE
+        flags |= BibleFlag.MULTIBOOK
+        return BibleRange(start=self.start.book.first_verse(flags=flags), end=self.end.book.last_verse(), flags=flags)
 
     def split(self, *, by_book: bool = False, by_chap: bool = False, num_verses: bool = None,
               flags: BibleFlag = None):
@@ -1232,6 +1232,23 @@ class BibleRangeList(util.GroupedList):
             node.value = node.value.verse_1_to_0()
         return None
 
+    def verse_count(self, flags: BibleFlag = None):
+        '''Returns the total number of verses in the ranges in the list.'''
+        return sum([bible_range.verse_count(flags=flags) for bible_range in self])
+
+    def chap_count(self, whole: bool = False, flags: BibleFlag = None):
+        '''Returns the total number of chapters in the ranges in the list.
+        
+        If `whole` is True, only whole chapters are counted. Otherwise partial chapters are also included in the
+        count.'''
+        return sum([bible_range.chap_count(whole=whole, flags=flags) for bible_range in self])
+
+    def book_count(self, whole: bool = False, flags: BibleFlag = None):
+        '''Returns the total number of Bible books in the ranges in the list.
+        
+        If `whole` is True, only whole books are counted. Otherwise, partial books are also included in the count.'''
+        return sum([bible_range.book_count(whole=whole, flags=flags) for bible_range in self])
+
     def span(self) -> 'BibleRange':
         '''Returns a new minimum `BibleRange` that includes every verse in this list.
         
@@ -1266,23 +1283,6 @@ class BibleRangeList(util.GroupedList):
         max_range: BibleRange = max(self)
         return BibleRange(start=min_range.start.book.first_verse(flags=flags), end=max_range.end.book.last_verse(),
                           flags=flags)
-
-    def verse_count(self, flags: BibleFlag = None):
-        '''Returns the total number of verses in the ranges in the list.'''
-        return sum([bible_range.verse_count(flags=flags) for bible_range in self])
-
-    def chap_count(self, whole: bool = False, flags: BibleFlag = None):
-        '''Returns the total number of chapters in the ranges in the list.
-        
-        If `whole` is True, only whole chapters are counted. Otherwise partial chapters are also included in the
-        count.'''
-        return sum([bible_range.chap_count(whole=whole, flags=flags) for bible_range in self])
-
-    def book_count(self, whole: bool = False, flags: BibleFlag = None):
-        '''Returns the total number of Bible books in the ranges in the list.
-        
-        If `whole` is True, only whole books are counted. Otherwise, partial books are also included in the count.'''
-        return sum([bible_range.book_count(whole=whole, flags=flags) for bible_range in self])
 
     def sort(self, regroup: bool = True):
         '''Sorts this list in-place. All existing groups are cleared and replaced with a single
