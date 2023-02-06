@@ -1232,6 +1232,15 @@ class BibleRangeList(util.GroupedList):
             node.value = node.value.verse_1_to_0()
         return None
 
+    def span(self) -> 'BibleRange':
+        '''Returns a new minimum `BibleRange` that includes every verse in this list.
+        
+        BibleFlag.ALL is always set for this method, regardless of the value of `bibleref.flags`.
+        '''
+        min_range: BibleRange = min(self)
+        max_range: BibleRange = max(self)
+        return BibleRange(start=min_range.start, end=max_range.end, flags=BibleFlag.ALL)
+
     def chap_span(self, flags: BibleFlag = None) -> 'BibleRange':
         '''Returns a new minimum `BibleRange` that includes every verse in this list, and begins and ends at
         chapter boundaries.

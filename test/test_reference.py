@@ -646,6 +646,7 @@ class TestBibleReference(unittest.TestCase):
 
     def test_range_list_span(self):
         bible_range = BibleRangeList("John 4:9; Luke 1:12; Mark 7:3; Matt 3:8")
+        self.assertEqual(bible_range.span(), BibleRange("Matt 3:8-John 4:9", flags=BibleFlag.MULTIBOOK))
         self.assertEqual(bible_range.chap_span(), BibleRange("Matt 3-John 4", flags=BibleFlag.MULTIBOOK))
         self.assertEqual(bible_range.book_span(), BibleRange("Matt-John", flags=BibleFlag.MULTIBOOK))
 
