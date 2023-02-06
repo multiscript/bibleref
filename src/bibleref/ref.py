@@ -1,4 +1,5 @@
 
+# TODO: Use major list sep to separate multi-chapter ranges, even if starting from same chapter.
 # TODO: Create context manager to temporarily set or unset particular flags
 # TODO: Create module method to make it easier to keep existing flags but set/unset particular flags
 
