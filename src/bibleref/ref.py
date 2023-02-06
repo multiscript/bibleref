@@ -376,11 +376,6 @@ class BibleVerse:
         '''
         return self.book.max_chap_num()
     
-    def chap_count(self):
-        '''Returns the number of chapters in the `BibleBook` containing this verse.
-        '''
-        return self.book.chap_count()
-
     def min_verse_num(self, chap_num: int = None, flags: BibleFlag = None) -> int:
         '''Return the lowest verse number (0 or 1) for the specified chapter of the `BibleBook` containing
         this verse. If no chapter is specified, it returns the lowest verse number of the chapter containing
