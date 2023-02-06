@@ -204,6 +204,16 @@ class BibleBook(Enum):
             chap_num = self.max_chap_num()
         return BibleVerse(self, chap_num, self.max_verse_num(chap_num))        
 
+    def whole_chap(self, chap_num: int, flags: BibleFlag = None) -> 'BibleRange':
+        '''Returns a `BibleRange` spanning the entired specified chapter of this `BibleBook`.
+        '''
+        return BibleRange(start=self.first_verse(chap_num, flags=flags), end=self.last_verse(chap_num), flags=flags)
+
+    def whole_book(self, flags: BibleFlag = None) -> 'BibleRange':
+        '''Returns a `BibleRange` spanning this entire `BibleBook`.
+        '''
+        return BibleRange(start=self.first_verse(flags=flags), end=self.last_verse(), flags=flags)
+
     def next(self) -> 'BibleBook':
         '''Returns the next `BibleBook` in the book ordering, or `None` if this is the final book,
         or is not part of the ordering.
