@@ -416,15 +416,15 @@ class BibleVerse:
             chap_num = self.chap_num
         return self.book.last_verse(chap_num)
 
-    def enclose_to_book(self, flags: BibleFlag = None) -> 'BibleRange':
-        '''Returns the `BibleRange` spanning the whole of the book containing this verse.        
-        '''
-        return self.book.whole_book(flags=flags)
-
-    def enclose_to_chap(self, flags: BibleFlag = None) -> 'BibleRange':
+    def chap_span(self, flags: BibleFlag = None) -> 'BibleRange':
         '''Returns the `BibleRange` spanning the whole of the chapter containing this verse.                
         '''
         return BibleRange(start=self.first_verse(flags=flags), end=self.last_verse(), flags=flags)
+
+    def book_span(self, flags: BibleFlag = None) -> 'BibleRange':
+        '''Returns the `BibleRange` spanning the whole of the book containing this verse.        
+        '''
+        return self.book.whole_book(flags=flags)
 
     def add(self, num_verses: int, flags: BibleFlag = None) -> 'BibleVerse':
         '''Returns a new `BibleVerse` that is `num_verses` after this `BibleVerse`.
@@ -782,16 +782,7 @@ class BibleRange:
         '''Returns `True` if the `BibleRange` exactly contains a single verse, else `False`.'''
         return  (self.start == self.end)
 
-    def enclose_to_book(self, flags: BibleFlag = None) -> 'BibleRange':
-        '''Returns the new minimum `BibleRange` that includes this range and begins and ends at book boundaries.
-        
-        BibleFlag.MULTIBOOK is always set for this method, regardless of the value of `flags`.
-        '''
-        flags = flags or bibleref.flags or BibleFlag.NONE
-        flags |= BibleFlag.MULTIBOOK
-        return BibleRange(start=self.start.book.first_verse(flags=flags), end=self.end.book.last_verse(), flags=flags)
-
-    def enclose_to_chap(self, flags: BibleFlag = None) -> 'BibleRange':
+    def chap_span(self, flags: BibleFlag = None) -> 'BibleRange':
         '''Returns the new minimum `BibleRange` that includes this range and begins and ends at chapter boundaries.
         
         BibleFlag.MULTIBOOK is always set for this method, regardless of the value of `flags`.
@@ -799,6 +790,15 @@ class BibleRange:
         flags = flags or bibleref.flags or BibleFlag.NONE
         flags |= BibleFlag.MULTIBOOK
         return BibleRange(start=self.start.first_verse(flags=flags), end=self.end.last_verse(), flags=flags)
+
+    def book_span(self, flags: BibleFlag = None) -> 'BibleRange':
+        '''Returns the new minimum `BibleRange` that includes this range and begins and ends at book boundaries.
+        
+        BibleFlag.MULTIBOOK is always set for this method, regardless of the value of `flags`.
+        '''
+        flags = flags or bibleref.flags or BibleFlag.NONE
+        flags |= BibleFlag.MULTIBOOK
+        return BibleRange(start=self.start.book.first_verse(flags=flags), end=self.end.book.last_verse(), flags=flags)
 
     def verse_count(self, flags: BibleFlag = None):
         '''Returns the number of verses in this range.'''
