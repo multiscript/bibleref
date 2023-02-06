@@ -737,23 +737,9 @@ class BibleRange:
         return BibleRange(start=self.start.verse_1_to_0(), end=self.end.verse_1_to_0(),
                           flags=BibleFlag.ALL)
 
-    def is_whole_book(self, flags: BibleFlag = None) -> bool:
-        '''Returns `True` if this `BibleRange` exactly spans one whole book, else `False`.'''
-        return  (self.start.book == self.end.book) and \
-                (self.start == self.start.book.first_verse(None, flags)) and \
-                (self.end == self.end.book.last_verse())
-
-    def spans_start_book(self, flags: BibleFlag = None) -> bool:
-        '''Returns `True` if this `BibleRange` includes the whole book that contains the `start` verse,
-        else `False`.'''
-        return  (self.start == self.start.book.first_verse(None, flags)) and \
-                (self.end >= self.start.book.last_verse())
-
-    def spans_end_book(self, flags: BibleFlag = None) -> bool:
-        '''Returns `True` if this `BibleRange` includes the whole book that contains the `end` verse,
-        else `False`.'''
-        return  (self.end == self.end.book.last_verse()) and \
-                (self.start <= self.end.book.first_verse(None, flags))
+    def is_single_verse(self) -> bool:
+        '''Returns `True` if the `BibleRange` exactly contains a single verse, else `False`.'''
+        return  (self.start == self.end)
 
     def is_whole_chap(self, flags: BibleFlag = None) -> bool:
         '''Returns `True` if this `BibleRange` exactly spans one whole chapter, else `False`.'''
@@ -773,9 +759,23 @@ class BibleRange:
         return  (self.end == self.end.book.last_verse(self.end.chap_num)) and \
                 (self.start <= self.end.book.first_verse(self.end.chap_num, flags=flags))
 
-    def is_single_verse(self) -> bool:
-        '''Returns `True` if the `BibleRange` exactly contains a single verse, else `False`.'''
-        return  (self.start == self.end)
+    def is_whole_book(self, flags: BibleFlag = None) -> bool:
+        '''Returns `True` if this `BibleRange` exactly spans one whole book, else `False`.'''
+        return  (self.start.book == self.end.book) and \
+                (self.start == self.start.book.first_verse(None, flags)) and \
+                (self.end == self.end.book.last_verse())
+
+    def spans_start_book(self, flags: BibleFlag = None) -> bool:
+        '''Returns `True` if this `BibleRange` includes the whole book that contains the `start` verse,
+        else `False`.'''
+        return  (self.start == self.start.book.first_verse(None, flags)) and \
+                (self.end >= self.start.book.last_verse())
+
+    def spans_end_book(self, flags: BibleFlag = None) -> bool:
+        '''Returns `True` if this `BibleRange` includes the whole book that contains the `end` verse,
+        else `False`.'''
+        return  (self.end == self.end.book.last_verse()) and \
+                (self.start <= self.end.book.first_verse(None, flags))
 
     def chap_span(self, flags: BibleFlag = None) -> 'BibleRange':
         '''Returns the new minimum `BibleRange` that includes this range and begins and ends at chapter boundaries.
