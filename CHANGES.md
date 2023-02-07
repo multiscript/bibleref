@@ -1,7 +1,6 @@
 - Next version:
   - Small fix to BibleRangeList.consolidate()
-  - Add chap_span() and book_span() to BibleBook, BibleVerse, BibleRange and BibleRangeList.
-  - Add BibleRangeList.span()
+  - Add span methods for extending ranges to nearest chap and book boundaries.
   - BibleRange.split() adds regroup bool argument (defaults to True)
   - Remove BibleVerse.chap_count()
   - Documentation fixes
