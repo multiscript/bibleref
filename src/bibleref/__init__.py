@@ -136,7 +136,7 @@ _bible_data = None  # Will be set by data submodule.
 flags = None # Will be set by ref submodule.
 '''Global package attribute that is a `bibleref.ref.BibleFlag` enum whose elements control package-wide behaviour.
 Many methods take a `flags` keyword-argument that overrides this global `flags` attribute during the
-execution of that method. The `bibleref.ref` submodule sets the default value to `bibleref.ref.BibleFlag.NONE`.
+execution of that method.
 '''
 
 class BibleRefException(Exception):

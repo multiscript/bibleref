@@ -12,11 +12,25 @@ class TestBibleReference(unittest.TestCase):
         self.assertEqual(BibleBook.from_str("Mt"), BibleBook.Matt)
         self.assertEqual(BibleBook.from_str("Rev"), BibleBook.Rev)
 
+        self.assertEqual(BibleBook.Matt.chap_span(2), BibleRange("Matt 2:1-23"))
+        self.assertEqual(BibleBook.Matt.book_span(), BibleRange("Matt 1:1-28:20"))
+
     def test_bible_book_counts(self):
         self.assertEqual(BibleBook.Phil.verse_count(), 104) # Check one book manually
         for book in BibleBook:
             self.assertEqual(book.verse_count(), BibleRange(book.title).verse_count())
             self.assertEqual(book.chap_count(), BibleRange(book.title).chap_count())
+
+    def test_bible_book_split(self):
+        self.assertRaises(ValueError, lambda: BibleBook.Matt.split())
+
+        self.assertEqual(BibleBook.Matt.split(by_book=True), BibleRangeList("Matt"))
+
+        self.assertEqual(BibleBook.Mark.split(by_chap=True),
+            BibleRangeList("Mark 1; 2; 3; 4; 5; 6; 7; 8; 9; 10; 11; 12; 13; 14; 15; 16"))
+
+        self.assertEqual(BibleBook.Mark.split(by_chap=False, num_verses=100),
+            BibleRangeList("Mark 1-3:27; 3:28-6:8; 6:9-8:15; 8:16-10:27; 10:28-12:42; 12:43-14:61; 14:62-16:20"))
 
     def test_bible_verses(self):
         self.assertRaises(ValueError, lambda: BibleVerse(BibleBook.Matt, 2, 3, 4))
@@ -72,6 +86,11 @@ class TestBibleReference(unittest.TestCase):
         self.assertEqual(verse_with_1.verse_1_to_0(), verse_with_0)
         self.assertEqual(no_verse_0.verse_0_to_1(), no_verse_0)
         self.assertEqual(no_verse_0.verse_1_to_0(), no_verse_0)
+
+    def test_verse_span(self):
+        bible_verse = BibleVerse("Matt 3:8")
+        self.assertEqual(bible_verse.chap_span(), BibleRange("Matt 3"))
+        self.assertEqual(bible_verse.book_span(), BibleRange("Matt"))
 
     def test_verse_arithmetic(self):
         self.assertEqual(BibleVerse("Ps 3:8") + 1, BibleVerse("Ps 4:1"))
@@ -250,6 +269,11 @@ class TestBibleReference(unittest.TestCase):
         ]
         self.assertEqual(list(bible_range), expected_list)       
 
+    def test_range_span(self):
+        bible_range = BibleRange("Matt 3:8-John 4:9", flags=BibleFlag.MULTIBOOK)
+        self.assertEqual(bible_range.chap_span(), BibleRange("Matt 3-John 4", flags=BibleFlag.MULTIBOOK))
+        self.assertEqual(bible_range.book_span(), BibleRange("Matt-John", flags=BibleFlag.MULTIBOOK))
+
     def test_range_counts(self):
         # Multi-book range
         bible_range = BibleRange("1 John 1:5-3 John 8", flags=BibleFlag.MULTIBOOK)
@@ -289,49 +313,19 @@ class TestBibleReference(unittest.TestCase):
 
         ref = BibleRange("Matt 1:5-John 10:11", flags=BibleFlag.MULTIBOOK)
         split = ref.split(by_book=True)
-        print(split)
-        expected =  BibleRangeList(
-                        BibleRange("Matt 1:5-28:20"),
-                        BibleRange("Mark"),
-                        BibleRange("Luke"),
-                        BibleRange("John 1-10:11"),
-                    )
-        self.assertEqual(split, expected)
+        self.assertEqual(split, BibleRangeList("Matt 1:5-28:20; Mark; Luke; John 1-10:11"))
 
         ref = BibleRange("John 1:11-10:5")
         split = ref.split(by_chap=True)
-        expected =  BibleRangeList(
-                        BibleRange("John 1:11-51"),
-                        BibleRange("John 2"),
-                        BibleRange("John 3"),
-                        BibleRange("John 4"),
-                        BibleRange("John 5"),
-                        BibleRange("John 6"),
-                        BibleRange("John 7"),
-                        BibleRange("John 8"),
-                        BibleRange("John 9"),
-                        BibleRange("John 10:1-5")
-                    )
-        self.assertEqual(split, expected)
+        self.assertEqual(split, BibleRangeList("John 1:11-51; 2; 3; 4; 5; 6; 7; 8; 9; 10:1-5"))
 
         ref = BibleRange("John 1:1-11")
         split = ref.split(by_chap=False, num_verses=10)
-        expected =  BibleRangeList(
-                        BibleRange("John 1:1-10"),
-                        BibleRange("John 1:11"),
-                    )
-        self.assertEqual(split, expected)
+        self.assertEqual(split, BibleRangeList("John 1:1-10, 11"))
 
         ref = BibleRange("John 1:11-10:5")
         split = ref.split(by_chap=False, num_verses=100)
-        expected =  BibleRangeList(
-                        BibleRange("John 1:11-3:34"),
-                        BibleRange("John 3:35-5:44"),
-                        BibleRange("John 5:45-7:26"),
-                        BibleRange("John 7:27-9:14"),
-                        BibleRange("John 9:15-10:5")
-                    )
-        self.assertEqual(split, expected)
+        self.assertEqual(split, BibleRangeList("John 1:11-3:34; 3:35-5:44; 5:45-7:26; 7:27-9:14; 9:15-10:5"))
 
     def test_range_is_disjoint(self):
         test_range = BibleRange("Matt 1:10-15")
@@ -631,6 +625,12 @@ class TestBibleReference(unittest.TestCase):
         no_verse_0.verse_1_to_0()
         self.assertEqual(no_verse_0, BibleRangeList("Matt 2:3-4:5; Mark 6:7-8:9"))
 
+    def test_range_list_span(self):
+        bible_range = BibleRangeList("John 4:9; Luke 1:12; Mark 7:3; Matt 3:8")
+        self.assertEqual(bible_range.span(), BibleRange("Matt 3:8-John 4:9", flags=BibleFlag.MULTIBOOK))
+        self.assertEqual(bible_range.chap_span(), BibleRange("Matt 3-John 4", flags=BibleFlag.MULTIBOOK))
+        self.assertEqual(bible_range.book_span(), BibleRange("Matt-John", flags=BibleFlag.MULTIBOOK))
+
     def test_range_list_counts(self):
         range_list = BibleRangeList("1 John 1:5-3 John 8; 1 John 1:5-3:10; 1 John 1:5-2:11; 3 John 5-10",
                                     flags=BibleFlag.MULTIBOOK)
@@ -784,6 +784,9 @@ class TestBibleReference(unittest.TestCase):
         self.assertEqual(BibleRangeList(  # Same chap at verse level. End verse in a different chap
             "Matthew 2:3, Matthew 2:6-5:7").str(),
             "Matthew 2:3, 2:6-5:7")
+        self.assertEqual(BibleRangeList(  # Same chap at verse level. End verse in diff chap. Don't preserve groups.
+            "Matthew 2:3, Matthew 2:6-5:7").str(preserve_groups=False),
+            "Matthew 2:3; 2:6-5:7")
         self.assertEqual(BibleRangeList(  # Same chap at verse level. End verse in a different book
             "Matthew 2:3, Matthew 2:6-John 5:7", flags=BibleFlag.MULTIBOOK).str(),
             "Matthew 2:3, 2:6-John 5:7")
