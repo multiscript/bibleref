@@ -233,7 +233,7 @@ class BibleBook(Enum):
         return BibleRange(start=self.first_verse(chap_num, flags=flags), end=self.last_verse(chap_num), flags=flags)
 
     def chap_ranges(self, regroup: bool = True, flags: BibleFlag = None) -> 'BibleRangeList':
-        '''Convenience method that returns a `BibleRangeList` of the range for each chapter in this `BibleBook`.
+        '''Convenience method that returns a `BibleRangeList` of the ranges for each chapter in this `BibleBook`.
         
         If `regroup` is `True`, regroup() is called on the resulting `BibleRangeList`.
 
@@ -843,7 +843,7 @@ class BibleRange:
         return BibleRange(start=self.start.book.first_verse(flags=flags), end=self.end.book.last_verse(), flags=flags)
 
     def split(self, *, by_book: bool = False, by_chap: bool = False, num_verses: bool = None,
-              regroup: bool = True, flags: BibleFlag = None):
+              regroup: bool = True, flags: BibleFlag = None) -> 'BibleRangeList':
         '''Split this `BibleRange` into a `BibleRangeList` of smaller consecutive ranges, as follows:
         
         - If `by_book` is `True`, splits are made at the end of each book.
