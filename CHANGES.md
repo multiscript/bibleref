@@ -1,3 +1,6 @@
+- Next version:
+  - Rename span methods to range methods.
+  - Add BibleBook.chap_ranges() and remove BibleBook.split()
 - v0.11.0:
   - Add span methods for extending ranges to nearest chap and book boundaries.
   - BibleRange.split() adds regroup bool argument (defaults to True)
