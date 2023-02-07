@@ -1,5 +1,4 @@
 
-# TODO: Use major list sep to separate multi-chapter ranges, even if starting from same chapter.
 # TODO: Create context manager to temporarily set or unset particular flags
 # TODO: Create module method to make it easier to keep existing flags but set/unset particular flags
 
@@ -1551,7 +1550,8 @@ class BibleRangeList(util.GroupedList):
                 show_start_verse = False
             else: # Range start is just a particular verse
                 if cur_book == bible_range.start.book: # Continuing same book
-                    if (not at_verse_level) or (cur_chap != bible_range.start.chap_num):
+                    if (not at_verse_level) or (cur_chap != bible_range.start.chap_num) or \
+                       (bible_range.chap_count(flags=flags) > 1):
                         # At chap level or verse level in a different chap
                         self._insert_new_group_at_node(node)
                 else: # Different book
@@ -1668,11 +1668,12 @@ class BibleRangeList(util.GroupedList):
                 else: # Range start is just a particular verse
                     if cur_book == bible_range.start.book: # Continuing same book
                         if at_verse_level and cur_chap == bible_range.start.chap_num: # Continuing same chap
-                            if (bible_range.end.book != bible_range.start.book) or \
-                               (bible_range.end.chap_num != bible_range.start.chap_num):
+                            if bible_range.chap_count(flags=flags) > 1:
                                 # This ref crosses chap/book boundaries in a verse list, so it's clearer to repeat
                                 # the starting chap num
                                 start_parts = BibleVersePart.CHAP_VERSE
+                                if not preserve_groups: # Use major list sep between multi-chap ranges
+                                    list_sep = bible_data().major_list_sep
                             else:
                                 # This ref stays within the same chap num
                                 start_parts = BibleVersePart.VERSE

@@ -314,7 +314,7 @@ class TestBibleReference(unittest.TestCase):
 
         ref = BibleRange("John 1:11-10:5")
         split = ref.split(by_chap=False, num_verses=100)
-        self.assertEqual(split, BibleRangeList("John 1:11-3:34, 3:35-5:44, 5:45-7:26, 7:27-9:14, 9:15-10:5"))
+        self.assertEqual(split, BibleRangeList("John 1:11-3:34; 3:35-5:44; 5:45-7:26; 7:27-9:14; 9:15-10:5"))
 
     def test_range_is_disjoint(self):
         test_range = BibleRange("Matt 1:10-15")
@@ -773,6 +773,9 @@ class TestBibleReference(unittest.TestCase):
         self.assertEqual(BibleRangeList(  # Same chap at verse level. End verse in a different chap
             "Matthew 2:3, Matthew 2:6-5:7").str(),
             "Matthew 2:3, 2:6-5:7")
+        self.assertEqual(BibleRangeList(  # Same chap at verse level. End verse in diff chap. Don't preserve groups.
+            "Matthew 2:3, Matthew 2:6-5:7").str(preserve_groups=False),
+            "Matthew 2:3; 2:6-5:7")
         self.assertEqual(BibleRangeList(  # Same chap at verse level. End verse in a different book
             "Matthew 2:3, Matthew 2:6-John 5:7", flags=BibleFlag.MULTIBOOK).str(),
             "Matthew 2:3, 2:6-John 5:7")
