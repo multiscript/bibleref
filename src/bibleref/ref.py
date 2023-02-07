@@ -204,16 +204,6 @@ class BibleBook(Enum):
             chap_num = self.max_chap_num()
         return BibleVerse(self, chap_num, self.max_verse_num(chap_num))        
 
-    def chap_span(self, chap_num: int, flags: BibleFlag = None) -> 'BibleRange':
-        '''Returns a `BibleRange` spanning the entired specified chapter of this `BibleBook`.
-        '''
-        return BibleRange(start=self.first_verse(chap_num, flags=flags), end=self.last_verse(chap_num), flags=flags)
-
-    def book_span(self, flags: BibleFlag = None) -> 'BibleRange':
-        '''Returns a `BibleRange` spanning this entire `BibleBook`.
-        '''
-        return BibleRange(start=self.first_verse(flags=flags), end=self.last_verse(), flags=flags)
-
     def next(self) -> 'BibleBook':
         '''Returns the next `BibleBook` in the book ordering, or `None` if this is the final book,
         or is not part of the ordering.
@@ -231,6 +221,33 @@ class BibleBook(Enum):
             return None
         else:
             return bible_data().book_order[self.order-1]
+
+    def chap_span(self, chap_num: int, flags: BibleFlag = None) -> 'BibleRange':
+        '''Returns a `BibleRange` spanning the entired specified chapter of this `BibleBook`.
+        '''
+        return BibleRange(start=self.first_verse(chap_num, flags=flags), end=self.last_verse(chap_num), flags=flags)
+
+    def book_span(self, flags: BibleFlag = None) -> 'BibleRange':
+        '''Returns a `BibleRange` spanning this entire `BibleBook`.
+        '''
+        return BibleRange(start=self.first_verse(flags=flags), end=self.last_verse(), flags=flags)
+
+    def split(self, *, by_book: bool = False, by_chap: bool = False, num_verses: bool = None,
+              regroup: bool = True, flags: BibleFlag = None):
+        '''Conveniece method, equivalent to BibleBook.book_span().split().
+
+        Convers this `BibleBook` into a range, then splits it into a `BibleRangeList` of smaller consecutive ranges,
+        as follows:
+        
+        - If `by_book` is `True`, splits are made at the end of each book.
+        - If `by_chap` is `True`, splits are made end of each chapter.
+        - If `num_verses` is specified, splits are made after (no more than) the specified number of verses.
+        - `by_book`, `by_chap` and `num_verses` can be set in any combination, but one of them must be not `None`,
+          otherwise a `ValueError` will be raised.
+        - If `regroup` is `True`, regroup() is called on the resulting `BibleRangeList`.
+        '''
+        return self.book_span(flags=flags).split(by_book=by_book, by_chap=by_chap, num_verses=num_verses,
+                                                 regroup=regroup, flags=flags)
 
     def __lt__(self, other):
         if not isinstance(other, BibleBook):

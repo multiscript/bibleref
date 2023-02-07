@@ -21,6 +21,17 @@ class TestBibleReference(unittest.TestCase):
             self.assertEqual(book.verse_count(), BibleRange(book.title).verse_count())
             self.assertEqual(book.chap_count(), BibleRange(book.title).chap_count())
 
+    def test_bible_book_split(self):
+        self.assertRaises(ValueError, lambda: BibleBook.Matt.split())
+
+        self.assertEqual(BibleBook.Matt.split(by_book=True), BibleRangeList("Matt"))
+
+        self.assertEqual(BibleBook.Mark.split(by_chap=True),
+            BibleRangeList("Mark 1; 2; 3; 4; 5; 6; 7; 8; 9; 10; 11; 12; 13; 14; 15; 16"))
+
+        self.assertEqual(BibleBook.Mark.split(by_chap=False, num_verses=100),
+            BibleRangeList("Mark 1-3:27; 3:28-6:8; 6:9-8:15; 8:16-10:27; 10:28-12:42; 12:43-14:61; 14:62-16:20"))
+
     def test_bible_verses(self):
         self.assertRaises(ValueError, lambda: BibleVerse(BibleBook.Matt, 2, 3, 4))
         self.assertRaises(ValueError, lambda: BibleVerse(BibleBook.Matt, 2))
