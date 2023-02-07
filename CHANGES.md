@@ -3,6 +3,7 @@
   - Add span methods for extending ranges to nearest chap and book boundaries.
   - BibleRange.split() adds regroup bool argument (defaults to True)
   - Remove BibleVerse.chap_count()
+  - Add BibleBook.split() convenience method
   - Documentation fixes
 - v0.10.0:
   - Add counts to BibleBook, BibleRange, BibleRangeList
