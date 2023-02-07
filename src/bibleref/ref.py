@@ -234,7 +234,7 @@ class BibleBook(Enum):
 
     def split(self, *, by_book: bool = False, by_chap: bool = False, num_verses: bool = None,
               regroup: bool = True, flags: BibleFlag = None):
-        '''Conveniece method, equivalent to BibleBook.book_span().split().
+        '''Convenience method, equivalent to BibleBook.book_span().split().
 
         Convers this `BibleBook` into a range, then splits it into a `BibleRangeList` of smaller consecutive ranges,
         as follows:
