@@ -236,10 +236,10 @@ class BibleBook(Enum):
               regroup: bool = True, flags: BibleFlag = None):
         '''Convenience method, equivalent to `BibleBook.book_span().split()`
 
-        Convers this `BibleBook` into a range, then splits it into a `BibleRangeList` of smaller consecutive ranges,
+        Converts this `BibleBook` into a range, then splits it into a `BibleRangeList` of smaller consecutive ranges,
         as follows:
         
-        - If `by_book` is `True`, splits are made at the end of each book.
+        - If `by_book` is `True`, splits are made at the end of each book (trivial for a BibleBook).
         - If `by_chap` is `True`, splits are made end of each chapter.
         - If `num_verses` is specified, splits are made after (no more than) the specified number of verses.
         - `by_book`, `by_chap` and `num_verses` can be set in any combination, but one of them must be not `None`,
