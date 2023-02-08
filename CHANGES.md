@@ -1,4 +1,4 @@
-- Next version:
+- v0.12.0:
   - Rename span methods to range methods.
   - Add BibleBook.chap_ranges() and remove BibleBook.split()
 - v0.11.0:
