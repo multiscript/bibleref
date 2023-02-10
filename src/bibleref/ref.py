@@ -1304,7 +1304,7 @@ class BibleRangeList(util.GroupedList):
         if regroup:
             self.regroup()
 
-    def consolidate(self, flags: BibleFlag = None):
+    def merge(self, flags: BibleFlag = None):
         '''Sorts this list in-place and merges ranges wherever possible, then regroups. The result is the smallest
         list of disjoint, non-adjacent `BibleRange` elements spanning the same verses as in the original
         list.
@@ -1346,7 +1346,7 @@ class BibleRangeList(util.GroupedList):
             other_ref = BibleRangeList([other_ref])
         # Create a consolidated copy of ourselves
         self_copy = BibleRangeList(self)
-        self_copy.consolidate(flags=flags)
+        self_copy.merge(flags=flags)
         # Every one of the other list's ranges must be contained by at least one of the our ranges
         return all(any(self_range.contains(other_range) for self_range in self_copy) for other_range in other_ref)
 
@@ -1374,7 +1374,7 @@ class BibleRangeList(util.GroupedList):
             raise ValueError(f"{other_ref} is not a valid BibleRef")        
 
         self.extend(other_ref)
-        self.consolidate(flags=flags)
+        self.merge(flags=flags)
 
     def intersection(self, other_ref: 'BibleRef', flags: BibleFlag = None) -> 'BibleRangeList':
         '''Creates a new `BibleRangeList` of verses that are common to both this `BibleRangeList` and `other_ref`,
@@ -1401,7 +1401,7 @@ class BibleRangeList(util.GroupedList):
                 item_intersection_list = self_range.intersection(other_range, flags=flags)
                 if len(item_intersection_list) > 0:
                     new_list.append(item_intersection_list[0])
-        new_list.consolidate(flags=flags)
+        new_list.merge(flags=flags)
         return new_list
 
     def intersection_update(self, other_ref: 'BibleRef', flags: BibleFlag = None) -> 'BibleRangeList':
@@ -1463,7 +1463,7 @@ class BibleRangeList(util.GroupedList):
                         self_node = self_node.prev
                     self._pop_node(old_self_node)
             self_node = self_node.next
-        self.consolidate()
+        self.merge()
 
     def sym_difference(self, other_ref: 'BibleRef', flags: BibleFlag = None) -> 'BibleRangeList':
         '''Returns a new `BibleRangeList` of verses that are either in this `BibleRangeList`, or in `other_ref`,
@@ -1529,8 +1529,8 @@ class BibleRangeList(util.GroupedList):
         return self.str()
 
     def regroup(self, flags: BibleFlag = None):
-        '''Removes the existing groups in the list, and places the list items into new groups that would most
-        naturally match the most conventional string representation of the list. (For example, this typically
+        '''Removes the existing groups in the list, and places the list items into their most natural new groupings,
+        that fit the most conventional string representation of the list. (For example, this typically
         places ranges in different chapters into different groups.)
         '''
         # This method is derived from the str() method below, and is best read after that method.

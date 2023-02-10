@@ -1,8 +1,9 @@
 # bibleref
 
+## Overview
+
 **bibleref is a Python package for handling references to Bible books, verses and verse-ranges, including string
-parsing and conversion.** It's designed for future use with [Multiscript](https://multiscript.app), but it can be
-used as a standalone package. Its only dependency is the [Lark](https://github.com/lark-parser/lark) parsing toolkit.
+parsing and conversion.** Its only dependency is the [Lark](https://github.com/lark-parser/lark) parsing toolkit.
 
 `bibleref` defines the following primary classes:
   - `bibleref.ref.BibleBook`:      An Enum of books in the Bible, with extra methods.
@@ -17,11 +18,11 @@ For convenience these classes can be directly imported from `bibleref`. They can
 `BibleRange` and `BibleRangeList` implement common set operations (such as union, intersection, difference and 
 symmetric difference).
 
-# Docs
+## Docs
 
 See [multiscript.app/bibleref](https://multiscript.app/bibleref)
 
-# Examples
+## Examples
 
 ```python
 >>> import bibleref
@@ -94,7 +95,66 @@ BibleRangeList("Matthew 2; 5; Mark 6-8; 12; Luke 9-12; John 1-3; 14-16")
 1
 ```
 
-# Attribution
+## List Grouping
+
+Bible ranges in a list can be separated by two different characters, known here as the *major list separator*
+('`;`' by default), and the *minor list separator* ('`,`' by default). These separators play two roles: distinguishing
+between 'bare' chapter and verse numbers (i.e. those not preceded by book names), and controlling how Bible ranges are
+grouped within a list.
+
+The major list separator (`;`) indicates any bare number that follows is a chapter number. It also marks the start of
+a new group. It is usually used between ranges in different chapters.
+
+The minor list separator (`,`) indicates any bare number that follows is of the same kind as the previous number
+(whether a chapter or verse number). It also marks the continuation of the same group. It is usually used between
+ranges within the same chapter.
+
+The groups of a `BibleRangeList` are accessed through its `groups` property. Alternative, you can index each
+`BibleRange` directly (e.g. `range_list[1]`), ignoring the groupings.
+
+For example:
+```python
+>>> from bibleref import *
+>>> range_list = BibleRangeList("Matt 2:3-4, 5-7, 9-12") # One group of three verse ranges
+>>> len(range_list.groups)
+1
+>>> range_list[0]
+BibleRange(Matthew 2:3-4)
+>>> range_list[1]
+BibleRange(Matthew 2:5-7)
+>>> range_list[2]
+BibleRange(Matthew 2:9-12)
+>>> range_list = BibleRangeList("Matt 2:3-4; 5-7, 9-12") # Two groups: one verse range, two chapter ranges
+>>> len(range_list.groups)
+2
+>>> range_list[0]             # Range access directly
+BibleRange(Matthew 2:3-4)
+>>> range_list.groups[0][0]   # Same range accessed through its group
+BibleRange(Matthew 2:3-4)
+>>> range_list.groups[1]      # Next group
+GroupView([BibleRange(Matthew 5-7), BibleRange(Matthew 9-12)])
+>>> range_list.groups[1][0]
+BibleRange(Matthew 5-7)
+>>> range_list.groups[1][1]   
+BibleRange(Matthew 9-12)
+>>> range_list[2]             # Same range as previous line, but accessed directly
+BibleRange(Matthew 9-12)
+>>> range_list = BibleRangeList("Matt 2:3-4, Matt 5-7, 9-12") # One group: one verse range, two chapter ranges
+>>> len(range_list.groups)
+1
+>>> range_list[1]
+BibleRange(Matthew 5-7)
+>>> range_list[2]
+BibleRange(Matthew 9-12)
+```
+
+`bibleref.ref.BibleRangeList.regroup()` removes the existing groups in the list, and places the list items into
+their most natural new groupings.
+
+The major and minor list separator characters can be changed through the `bibleref.data.BibleData` singleton returned
+by `bible_data()`.
+
+## Attribution
 
 The set operations and linked-list implementation in this package are derived from
 [python-ranges](https://github.com/Superbird11/ranges), under the MIT Licence.
@@ -102,11 +162,11 @@ The set operations and linked-list implementation in this package are derived fr
 Other ideas in this package were developed from [python-scriptures](https://github.com/davisd/python-scriptures),
 under the BSD-3-Clause license.
 
-# Installation
+## Installation
 
    `pip install bibleref`
 
-# Build Instructions
+## Build Instructions
 
 Use these instructions if you’re building from the source. bibleref has been developed on Python 3.10, but should
 work on several earlier versions as well.
@@ -116,11 +176,10 @@ work on several earlier versions as well.
 1. `python3 -m venv venv` (Create a virtual environment.)
    - On Windows: `python -m venv venv`
 1. `source venv/bin/activate` (Activate the virtual environment.)
-   - In Windows cmd.exe: `venv\Scripts\activate.bat`
-   - In Windows powershell: `.\venv\Scripts\Activate.ps1` You may first need to run `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser`
+   - In Windows cmd.exe: `venv\Scripts\\activate.bat`
+   - In Windows powershell: `.\\venv\Scripts\Activate.ps1` You may first need to run `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser`
 1. For development work...
    - `pip install -e .` (Creates an editable local install)
 1. ...or to build the package:
    - `pip install build`
    - `python -m build`
-
