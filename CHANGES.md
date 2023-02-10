@@ -1,3 +1,6 @@
+- v0.13.0:
+  - Rename BibleRangeList.consolidate() to merge()
+  - Add documentation about list grouping.
 - v0.12.0:
   - Rename span methods to range methods.
   - Add BibleBook.chap_ranges() and remove BibleBook.split()

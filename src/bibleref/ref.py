@@ -1529,8 +1529,8 @@ class BibleRangeList(util.GroupedList):
         return self.str()
 
     def regroup(self, flags: BibleFlag = None):
-        '''Removes the existing groups in the list, and places the list items into new groups that would most
-        naturally match the most conventional string representation of the list. (For example, this typically
+        '''Removes the existing groups in the list, and places the list items into their most natural new groupings,
+        that fit the most conventional string representation of the list. (For example, this typically
         places ranges in different chapters into different groups.)
         '''
         # This method is derived from the str() method below, and is best read after that method.
