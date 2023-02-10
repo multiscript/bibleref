@@ -646,12 +646,12 @@ class TestBibleReference(unittest.TestCase):
         range_list.regroup()
         self.assertEqual(range_list, BibleRangeList("Matt 1:4-7, 9-15, 17-20; John 2; 3; Luke 2:1-5, 6-10, 11-15"))
 
-    def test_bible_range_list_consolidate(self):
+    def test_bible_range_list_merge(self):
         range_list = BibleRangeList("John; Luke; Matt 1:17-20, 12-15, 9-11, 5-7, 4-6", flags=BibleFlag.MULTIBOOK)
         range_list.sort()
-        range_list.consolidate(flags=BibleFlag.NONE)
+        range_list.merge(flags=BibleFlag.NONE)
         self.assertEqual(range_list, BibleRangeList("Matt 1:4-7, 9-15, 17-20; Luke; John"))
-        range_list.consolidate(flags=BibleFlag.MULTIBOOK)
+        range_list.merge(flags=BibleFlag.MULTIBOOK)
         self.assertEqual(range_list, BibleRangeList("Matt 1:4-7, 9-15, 17-20; Luke-John", flags=BibleFlag.MULTIBOOK))
 
         # Test groups
