@@ -1,3 +1,6 @@
+- v0.14.0:
+  - Add BibleVerse methods is_first_in_chap(), is_last_in_chap(), is_first_in_book(), is_last_in_book()
+  - Allow BibleRange.split() to be called with no arguments.
 - v0.13.0:
   - Rename BibleRangeList.consolidate() to merge()
   - Add documentation about list grouping.
