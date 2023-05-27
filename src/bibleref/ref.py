@@ -420,6 +420,34 @@ class BibleVerse:
             chap_num = self.chap_num
         return self.book.last_verse(chap_num)
 
+    def is_first_in_chap(self, chap_num: int = None, flags: BibleFlag = None) -> bool:
+        '''Returns `True` if this `BibleVerse` is the first verse in the specified chapter of the `BibleBook`
+        containing this verse. If `chap_num` is `None`, the chapter containing this verse is used.
+        '''
+        return self == self.first_verse(chap_num, flags=flags)
+
+    def is_last_in_chap(self, chap_num: int = None) -> bool:
+        '''Returns `True` if this `BibleVerse` is the last verse in the specified chapter of the `BibleBook`
+        containing this verse. If `chap_num` is `None`, the chapter containing this verse is used.
+        '''
+        return self == self.last_verse(chap_num)
+
+    def is_first_in_book(self, book: BibleBook = None, flags: BibleFlag = None) -> bool:
+        '''Returns `True` if this `BibleVerse` is the first verse in the specified `BibleBook`.
+        If `book` is `None`, the `BibleBook` containing this verse is used.
+        '''
+        if book is None:
+            book = self.book
+        return self == book.first_verse(None, flags=flags)
+
+    def is_last_in_book(self, book: BibleBook = None) -> bool:
+        '''Returns `True` if this `BibleVerse` is the last verse in the specified `BibleBook`.
+        If `book` is `None`, the `BibleBook` containing this verse is used.
+        '''
+        if book is None:
+            book = self.book
+        return self == book.last_verse(None)
+
     def chap_range(self, flags: BibleFlag = None) -> 'BibleRange':
         '''Returns the `BibleRange` spanning the whole of the chapter containing this verse.                
         '''
@@ -849,13 +877,10 @@ class BibleRange:
         - If `by_book` is `True`, splits are made at the end of each book.
         - If `by_chap` is `True`, splits are made end of each chapter.
         - If `num_verses` is specified, splits are made after (no more than) the specified number of verses.
-        - `by_book`, `by_chap` and `num_verses` can be set in any combination, but one of them must be not `None`,
-          otherwise a `ValueError` will be raised.
+        - `by_book`, `by_chap` and `num_verses` can be set in any combination. If none of them are set, the resulting
+          `BibleRangeList` will contain this range only.
         - If `regroup` is `True`, regroup() is called on the resulting `BibleRangeList`.
         '''
-        if not (by_book or by_chap or num_verses):
-            raise ValueError("Must split by at least one of book, chapter, or number of verses")
-
         flags = flags or bibleref.flags or BibleFlag.NONE
         # Set flags if our attributes imply they should be set
         if self.start.book != self.end.book:

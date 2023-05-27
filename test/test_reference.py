@@ -84,6 +84,17 @@ class TestBibleReference(unittest.TestCase):
         self.assertEqual(no_verse_0.verse_0_to_1(), no_verse_0)
         self.assertEqual(no_verse_0.verse_1_to_0(), no_verse_0)
 
+    def test_bible_verse_bool_tests(self):
+        self.assertTrue(BibleVerse(BibleBook.Matt, 2, 1).is_first_in_chap())
+        self.assertFalse(BibleVerse(BibleBook.Matt, 2, 2).is_first_in_chap())
+        self.assertTrue(BibleVerse(BibleBook.Matt, 2, 23).is_last_in_chap())
+        self.assertFalse(BibleVerse(BibleBook.Matt, 2, 22).is_last_in_chap())
+
+        self.assertTrue(BibleVerse(BibleBook.Matt, 1, 1).is_first_in_book())
+        self.assertFalse(BibleVerse(BibleBook.Matt, 1, 2).is_first_in_book())
+        self.assertTrue(BibleVerse(BibleBook.Matt, 28, 20).is_last_in_book())
+        self.assertFalse(BibleVerse(BibleBook.Matt, 28, 19).is_last_in_book())
+
     def test_verse_ranges(self):
         bible_verse = BibleVerse("Matt 3:8")
         self.assertEqual(bible_verse.chap_range(), BibleRange("Matt 3"))
@@ -306,7 +317,8 @@ class TestBibleReference(unittest.TestCase):
 
     def test_range_split(self):
         ref = BibleRange("Matt 1:5-John 10:11", flags=BibleFlag.MULTIBOOK)
-        self.assertRaises(ValueError, lambda: ref.split())
+        split = ref.split()
+        self.assertEqual(split, BibleRangeList("Matt 1:5-John 10:11", flags=BibleFlag.MULTIBOOK))
 
         ref = BibleRange("Matt 1:5-John 10:11", flags=BibleFlag.MULTIBOOK)
         split = ref.split(by_book=True)
