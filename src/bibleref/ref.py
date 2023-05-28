@@ -1248,7 +1248,21 @@ class BibleRangeList(util.GroupedList):
 
     @property
     def groups(self) -> util.GroupedList.GroupViews:
-        '''Returns the `bibleref.util.GroupedList.GroupViews` collection for this list.'''
+        '''Returns the `bibleref.util.GroupedList.GroupViews` collection for this list.
+        
+        Note: Currently, to convert an individual group to a properly-formatted Bible reference string you need to
+        create a new BibleRangeList from the group. For example:
+        
+        ```python
+        >>> range_list = BibleRangeList("Mark 3:1-4:2; 5:6-8, 10; Matt 4")
+        >>> range_list.groups[1]
+        GroupView([BibleRange(Mark 5:6-8), BibleRange(Mark 5:10)])
+        >>> str(range_list.groups[1])
+        '[BibleRange(Mark 5:6-8), BibleRange(Mark 5:10)]'
+        >>> str(BibleRangeList(range_list.groups[1]))
+        'Mark 5:6-8, 10'        
+        ```
+        '''
         return super().groups    
 
     def _check_type(self, value):
@@ -1851,7 +1865,7 @@ class BibleRefParsingError(BibleRefException):
     Contains two extra attributes:
     
      - `start_pos`: index of the first unexpected character in the string for parsing.
-     - `end_pos`:   index of the last unexpected character in the string for parsing.
+     - `end_pos`:   index + 1 of the last unexpected character in the string for parsing.
     '''
     def __init__(self, mesg, start_pos=None, end_pos=None, *args, **kwargs):
         super().__init__(mesg, *args, **kwargs)

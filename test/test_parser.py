@@ -5,7 +5,7 @@ from bibleref.ref import BibleBook, BibleRange, BibleRefParsingError
 from bibleref.parser import _parse
 
 class TestBibleParser(unittest.TestCase):
-    def test_parse(self):
+    def test_parse_success(self):
         try:
             range_groups_list = _parse("Matthew; Mark 2; Jude 5; 8; Obadiah 2-3; John 3.16-18; 10-14:2;" + 
                                       "Romans 1:10-22; 2; 3:20-22, 24, 4:2-5:2, 10")
@@ -34,3 +34,15 @@ class TestBibleParser(unittest.TestCase):
         pprint(range_groups_list)
         # pprint(expected_list)
         self.assertEqual(range_groups_list, expected_list)
+
+    def test_parse_failure(self):
+        error = None
+        try:
+            _parse("Mark 2, 20, 3")
+        except BibleRefParsingError as e:
+            error = e
+        
+        self.assertIsNotNone(error)
+        self.assertEqual(error.start_pos, 8)
+        self.assertEqual(error.end_pos, 10)
+        
