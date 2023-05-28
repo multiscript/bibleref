@@ -1,3 +1,6 @@
+- v0.15.0:
+  - Added note about converting BibleRangeList groups to properly-formatted Bible reference strings.
+  - Correct BibleRefParsingError docs.
 - v0.14.0:
   - Add BibleVerse methods is_first_in_chap(), is_last_in_chap(), is_first_in_book(), is_last_in_book()
   - Allow BibleRange.split() to be called with no arguments.
