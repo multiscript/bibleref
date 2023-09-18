@@ -277,7 +277,15 @@ class TestBibleReference(unittest.TestCase):
         ]
         self.assertEqual(list(bible_range), expected_list)       
 
-        # Ensure iteration works when there is no verse after the end verse
+        bible_range = BibleRange(BibleBook.Matt, 28, 18, None, 28, 20)
+        expected_list = [
+            BibleVerse(BibleBook.Matt, 28, 18),
+            BibleVerse(BibleBook.Matt, 28, 19),
+            BibleVerse(BibleBook.Matt, 28, 20),
+        ]
+        self.assertEqual(list(bible_range), expected_list)       
+
+        # Ensure iteration works when the range ends on the last verse of the Bible
         # Tests for regression of https://github.com/multiscript/bibleref/issues/19
         bible_range = BibleRange(BibleBook.Rev, 22, 19, None, 22, 21)
         expected_list = [

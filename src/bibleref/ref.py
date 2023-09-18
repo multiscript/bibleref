@@ -1105,7 +1105,7 @@ class BibleRange:
         verse = self.start
         while verse is not None and verse <= self.end:
             yield verse
-            verse = verse.add(1, BibleFlag.MULTIBOOK)
+            verse = verse.add(1, BibleFlag.MULTIBOOK) # `verse`` will be None if we're on the last verse of the Bible
 
     def __contains__(self, bible_ref) -> bool:
         '''Returns True if item is a BibleRef that falls within this range, otherwise False.
