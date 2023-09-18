@@ -1,3 +1,5 @@
+- v0.16.0:
+  - Iterate correctly over a BibleRange that ends on the last verse in the Bible (fixes issue #19).
 - v0.15.0:
   - Added note about converting BibleRangeList groups to properly-formatted Bible reference strings.
   - Correct BibleRefParsingError docs.
