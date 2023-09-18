@@ -1103,7 +1103,7 @@ class BibleRange:
 
     def __iter__(self):
         verse = self.start
-        while verse <= self.end:
+        while verse is not None and verse <= self.end:
             yield verse
             verse = verse.add(1, BibleFlag.MULTIBOOK)
 
