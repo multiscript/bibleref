@@ -505,7 +505,7 @@ class GroupedList(MutableSequence):
         index = self._conform_index(index)
         self._insert_new_group_at_node(self._node_at(index))
 
-    def pop(self, index: int = None):
+    def pop(self, index: int | None = None):
         '''Removes the item at the given `index`, and returns its value.'''
         if index is None:
             index = self._node_count - 1

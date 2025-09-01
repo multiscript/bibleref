@@ -535,12 +535,12 @@ class BibleVerse:
         else:
             raise TypeError(f"Cannot subtract a {type(other)} from a BibleVerse")
 
-    def __add__(self, num_verses: int) -> 'BibleVerse':
+    def __add__(self, num_verses: int) -> 'BibleVerse | None':
         if not isinstance(num_verses, int):
             return NotImplemented
         return self.add(num_verses)
     
-    def __sub__(self, other: Union[int, 'BibleVerse']) -> Union[int, 'BibleVerse']:
+    def __sub__(self, other: Union[int, 'BibleVerse']) -> 'BibleVerse | int | None':
         if not isinstance(other, int) and not isinstance(other, BibleVerse):
             return NotImplemented
         return self.subtract(other)
@@ -662,8 +662,14 @@ class BibleRange:
         '''
         flags = flags or bibleref.flags or BibleFlag.NONE
         if len(args) == 0:
-            if start is None or end is None:
-                raise ValueError("Start and end verses must be specified")
+            if start is None and end is None:
+                raise ValueError("Start or end verse must be specified")
+            elif start is None:
+                start = end
+            elif end is None:
+                end = start
+            assert start is not None and end is not None
+
             if BibleFlag.MULTIBOOK not in flags and start.book != end.book:
                 raise MultibookRangeNotAllowedError(f"Multi-book ranges not allowed " + 
                                                     f"({start.book.abbrev} and {end.book.abbrev} are different)") # type: ignore
@@ -873,7 +879,7 @@ class BibleRange:
         flags |= BibleFlag.MULTIBOOK
         return BibleRange(start=self.start.book.first_verse(flags=flags), end=self.end.book.last_verse(), flags=flags)
 
-    def split(self, *, by_book: bool = False, by_chap: bool = False, num_verses: bool | None = None,
+    def split(self, *, by_book: bool = False, by_chap: bool = False, num_verses: int | None = None,
               regroup: bool = True, flags: BibleFlag | None = None) -> 'BibleRangeList':
         '''Split this `BibleRange` into a `BibleRangeList` of smaller consecutive ranges, as follows:
         
@@ -901,6 +907,7 @@ class BibleRange:
                 while range_end < range_to_split.end:
                     new_split.append(BibleRange(start=range_start, end=range_end, flags=flags))
                     range_start = range_end.add(1, flags=flags)
+                    assert range_start is not None
                     range_end = range_start.book.last_verse()
                 new_split.append(BibleRange(start=range_start, end=range_to_split.end, flags=flags))
             split_result = new_split
@@ -913,6 +920,7 @@ class BibleRange:
                 while range_end < range_to_split.end:
                     new_split.append(BibleRange(start=range_start, end=range_end, flags=flags))
                     range_start = range_end.add(1, flags=flags)
+                    assert range_start is not None
                     range_end = range_start.last_verse()
                 new_split.append(BibleRange(start=range_start, end=range_to_split.end, flags=flags))
             split_result = new_split
@@ -1052,8 +1060,7 @@ class BibleRange:
         else:
             raise ValueError(f"{other_ref} is not a valid BibleRef")
 
-    def difference(self, other_ref: 'BibleVerse | BibleRange',
-                   flags: BibleFlag | None = None) -> 'BibleRangeList':
+    def difference(self, other_ref: 'BibleRef', flags: BibleFlag | None = None) -> 'BibleRangeList':
         '''Returns a new `BibleRangeList` of verses that are in this range, but not in `other_ref`.
 
         If this range and `other_ref` are disjoint, the list contains one element: a copy of this `BibleRange`.
@@ -1063,6 +1070,9 @@ class BibleRange:
 
         Using the `-` operator is equivalent to calling `difference()` with `flags = None`.
         '''
+        if isinstance(other_ref, BibleRangeList):
+            # Use the BibleRangeList implementation
+            return BibleRangeList([self]).difference(other_ref, flags=flags)
         if isinstance(other_ref, BibleVerse):
             # Convert to BibleRange (and we don't enforce existing flags for conversions)
             other_ref = BibleRange(start=other_ref, end=other_ref, flags=BibleFlag.ALL)
@@ -1071,7 +1081,7 @@ class BibleRange:
         if other_ref.contains(self):
             return BibleRangeList()
 
-        lower_range = BibleRange(start=self.start, end=other_ref.start.subtract(1, flags=flags))
+        lower_range = BibleRange(start=self.start, end=other_ref.start.subtract(1, flags=flags)) # type: ignore
         upper_range = BibleRange(start=other_ref.end.add(1, flags=flags), end=self.end)
         if self.surrounds(other_ref):
             return BibleRangeList([lower_range, upper_range], flags=BibleFlag.ALL)
@@ -1080,8 +1090,7 @@ class BibleRange:
         else:
             return BibleRangeList([upper_range], flags=BibleFlag.ALL)
 
-    def sym_difference(self, other_ref: Union[BibleVerse, 'BibleRange'],
-                   flags: BibleFlag | None = None) -> 'BibleRangeList':
+    def sym_difference(self, other_ref: 'BibleRef', flags: BibleFlag | None = None) -> 'BibleRangeList':
         '''Returns a new `BibleRangeList` of verses that are either in this range, or in `other_ref`,
         but not both.
 
@@ -1090,6 +1099,9 @@ class BibleRange:
 
         Using the `^` operator is equivalent to calling `sym_difference()` with `flags = None`.
         '''
+        if isinstance(other_ref, BibleRangeList):
+            # Use the BibleRangeList implementation
+            return BibleRangeList([self]).sym_difference(other_ref, flags=flags)
         if isinstance(other_ref, BibleVerse):
             # Convert to BibleRange (and we don't enforce existing flags for conversions)
             other_ref = BibleRange(start=other_ref, end=other_ref, flags=BibleFlag.ALL)
@@ -1394,7 +1406,7 @@ class BibleRangeList(util.GroupedList):
 
     def union(self, other_ref: 'BibleRef', flags: BibleFlag | None = None) -> 'BibleRangeList':
         '''Creates a new `BibleRangeList` that contains all the verses in this `BibleRangeList`
-        and all the verses in `other_ref`, then consolidates the result and returns it.
+        and all the verses in `other_ref`, then merges the result and returns it.
 
         Using the `|` operator is equivalent to calling `union()` with `flags = None`.
         '''
@@ -1403,7 +1415,7 @@ class BibleRangeList(util.GroupedList):
         return new_list
 
     def union_update(self, other_ref: 'BibleRef', flags: BibleFlag | None = None) -> None:
-        '''Updates this list to be the union of its existing elements and `other_ref`, then consolidates this list.
+        '''Updates this list to be the union of its existing elements and `other_ref`, then merges this list.
 
         Using the `|=` operator is equivalent to calling `union_update()` with `flags = None`.
         '''
@@ -1420,7 +1432,7 @@ class BibleRangeList(util.GroupedList):
 
     def intersection(self, other_ref: 'BibleRef', flags: BibleFlag | None = None) -> 'BibleRangeList':
         '''Creates a new `BibleRangeList` of verses that are common to both this `BibleRangeList` and `other_ref`,
-        then consolidates the result and returns it. If there are no verses in common, the returned list is empty.
+        then merges the result and returns it. If there are no verses in common, the returned list is empty.
 
         Using the `&` operator is equivalent to calling `intersection()` with `flags = None`.
         '''
@@ -1447,7 +1459,7 @@ class BibleRangeList(util.GroupedList):
         return new_list
 
     def intersection_update(self, other_ref: 'BibleRef', flags: BibleFlag | None = None) -> None:
-        '''Updates this list to be the intersection of its existing elements and `other_ref`, then consolidates
+        '''Updates this list to be the intersection of its existing elements and `other_ref`, then merges
         this list.
 
         Using the `&=` operator is equivalent to calling `intersection_update()` with `flags = None`.
@@ -1466,7 +1478,7 @@ class BibleRangeList(util.GroupedList):
         return new_list
 
     def difference_update(self, other_ref: 'BibleRef', flags: BibleFlag | None = None) -> None:
-        '''Updates this list to be the difference of its existing elements and `other_ref`, then consolidates
+        '''Updates this list to be the difference of its existing elements and `other_ref`, then merges
         this list.
 
         Using the `-=` operator is equivalent to calling `difference_update()` with `flags = None`.
@@ -1527,7 +1539,7 @@ class BibleRangeList(util.GroupedList):
 
     def sym_difference_update(self, other_ref: 'BibleRef', flags: BibleFlag | None = None) -> None:
         '''Updates this list to be the symmetric difference of its existing elements and `other_ref`, then
-        consolidates this list.
+        merges this list.
 
         Using the `^=` operator is equivalent to calling `sym_difference_update()` with `flags = None`.
         '''

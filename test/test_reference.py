@@ -530,6 +530,11 @@ class TestBibleReference(unittest.TestCase):
         self.assertEqual(test_range - BibleRange("Matt 1:16-20"), BibleRangeList("Matt 1:10-15"))
         self.assertEqual(test_range - BibleRange("Matt 1:17-20"), BibleRangeList("Matt 1:10-15"))
 
+        self.assertEqual(test_range - BibleRangeList("Matt 1:5-8; Mark 1-3"), BibleRangeList("Matt 1:10-15"))
+        self.assertEqual(test_range - BibleRangeList("Matt 1:5-10; Mark 1-3"), BibleRangeList("Matt 1:11-15"))
+        self.assertEqual(test_range - BibleRangeList("Matt 1:5-11; Mark 1-3; Matt 1:14-20"), BibleRangeList("Matt 1:12-13"))
+        self.assertEqual(test_range - BibleRangeList("Mark 4-6; Matt 1:11-12, 14"), BibleRangeList("Matt 1:10, 13, 15"))
+
     def test_range_sym_difference(self):
         test_range = BibleRange("Matt 1:10-15")
         self.assertEqual(test_range ^ BibleRange("Matt 1:5-8"), BibleRangeList("Matt 1:5-8, 10-15"))
@@ -548,6 +553,11 @@ class TestBibleReference(unittest.TestCase):
         self.assertEqual(test_range ^ BibleRange("Matt 1:15-20"), BibleRangeList("Matt 1:10-14, 16-20"))
         self.assertEqual(test_range ^ BibleRange("Matt 1:16-20"), BibleRangeList("Matt 1:10-20"))
         self.assertEqual(test_range ^ BibleRange("Matt 1:17-20"), BibleRangeList("Matt 1:10-15, 17-20"))
+
+        self.assertEqual(test_range ^ BibleRangeList("Matt 1:5-8; Mark 1-3"), BibleRangeList("Matt 1:5-8, 10-15; Mark 1-3"))
+        self.assertEqual(test_range ^ BibleRangeList("Matt 1:5-10; Mark 1-3"), BibleRangeList("Matt 1:5-9, 11-15; Mark 1-3"))
+        self.assertEqual(test_range ^ BibleRangeList("Matt 1:5-11; Mark 1-3; Matt 1:14-20"), BibleRangeList("Matt 1:5-9, 12-13, 16-20; Mark 1-3"))
+        self.assertEqual(test_range ^ BibleRangeList("Mark 4-6; Matt 1:11-12, 14"), BibleRangeList("Matt 1:10, 13, 15; Mark 4-6;"))
 
     def test_bible_range_to_string(self):
         rng = BibleRange(BibleBook.Rom, 1, 1, None, 16, 27)
