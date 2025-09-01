@@ -332,16 +332,20 @@ class TestGroupedList(unittest.TestCase):
         test_list = GroupedList(values)
         test_list.sort()
         self.assertEqual(test_list, GroupedList(sorted(values)))
-        self.assertEqual(test_list._first.value, 1)
-        self.assertEqual(test_list._last.value, 10)
+        self.assertEqual(test_list._first.value, 1) # type: ignore
+        self.assertEqual(test_list._last.value, 10) # type: ignore
         self.assertTrue(self.verify_is_single_group(test_list))
+
+        empty_list = GroupedList()
+        empty_list.sort()
+        self.assertEqual(empty_list, GroupedList())
 
     def test_sort_of_groups(self):
         test_list = GroupedList([[12, 3, 20], [18, 5, 11], [1, 8], [15], [2, 6, 14]])
         test_list.sort()
         self.assertEqual(test_list, GroupedList([1, 2, 3, 5, 6, 8, 11, 12, 14, 15, 18, 20]))
-        self.assertEqual(test_list._first.value, 1)
-        self.assertEqual(test_list._last.value, 20)
+        self.assertEqual(test_list._first.value, 1) # type: ignore
+        self.assertEqual(test_list._last.value, 20) # type: ignore
         self.assertTrue(self.verify_is_single_group(test_list))
 
     def verify_is_single_group(self, linked_list: GroupedList):

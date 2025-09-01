@@ -1,4 +1,5 @@
 from collections.abc import MutableSequence, Iterable
+from typing import Any
 
 from bibleref import BibleRefException
 
@@ -36,14 +37,15 @@ class GroupedList(MutableSequence):
         '''
         def __init__(self, value, prev=None, next=None, parent=None):
             self.value = value
-            self.parent: 'GroupedList' = parent
-            self.prev: 'GroupedList._Node' = prev
-            self.next: 'GroupedList._Node' = next
+            self.parent: 'GroupedList | None' = parent
+            self.prev: 'GroupedList._Node | None' = prev
+            self.next: 'GroupedList._Node | None' = next
             self.is_group_head: bool = False  # True if this node is the start of a group.
-            self.prev_head: 'GroupedList._Node' = None # If this is a group head, link to next group head.
-            self.next_head: 'GroupedList._Node' = None # If this is a group head, link to prev group head.
+            self.prev_head: 'GroupedList._Node | None' = None # If this is a group head, link to next group head.
+            self.next_head: 'GroupedList._Node | None' = None # If this is a group head, link to prev group head.
 
         def clear_group_head(self):
+            '''Clears the group head status of this node.'''
             self.is_group_head = False
             self.prev_head = None
             self.next_head = None
@@ -96,8 +98,10 @@ class GroupedList(MutableSequence):
         def _group_at(self, group_index: int) -> 'GroupedList._Node':
             group_index = self._conform_group_index(group_index)
             group_head = self.parent._first_head
+            assert group_head is not None
             for i in range(group_index):
                 group_head = group_head.next_head
+                assert group_head is not None
             return group_head
 
         def __len__(self):
@@ -136,6 +140,9 @@ class GroupedList(MutableSequence):
             self.group_head = group_head
 
         def _check_group_head(self):
+            '''Checks whether the current group_head is valid. Raises a `GroupViewError` if group_head is not
+            a group head or its parent is None, indicating the GroupView has been modified.
+            '''
             if not self.group_head.is_group_head or self.group_head.parent is None:
                 raise GroupViewError("GroupView has been modified")
 
@@ -171,11 +178,13 @@ class GroupedList(MutableSequence):
 
         def __setitem__(self, index, value):
             self._check_group_head()
+            assert self.group_head.parent is not None
             self.group_head.parent._check_type(value)
             self._node_at(index).value = value
 
         def __delitem__(self, index):
             self._check_group_head()
+            assert self.group_head.parent is not None
             node = self._node_at(index)
             self.group_head.parent._pop_node(node)
         
@@ -185,8 +194,9 @@ class GroupedList(MutableSequence):
         def __str__(self):
             return str(list(self))
 
-    def __init__(self, iterable: Iterable = None):
-        '''Creates a new `GroupedList` and adds the items in `iterable` to this list.
+    def __init__(self, iterable: Iterable | None = None):
+        '''Creates a new `GroupedList` and adds any items in `iterable` to this list. If `iterable` is None, the
+        new `GroupedList` is empty.
         
         If the items of `iterable` are Python lists or tuples, each element of `iterable` is added as a
         separate group.'''
@@ -220,18 +230,23 @@ class GroupedList(MutableSequence):
         return index
 
     def _node_at(self, index: int) -> 'GroupedList._Node':
+        '''Returns the node at the given `index`.'''
         index = self._conform_index(index)
         if index <= self._node_count // 2:
             # Node is closer to the start, so search from there
             node = self._first
+            assert node is not None
             for i in range(index):
                 node = node.next
+                assert node is not None
             return node
         else:
             # Node is closer to the end, so seach from there
             node = self._last
+            assert node is not None
             for i in range(self._node_count - index - 1):
                 node = node.prev
+                assert node is not None
             return node
 
     def _insert_first(self, value):
@@ -247,6 +262,7 @@ class GroupedList(MutableSequence):
         
         Assumes there are no existing groups.'''
         if len(self) > 0:
+            assert self._first is not None
             self._first.is_group_head = True
             self._first.prev_head = None
             self._first.next_head = None
@@ -297,7 +313,9 @@ class GroupedList(MutableSequence):
             self._insert_new_group_at_node(new)
 
     def _insert_new_group_before_head(self, node: 'GroupedList._Node', keep_existing_head: bool = False):
+        '''Set `node` to be a new group head, where there is an existing group head at `node.next`.'''
         old_head = node.next
+        assert old_head is not None and old_head.is_group_head
         node.is_group_head = True
         node.prev_head = old_head.prev_head
         if old_head.prev_head is not None:
@@ -321,8 +339,10 @@ class GroupedList(MutableSequence):
         if node is self._first:
             # First node is always already a group.
             return
+        assert node.prev is not None
         node.is_group_head = True
         prev_group_head = self._find_group_head(node.prev)
+        assert prev_group_head is not None
         node.prev_head = prev_group_head
         node.next_head = prev_group_head.next_head
         if prev_group_head.next_head is not None:
@@ -332,10 +352,11 @@ class GroupedList(MutableSequence):
             self._last_head = node
         self._group_count += 1
 
-    def _find_group_head(self, node: 'GroupedList._Node') -> 'GroupedList._Node':
-        '''Search for the next group head, beginning at `node`, and returning the group head node.'''
+    def _find_group_head(self, node: 'GroupedList._Node') -> 'GroupedList._Node | None':
+        '''Search for the closest previous group head, beginning at `node`, and returning the group head node,
+        or None if no group head is found.'''
         while node is not None and not node.is_group_head:
-            node = node.prev
+            node = node.prev # type: ignore
         return node
 
     def _pop_node(self, node: 'GroupedList._Node'):
@@ -392,14 +413,14 @@ class GroupedList(MutableSequence):
         return node.value
 
     def _pop_before(self, node: 'GroupedList._Node'):
-        '''Remove the node before this `node` from this list, and return's the value of the popped node.'''
+        '''Remove the node before this `node` from this list, and return the value of the popped node.'''
         self._check_is_child(node)
         if node is self._first:
             raise IndexError("Can't pop before first node")
         return self._pop_node(node.prev)
 
     def _pop_after(self, node: 'GroupedList._Node'):
-        '''Remove the node after this `node` from this list, and returns the value of the popped node.'''
+        '''Remove the node after this `node` from this list, and return the value of the popped node.'''
         self._check_is_child(node)
         if node is self._last:
             raise IndexError("Can't pop after last node")
@@ -428,23 +449,26 @@ class GroupedList(MutableSequence):
             outer_list.append(inner_list)
         return outer_list
 
-    def index(self, value, min_index: int = None, limit_index: int =None):
+    def index(self, value, start: int | None = None, stop: int | None = None):
         '''Returns the index of the first occurrence of `value` in the list, at or after `min_index`
         and before `limit_index`.'''
-        if min_index is None:
-            min_index = 0
-        if limit_index is None:
-            limit_index = self._node_count
-        self._check_type(value)
-        min_index = self._conform_index(min_index)
-        limit_index = self._conform_index(limit_index-1) + 1
-        if min_index > limit_index: # Swap
-            (limit_index, min_index) = (min_index, limit_index)
-        node: GroupedList._Node = self._first
-        for index in range(limit_index):
-            if node.value == value and index >= min_index:
-                return index
-            node = node.next
+        if start is None:
+            start = 0
+        if stop is None:
+            stop = self._node_count
+        if self._node_count > 0:
+            self._check_type(value)
+            start = self._conform_index(start)
+            stop = self._conform_index(stop-1) + 1
+            if start > stop: # Swap
+                (stop, start) = (start, stop)
+            node = self._first
+            assert node is not None
+            for index in range(stop):
+                if node.value == value and index >= start:
+                    return index
+                node = node.next
+                assert node is not None
         # At this point item not found
         raise ValueError(f"Value {value} not found in list")        
             
@@ -465,6 +489,7 @@ class GroupedList(MutableSequence):
         if self._node_count == 0:
             self._insert_first(value)
         else:
+            assert self._first is not None
             self._insert_before(self._first, value, new_group)
 
     def append(self, value, new_group: bool = False):
@@ -475,6 +500,7 @@ class GroupedList(MutableSequence):
         if self._node_count == 0:
             self._insert_first(value)
         else:
+            assert self._last is not None
             self._insert_after(self._last, value, new_group)
                
     def append_group(self, iterable):
@@ -486,9 +512,9 @@ class GroupedList(MutableSequence):
             self.append(item, new_group=is_first_item)
             is_first_item = False
 
-    def extend(self, iterable):
-        '''Appends each item of `iterable` to the end of this list.'''
-        for item in iterable:
+    def extend(self, values: Iterable):
+        '''Appends each item of `values` to the end of this list.'''
+        for item in values:
             self.append(item)
 
     def insert(self, index: int, value):
@@ -501,7 +527,7 @@ class GroupedList(MutableSequence):
         else:
             self._insert_before(self._node_at(index), value)
 
-    def insert_group_at(self, index: int = None):
+    def insert_group_at(self, index: int):
         index = self._conform_index(index)
         self._insert_new_group_at_node(self._node_at(index))
 
@@ -526,12 +552,12 @@ class GroupedList(MutableSequence):
 
     def clear(self):
         '''Removes all items from the list.'''
-        self._first: GroupedList._Node = None          # First node
-        self._last: GroupedList._Node = None           # Last node
-        self._node_count: int = 0                    # Count of nodes
-        self._first_head: GroupedList._Node = None     # First node that is a group head
-        self._last_head: GroupedList._Node = None      # Last node that is a group head
-        self._group_count: int = 0                   # Count of groups
+        self._first: GroupedList._Node | None = None        # First node
+        self._last: GroupedList._Node | None = None         # Last node
+        self._node_count: int = 0                           # Count of nodes
+        self._first_head: GroupedList._Node | None = None   # First node that is a group head
+        self._last_head: GroupedList._Node | None   = None  # Last node that is a group head
+        self._group_count: int = 0                          # Count of groups
 
     def clear_groups(self):
         '''Clears all existing groups and replaces them with a single new group containing all the items
@@ -563,10 +589,11 @@ class GroupedList(MutableSequence):
     def sort(self):
         '''Sorts this list in-place. All existing groups are cleared and replaced with a single
         new group.'''
-        (self._first, self._last) = self._merge_sort(self._first, clear_group_heads=True)
+        if self._node_count > 1:
+            (self._first, self._last) = self._merge_sort(self._first, clear_group_heads=True)
         self._setup_single_group()
 
-    def _merge_sort(self, first_node: 'GroupedList._Node', clear_group_heads=False):
+    def _merge_sort(self, first_node: 'GroupedList._Node | None', clear_group_heads=False):
         '''Sorts a list beginning with `first_node`, and returns a tuple of (new_first_node, new_last_node).
         '''
         if first_node is None or first_node.next is None:
@@ -680,14 +707,20 @@ class GroupedList(MutableSequence):
         # At this point item not found
         return False
  
-    def __getitem__(self, index: int):
+    def __getitem__(self, index: Any):
+        if not isinstance(index, int):
+            raise TypeError("Index must be an int")
         return self._node_at(index).value
 
-    def __setitem__(self, index: int, value):
+    def __setitem__(self, index: Any, value):
+        if not isinstance(index, int):
+            raise TypeError("Index must be an int")
         self._check_type(value)
         self._node_at(index).value = value
 
-    def __delitem__(self, index: int):
+    def __delitem__(self, index: Any):
+        if not isinstance(index, int):
+            raise TypeError("Index must be an int")
         self.pop(index)
 
     def __reversed__(self):

@@ -4,7 +4,7 @@
 
 from dataclasses import dataclass
 from enum import Enum, Flag, auto
-from typing import Union
+from typing import Iterable
 
 import bibleref
 from bibleref import BibleRefException, bible_data
@@ -490,7 +490,7 @@ class BibleVerse:
 
         return BibleVerse(book, chap_num, verse_num, flags=flags)
 
-    def subtract(self, other: Union[int, 'BibleVerse'], flags: BibleFlag | None = None) -> 'BibleVerse | int | None':
+    def subtract(self, other: 'int | BibleVerse', flags: BibleFlag | None = None) -> 'BibleVerse | int | None':
         '''
         - If `other` is an `int`, returns a new `BibleVerse` that is `other` verses before this `BibleVerse`.
         
@@ -540,7 +540,7 @@ class BibleVerse:
             return NotImplemented
         return self.add(num_verses)
     
-    def __sub__(self, other: Union[int, 'BibleVerse']) -> 'BibleVerse | int | None':
+    def __sub__(self, other: 'int | BibleVerse') -> 'BibleVerse | int | None':
         if not isinstance(other, int) and not isinstance(other, BibleVerse):
             return NotImplemented
         return self.subtract(other)
@@ -1835,8 +1835,8 @@ class BibleRangeList(util.GroupedList):
     def append_group(self, iterable):
         return super().append_group(iterable)
 
-    def extend(self, iterable):
-        return super().extend(iterable)
+    def extend(self, values: Iterable):
+        return super().extend(values)
     
     def insert(self, index: int, value):
         return super().insert(index, value)
@@ -1860,7 +1860,7 @@ class BibleRangeList(util.GroupedList):
         return super().equals(other_iterable, compare_groups)
 
 
-BibleRef = Union[BibleVerse, BibleRange, BibleRangeList]
+BibleRef = BibleVerse | BibleRange | BibleRangeList
 '''A convenience type to indicate either a `BibleVerse`, `BibleRange` or `BibleRangeList`.'''
 
 
