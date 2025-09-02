@@ -19,13 +19,13 @@ class TestGroupedList(unittest.TestCase):
         test_list = GroupedList([5, 8, 2, 7, 3, 10])
         self.assertIs(test_list._node_at(0), test_list._first)
         self.assertIs(test_list._node_at(-1), test_list._last)
-        self.assertIs(test_list._node_at(2), test_list._first.next.next)
+        self.assertIs(test_list._node_at(2), test_list._first.next.next) # type: ignore
     
     def test_insert_first(self):
         test_list = GroupedList()
         test_list._insert_first(6)
         self.assertIs(test_list._first, test_list._last)
-        self.assertEqual(test_list._first.value, 6)
+        self.assertEqual(test_list._first.value, 6) # type: ignore
         self.assertEqual(len(test_list), 1)
     
     def test_insert_before(self):
@@ -129,12 +129,15 @@ class TestGroupedList(unittest.TestCase):
         test_list = GroupedList([5, 8, 2, 7, 3, 10])
         test_list.clear()
         self.assertListEqual(list(test_list), [])
-    
+
+        test_list = GroupedList([[1, 2, 3], [4, 5, 6], [7, 8], [9, 10]])
+        test_list.clear()
+        self.assertTrue(test_list.equals(GroupedList()))
+
     def test_len(self):
         test_list = GroupedList([5, 8, 2, 7, 3, 10])
         self.assertEqual(len(test_list), 6)
 
-    def test_len(self):
         test_list = GroupedList([5, 8, 2, 7, 3, 10])
         self.assertTrue(2 in test_list)
         self.assertFalse(9 in test_list)
@@ -316,11 +319,6 @@ class TestGroupedList(unittest.TestCase):
         test_list.insert_group_at(3)
         test_list.insert_group_at(7)
         self.assertEquals(test_list, GroupedList([[1, 2, 3], [4, 5, 6, 7], [8, 9, 10]]))
-
-    def test_clear(self):
-        list_1 = GroupedList([[1, 2, 3], [4, 5, 6], [7, 8], [9, 10]])
-        list_1.clear()
-        self.assertTrue(list_1.equals(GroupedList()))
 
     def test_clear_groups(self):
         list_1 = GroupedList([[1, 2, 3], [4, 5, 6], [7, 8], [9, 10]])

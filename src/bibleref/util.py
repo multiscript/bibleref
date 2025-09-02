@@ -360,7 +360,7 @@ class GroupedList(MutableSequence):
         return node
 
     def _pop_node(self, node: 'GroupedList._Node'):
-        '''Remove `node` from this list, and returns the node's value.'''
+        '''Remove `node` from this list, and return the node's value.'''
         self._check_is_child(node)
         if self._node_count == 1:
             # pop only element
@@ -370,14 +370,17 @@ class GroupedList(MutableSequence):
             self._last_head = None
         elif node is self._first:
             # pop from start
+            assert node.next is not None
             self._first = node.next
             self._first.prev = None
         elif node is self._last:
             # pop at end
-            self._last = self._last.prev
+            assert node.prev is not None
+            self._last = node.prev
             self._last.next = None
         else:
             # pop from somewhere in middle
+            assert node.prev is not None and node.next is not None
             node.prev.next = node.next
             node.next.prev = node.prev
         
@@ -417,6 +420,7 @@ class GroupedList(MutableSequence):
         self._check_is_child(node)
         if node is self._first:
             raise IndexError("Can't pop before first node")
+        assert node.prev is not None
         return self._pop_node(node.prev)
 
     def _pop_after(self, node: 'GroupedList._Node'):
@@ -424,6 +428,7 @@ class GroupedList(MutableSequence):
         self._check_is_child(node)
         if node is self._last:
             raise IndexError("Can't pop after last node")
+        assert node.next is not None
         return self._pop_node(node.next)
 
     def _node_iter(self):
@@ -622,17 +627,19 @@ class GroupedList(MutableSequence):
             fast_node = fast_node.next
             if fast_node is not None:
                 if clear_group_heads:
-                    fast_node.clear_group_head()            
+                    fast_node.clear_group_head()
+                assert slow_node is not None            
                 slow_node = slow_node.next
                 fast_node = fast_node.next
         
+        assert slow_node is not None and slow_node.next is not None
         first_node_B = slow_node.next
         slow_node.next = None
         first_node_B.prev = None
         return first_node_B
 
-    def _merge_sublists(self, first_node_A: 'GroupedList._Node', last_node_A: 'GroupedList._Node',
-                              first_node_B: 'GroupedList._Node', last_node_B: 'GroupedList._Node'):
+    def _merge_sublists(self, first_node_A: 'GroupedList._Node | None', last_node_A: 'GroupedList._Node',
+                              first_node_B: 'GroupedList._Node | None', last_node_B: 'GroupedList._Node'):
         '''Combines two sublists (A and B) into a single sorted list. Returns a tuple of
         (new_first_node, new_last_node)'''
         if first_node_A is None:
@@ -707,18 +714,18 @@ class GroupedList(MutableSequence):
         # At this point item not found
         return False
  
-    def __getitem__(self, index: Any):
+    def __getitem__(self, index):
         if not isinstance(index, int):
             raise TypeError("Index must be an int")
         return self._node_at(index).value
 
-    def __setitem__(self, index: Any, value):
+    def __setitem__(self, index, value):
         if not isinstance(index, int):
             raise TypeError("Index must be an int")
         self._check_type(value)
         self._node_at(index).value = value
 
-    def __delitem__(self, index: Any):
+    def __delitem__(self, index):
         if not isinstance(index, int):
             raise TypeError("Index must be an int")
         self.pop(index)
