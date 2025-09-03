@@ -1505,6 +1505,7 @@ class BibleRangeList(util.GroupedList):
         self_node = self._first
         while self_node is not None:
             for other_range in other_ref:
+                assert self_node is not None
                 self_range = self_node.value
                 item_difference_list = self_range.difference(other_range, flags=flags)
                 if len(item_difference_list) > 0:
@@ -1513,9 +1514,11 @@ class BibleRangeList(util.GroupedList):
                     # way to do this is to insert the result items starting from the end:
                     old_self_node = self_node
                     for difference_range in reversed(item_difference_list):
+                        assert self_node is not None
                         self._insert_before(self_node, difference_range)
                         self_node = self_node.prev
                     self._pop_node(old_self_node)
+            assert self_node is not None
             self_node = self_node.next
         self.merge()
 
@@ -1820,8 +1823,8 @@ class BibleRangeList(util.GroupedList):
     # that the implementation could change.
     #
 
-    def index(self, value, min_index: int | None = None, limit_index: int | None = None):
-        return super().index(value, min_index, limit_index)
+    def index(self, value, start: int | None = None, stop: int | None = None):
+        return super().index(value, start, stop)
 
     def count(self, value):
         return super().count(value)
