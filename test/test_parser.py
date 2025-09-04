@@ -43,6 +43,5 @@ class TestBibleParser(unittest.TestCase):
             error = e
         
         self.assertIsNotNone(error)
-        self.assertEqual(error.start_pos, 8)
-        self.assertEqual(error.end_pos, 10)
-        
+        self.assertEqual(error.start_pos, 8) #type: ignore
+        self.assertEqual(error.end_pos, 10) #type: ignore

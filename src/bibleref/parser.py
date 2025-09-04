@@ -3,7 +3,7 @@ implementation detail and not relied upon.
 '''
 from lark import Lark, UnexpectedInput
 from lark import Transformer, v_args
-from lark.visitors import VisitError
+from lark.exceptions import VisitError
 
 import bibleref
 from bibleref import ref, bible_data
@@ -13,9 +13,9 @@ MAJOR_LIST_SEP_SENTINEL = object()
 MINOR_LIST_SEP_SENTINEL = object()
 
 
-_parser_obj = None
+_parser_obj: Lark | None  = None
 
-def _parser():
+def _parser() -> Lark:
     '''Return a Lark parser singleton.'''
     global _parser_obj
     if _parser_obj is None:
@@ -25,6 +25,7 @@ def _parser():
         # with open(grammar_path) as file:
         #     grammar_text = file.read()
         _recreate_parser()
+    assert _parser_obj is not None
     return _parser_obj
 
 
@@ -39,16 +40,18 @@ def _transformer():
     return _transformer_obj
 
 
-def _parse(string, flags: ref.BibleFlag = None):
+def _parse(string, flags: ref.BibleFlag | None = None):
     '''Parse `string` as a `bibleref.ref.BibleRefList` using `BibleRefTransformer`.'''
     try:
         tree = _parser().parse(string)
     except UnexpectedInput as orig:
+        assert orig.pos_in_stream is not None
         start_pos=orig.pos_in_stream
         end_pos=orig.pos_in_stream + 1
         new_error = ref.BibleRefParsingError(f"Unexpected text: {string[start_pos:end_pos]}",
                                          start_pos, end_pos)
-        new_error.orig = orig
+        # Create a new attribute to hold the original error
+        new_error.orig = orig # type: ignore
         raise new_error
     
     try:
@@ -65,7 +68,7 @@ def _meta_info_to_pos(meta_info):
 @v_args(meta=True)
 class _BibleRefTransformer(Transformer):
     '''Lark Transformer for parsing strings into Bible references.'''
-    def __init__(self, *args, flags: ref.BibleFlag = None, **kwargs):
+    def __init__(self, *args, flags: ref.BibleFlag | None = None, **kwargs):
         super().__init__(*args, **kwargs)
         self.cur_book = None            # Tracks implied current book
         self.cur_chap_num = None        # Tracks implied current chapter
@@ -201,11 +204,13 @@ class _BibleRefTransformer(Transformer):
 
 def _recreate_parser():
     global _parser_obj
-    range_sep = bible_data().range_sep
-    major_list_sep = bible_data().major_list_sep
-    minor_list_sep = bible_data().minor_list_sep
-    verse_sep_std = bible_data().verse_sep_std
-    verse_sep_alt = bible_data().verse_sep_alt
+    bible_data_instance = bible_data()
+    assert bible_data_instance is not None
+    range_sep = bible_data_instance.range_sep
+    major_list_sep = bible_data_instance.major_list_sep
+    minor_list_sep = bible_data_instance.minor_list_sep
+    verse_sep_std = bible_data_instance.verse_sep_std
+    verse_sep_alt = bible_data_instance.verse_sep_alt
     grammar = rf'''
         ?start: ref_list
 

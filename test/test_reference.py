@@ -19,8 +19,8 @@ class TestBibleReference(unittest.TestCase):
     def test_bible_book_counts(self):
         self.assertEqual(BibleBook.Phil.verse_count(), 104) # Check one book manually
         for book in BibleBook:
-            self.assertEqual(book.verse_count(), BibleRange(book.title).verse_count())
-            self.assertEqual(book.chap_count(), BibleRange(book.title).chap_count())
+            self.assertEqual(book.verse_count(), BibleRange(book.title).verse_count()) #type: ignore
+            self.assertEqual(book.chap_count(), BibleRange(book.title).chap_count()) #type: ignore
 
     def test_bible_book_chap_ranges(self):
         self.assertEqual(BibleBook.Mark.chap_ranges(),
@@ -618,7 +618,7 @@ class TestBibleReference(unittest.TestCase):
     def test_bible_range_string_roundtrip(self):
         # For each Bible book, test that we can convert a range to a string and back again
         for book in BibleBook:
-            if book.abbrev is None or book.title is None or book.regex is None:
+            if book.abbrev is None or book.title is None or book.regex is None: #type: ignore
                 print(f"{book} lacks complete name data.")
                 continue
 
@@ -947,5 +947,5 @@ class TestBibleReference(unittest.TestCase):
         expected_list_str = "Gen 1:2-3:4; 1Sam 2:2-3:3; Matt 1:2-11:1; 2:3-4:4; " + \
                             "2:3-4:5; Mark 3:4-5:5; 3:4-5:6"
         self.assertEqual(sorted_list_str, expected_list_str)
-        self.assertEqual(range_list._first.value, BibleRange("Gen 1:2-3:4"))
-        self.assertEqual(range_list._last.value, BibleRange("Mark 3:4-5:6"))
+        self.assertEqual(range_list._first.value, BibleRange("Gen 1:2-3:4")) #type: ignore
+        self.assertEqual(range_list._last.value, BibleRange("Mark 3:4-5:6")) #type: ignore

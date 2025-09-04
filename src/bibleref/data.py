@@ -92,7 +92,7 @@ class BibleData:
         # Set remaining order of remaining books to None
         for book in book_set:
             # print(f"No order for {book}")
-            book.order = None
+            book.order = None # type: ignore
 
     @property
     def name_data(self):
@@ -110,12 +110,12 @@ class BibleData:
         for book in ref.BibleBook:
             if book not in name_data:
                 # print(f"No name data for {book}")
-                book.abbrev = None
-                book.title = None
+                book.abbrev = None # type: ignore
+                book.title = None # type: ignore
             else:
                 book_name_data = name_data[book]
-                book.abbrev = book_name_data[0]
-                book.title = book_name_data[1]
+                book.abbrev = book_name_data[0] # type: ignore
+                book.title = book_name_data[1] # type: ignore
 
     def _set_regexes(self, name_data: dict):
         '''Add a 'regex' attribute to each BibleBook for a regex matching acceptable names.
@@ -128,7 +128,7 @@ class BibleData:
         for book in ref.BibleBook:
             if book not in name_data:
                 # print(f"No name data for {book}")
-                book.regex = None
+                book.regex = None # type: ignore
             else:
                 book_name_data = name_data[book]
 
@@ -167,7 +167,7 @@ class BibleData:
                 for abbrev in extra_abbrevs:
                     abbrev = abbrev.replace(" ",r"\s*") # Allow for variable whitespace
                     total_pattern += "|" + abbrev
-                book.regex = re.compile(total_pattern, re.IGNORECASE)
+                book.regex = re.compile(total_pattern, re.IGNORECASE) # type: ignore
 
     @property
     def max_verses(self):
@@ -181,9 +181,9 @@ class BibleData:
         for book in ref.BibleBook:
             if book not in self._max_verses:
                 # print(f"No max_verses for {book}")
-                book._max_verses = None
+                book._max_verses = None # type: ignore
             else:
-                book._max_verses = self._max_verses[book]
+                book._max_verses = self._max_verses[book] # type: ignore
 
     @property
     def verse_0s(self):
@@ -197,9 +197,9 @@ class BibleData:
         self._verse_0s = verse_0s
         for book in ref.BibleBook:
             if book in verse_0s:
-                book._verse_0s = self._verse_0s[book]
+                book._verse_0s = self._verse_0s[book] # type: ignore
             else:
-                book._verse_0s = set()
+                book._verse_0s = set() # type: ignore
 
 
 default_book_order = [
