@@ -1,10 +1,10 @@
 
-import unittest
+import pytest
 
 from bibleref import bible_data, BibleRangeList
 
 
-class TestBibleRef(unittest.TestCase):
+class TestBibleRef:
     def test_bible_data(self):
         bible_data_instance = bible_data()
         assert bible_data_instance is not None
@@ -26,7 +26,7 @@ class TestBibleRef(unittest.TestCase):
 
         range_list_2 = BibleRangeList("Mark 3,1_4,2| 5,6_8/ 10| Matt 4")
 
-        self.assertEqual(range_list_1, range_list_2)
+        assert range_list_1 == range_list_2
 
         # Restore original characters
         bible_data_instance.range_sep = range_sep

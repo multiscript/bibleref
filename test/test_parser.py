@@ -1,16 +1,17 @@
 from pprint import pprint
-import unittest
+
+import pytest
 
 from bibleref.ref import BibleBook, BibleRange, BibleRefParsingError
 from bibleref.parser import _parse
 
-class TestBibleParser(unittest.TestCase):
+class TestBibleParser:
     def test_parse_success(self):
         try:
             range_groups_list = _parse("Matthew; Mark 2; Jude 5; 8; Obadiah 2-3; John 3.16-18; 10-14:2;" + 
                                       "Romans 1:10-22; 2; 3:20-22, 24, 4:2-5:2, 10")
         except BibleRefParsingError as e:
-            self.fail(str([str(e), e.start_pos, e.end_pos]))
+            pytest.fail(str([str(e), e.start_pos, e.end_pos]))
 
         # print(tree.pretty())
         # pprint(top_list)
@@ -33,7 +34,7 @@ class TestBibleParser(unittest.TestCase):
         ]
         pprint(range_groups_list)
         # pprint(expected_list)
-        self.assertEqual(range_groups_list, expected_list)
+        assert range_groups_list == expected_list
 
     def test_parse_failure(self):
         error = None
@@ -41,7 +42,7 @@ class TestBibleParser(unittest.TestCase):
             _parse("Mark 2, 20, 3")
         except BibleRefParsingError as e:
             error = e
-        
-        self.assertIsNotNone(error)
-        self.assertEqual(error.start_pos, 8) #type: ignore
-        self.assertEqual(error.end_pos, 10) #type: ignore
+
+        assert error is not None
+        assert error.start_pos == 8  # type: ignore
+        assert error.end_pos == 10  # type: ignore

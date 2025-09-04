@@ -20,6 +20,10 @@ classifiers = [
     "Intended Audience :: Developers",
     "Topic :: Religion",
 ]
+[project.optional-dependencies]
+test = [
+  "pytest",
+]
 
 [project.urls]
 "Documentation" = "https://multiscript.app/bibleref"
