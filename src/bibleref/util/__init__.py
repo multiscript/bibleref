@@ -1,5 +1,4 @@
 from collections.abc import MutableSequence, Iterable
-from typing import Any
 
 from bibleref import BibleRefException
 
@@ -19,7 +18,7 @@ class GroupedList(MutableSequence):
     As groups are just views of the items, updating an item in a group also updates
     the main list, and vice verse.
 
-    The groups property returns a GroupsView collection, which can be indexed and iterated
+    The groups property returns a GroupViews collection, which can be indexed and iterated
     over. Each iteration returns GroupView, which can be indexed and iterated over to return
     the items in the group.
     
@@ -454,11 +453,9 @@ class GroupedList(MutableSequence):
             outer_list.append(inner_list)
         return outer_list
 
-    def index(self, value, start: int | None = None, stop: int | None = None):
+    def index(self, value, start: int=0, stop: int | None = None) -> int:
         '''Returns the index of the first occurrence of `value` in the list, at or after `min_index`
         and before `limit_index`.'''
-        if start is None:
-            start = 0
         if stop is None:
             stop = self._node_count
         if self._node_count > 0:
@@ -574,7 +571,7 @@ class GroupedList(MutableSequence):
     def reverse(self):
         '''Reverses the items of this list in-place.
         
-        For simplicity, this also clears all existing groups and places all list items in one new group.
+        For simplicity, this also clears all existing groups and places all existing items in one new group.
         '''
         if self._node_count == 0:
             return
@@ -749,7 +746,3 @@ class GroupedList(MutableSequence):
 
 class GroupViewError(BibleRefException):
     '''Raised when a no-longer-valid GroupView is accessed.'''
-
-
-
-
